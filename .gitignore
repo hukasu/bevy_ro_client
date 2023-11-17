@@ -1,0 +1,5 @@
+# Visual Code
+.vscode/
+
+# Rust
+/target

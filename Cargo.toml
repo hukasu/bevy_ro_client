@@ -1,0 +1,8 @@
+[workspace]
+members = ["ragnarok_rebuild_common", "ragnarok_rebuild_client", "ragnarok_rebuild_server"]
+resolver = "2"
+
+[workspace.lints.clippy]
+todo = "warn"
+uninplemented = "warn"
+dbg_macro = "warn"
