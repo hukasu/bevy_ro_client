@@ -6,8 +6,13 @@ use std::{
     fmt::Display,
     fs::File,
     io::{BufReader, Error, ErrorKind, Read, Seek},
-    path::Path,
+    path::{Path, PathBuf},
     sync::Mutex,
+};
+
+use bevy::{
+    asset::io::{AssetReader, AssetReaderError, PathStream},
+    utils::BoxedFuture,
 };
 
 use encoding_rs::EUC_KR;
@@ -17,11 +22,11 @@ use crate::{
     buf_reader_ext::BufReaderExt,
     grf::{
         entry::Entry,
-        header::{Header, Version},
+        header::{Header, Version, SIZE_OF_HEADER},
     },
 };
 
-use self::{error::GRFError, header::SIZE_OF_HEADER};
+pub use self::error::GRFError;
 
 const GRF_SIGNATURE: &str = "Master of Magic\0";
 
@@ -61,11 +66,11 @@ impl GRF {
         Ok(GRF {
             reader: reader.into(),
             header,
-            file_table: file_table.into_boxed_slice(),
+            file_table: file_table.into(),
         })
     }
 
-    pub fn read_file(&self, path: &str) -> Result<Box<[u8]>, error::GRFError> {
+    pub fn read_file(&self, path: &Path) -> Result<Box<[u8]>, error::GRFError> {
         let entry = self.search_file(path).ok_or(GRFError::FileNotFound)?;
 
         let data = {
@@ -108,7 +113,7 @@ impl GRF {
         Ok(uncompressed_data.into_boxed_slice())
     }
 
-    fn search_file<'a>(&'a self, path: &str) -> Option<&'a Entry> {
+    fn search_file<'a>(&'a self, path: &Path) -> Option<&'a Entry> {
         let bin_search = self
             .file_table
             .binary_search_by_key(&path, |entry| &entry.filename);
@@ -176,14 +181,17 @@ impl GRF {
     fn read_file_table_entry(table_reader: &mut BufReader<&[u8]>) -> Result<Entry, Error> {
         let cp949_filename = table_reader.read_null_terminated_string()?;
 
-        let (filename, _encoding, chars_replaced) =
-            EUC_KR.decode(&cp949_filename[..(cp949_filename.len() - 1)]);
-        if chars_replaced {
-            Err(Error::new(
-                ErrorKind::InvalidInput,
-                "String had invalid CP949 characters",
-            ))?
-        }
+        let filename = {
+            let (f, _encoding, chars_replaced) =
+                EUC_KR.decode(&cp949_filename[..(cp949_filename.len() - 1)]);
+            if chars_replaced {
+                Err(Error::new(
+                    ErrorKind::InvalidInput,
+                    "String had invalid CP949 characters",
+                ))?
+            }
+            PathBuf::from(f.replace('\\', "/"))
+        };
 
         let compressed_length = table_reader.read_u32()?;
         let compressed_length_aligned = table_reader.read_u32()?;
@@ -192,7 +200,7 @@ impl GRF {
         let offset = table_reader.read_u32()?;
 
         Ok(Entry {
-            filename: filename.replace('\\', "/").into_boxed_str(),
+            filename,
             compressed_length,
             compressed_length_aligned,
             uncompressed_length,
@@ -212,5 +220,69 @@ impl GRF {
         SUPPORTED_VERSION
             .iter()
             .any(|version| version.eq(&header.version))
+    }
+}
+
+impl AssetReader for GRF {
+    fn read<'a>(
+        &'a self,
+        path: &'a Path,
+    ) -> BoxedFuture<'a, Result<Box<bevy::asset::io::Reader<'a>>, AssetReaderError>> {
+        Box::pin(async {
+            let data = self.read_file(path)?;
+            let reader: Box<bevy::asset::io::Reader<'a>> =
+                Box::new(bevy::asset::io::VecReader::new(data.to_vec()));
+            Ok(reader)
+        })
+    }
+
+    fn read_meta<'a>(
+        &'a self,
+        path: &'a Path,
+    ) -> BoxedFuture<'a, Result<Box<bevy::asset::io::Reader<'a>>, AssetReaderError>> {
+        Box::pin(async { Err(AssetReaderError::NotFound(path.to_path_buf())) })
+    }
+
+    fn is_directory<'a>(
+        &'a self,
+        path: &'a Path,
+    ) -> BoxedFuture<'a, Result<bool, AssetReaderError>> {
+        Box::pin(async move {
+            let entry = match self.search_file(path) {
+                Some(entry) => entry,
+                None => Err(AssetReaderError::NotFound(path.to_path_buf()))?,
+            };
+            Ok(!entry.is_file())
+        })
+    }
+
+    fn read_directory<'a>(
+        &'a self,
+        path: &'a Path,
+    ) -> BoxedFuture<'a, Result<Box<PathStream>, AssetReaderError>> {
+        let files = self
+            .file_table
+            .iter()
+            .filter(|&entry| {
+                entry
+                    .filename
+                    .parent()
+                    .map(|parent| parent.eq(path))
+                    .unwrap_or(false)
+            })
+            .map(|entry| entry.filename.to_owned())
+            .collect::<Vec<_>>();
+        Box::pin(async {
+            match self.is_directory(path).await? {
+                true => {
+                    let stream: Box<PathStream> = Box::new(futures::stream::iter(files));
+                    Ok(stream)
+                }
+                false => Err(AssetReaderError::Io(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "Not a directory.",
+                ))),
+            }
+        })
     }
 }

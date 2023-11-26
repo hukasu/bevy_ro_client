@@ -1,4 +1,4 @@
-use std::fmt::Display;
+use std::{fmt::Display, path::PathBuf};
 
 const GRF_FILETYPE_FILE: u8 = 0x01;
 const GRF_FILETYPE_ENCRYPT_MIXED: u8 = 0x02;
@@ -6,7 +6,7 @@ const GRF_FILETYPE_ENCRYPT_HEADER_ONLY: u8 = 0x04;
 
 #[derive(Debug)]
 pub struct Entry {
-    pub filename: Box<str>,
+    pub filename: PathBuf,
     pub compressed_length: u32,
     pub compressed_length_aligned: u32,
     pub uncompressed_length: u32,
@@ -31,7 +31,7 @@ impl Entry {
 impl Display for Entry {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "Entry {{")?;
-        writeln!(f, "filename = {}", self.filename)?;
+        writeln!(f, "filename = {:?}", self.filename)?;
         writeln!(f, "compressed length = {}", self.compressed_length)?;
         writeln!(
             f,

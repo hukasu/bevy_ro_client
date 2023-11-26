@@ -45,3 +45,35 @@ impl<'a> std::fmt::Display for GRFError<'a> {
 }
 
 impl<'a> Error for GRFError<'a> {}
+
+impl<'a> From<GRFError<'a>> for bevy::asset::io::AssetReaderError {
+    fn from(value: GRFError) -> Self {
+        match value {
+            GRFError::FileNotFound => bevy::asset::io::AssetReaderError::Io(std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                "Could not find GRF file.",
+            )),
+            GRFError::WrongSignature => bevy::asset::io::AssetReaderError::Io(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Grf has wrong signature.",
+            )),
+            GRFError::UnsupportedVersion => {
+                bevy::asset::io::AssetReaderError::Io(std::io::Error::new(
+                    std::io::ErrorKind::InvalidInput,
+                    "Grf has unsupported version.",
+                ))
+            }
+            GRFError::Io(io) => bevy::asset::io::AssetReaderError::Io(io),
+            GRFError::Zip(_zip) => bevy::asset::io::AssetReaderError::Io(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "Failed to decompress data from Grf.",
+            )),
+            GRFError::MutexPoisoned(_poison) => {
+                bevy::asset::io::AssetReaderError::Io(std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Mutex guarding BufReader is poisoned.",
+                ))
+            }
+        }
+    }
+}
