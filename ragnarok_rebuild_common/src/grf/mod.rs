@@ -19,7 +19,7 @@ use encoding_rs::EUC_KR;
 use flate2::read::ZlibDecoder;
 
 use crate::{
-    buf_reader_ext::BufReaderExt,
+    buf_reader_ext::{BufReaderExt, ReaderExt},
     grf::{
         entry::Entry,
         header::{Header, Version, SIZE_OF_HEADER},
