@@ -4,11 +4,11 @@ pub const SIZE_OF_HEADER: usize = 16 + 14 + 4 + 4 + 4 + 4;
 
 #[derive(Debug)]
 pub struct Header {
-    pub signature: [u8; 16],
-    pub allowed_encription: [u8; 14],
+    pub signature: [u8; 15],
+    pub allowed_encription: [u8; 15],
     pub filetableoffset: u32,
-    pub number1: u32,
-    pub number2: u32,
+    pub scrambling_seed: u32,
+    pub scrambled_file_count: u32,
     pub version: Version,
 }
 

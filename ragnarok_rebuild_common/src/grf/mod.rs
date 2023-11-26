@@ -28,7 +28,7 @@ use crate::{
 
 pub use self::error::GRFError;
 
-const GRF_SIGNATURE: &str = "Master of Magic\0";
+const GRF_SIGNATURE: &str = "Master of Magic";
 
 pub struct GRF {
     reader: Mutex<BufReader<File>>,
@@ -59,8 +59,10 @@ impl GRF {
         }
 
         reader.seek_relative(header.filetableoffset as i64)?;
-        let mut file_table =
-            Self::read_file_table(&mut reader, (header.number2 - header.number1 - 7) as usize)?;
+        let mut file_table = Self::read_file_table(
+            &mut reader,
+            (header.scrambled_file_count - header.scrambling_seed - 7) as usize,
+        )?;
         file_table.sort_by_cached_key(|file_entry| file_entry.filename.clone());
 
         Ok(GRF {
@@ -128,8 +130,8 @@ impl GRF {
         let allowed_encription = reader.read_array()?;
 
         let filetableoffset = reader.read_u32()?;
-        let number1 = reader.read_u32()?;
-        let number2 = reader.read_u32()?;
+        let scrambling_seed = reader.read_u32()?;
+        let scrambled_file_count = reader.read_u32()?;
         let build = reader.read_u8()?;
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
@@ -139,8 +141,8 @@ impl GRF {
             signature,
             allowed_encription,
             filetableoffset,
-            number1,
-            number2,
+            scrambling_seed,
+            scrambled_file_count,
             version: Version {
                 padding,
                 major,
