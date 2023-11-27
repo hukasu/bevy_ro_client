@@ -12,6 +12,7 @@ use std::{
 
 use bevy::{
     asset::io::{AssetReader, AssetReaderError, PathStream},
+    log::info,
     utils::BoxedFuture,
 };
 
@@ -74,7 +75,7 @@ impl GRF {
 
     pub fn read_file(&self, path: &Path) -> Result<Box<[u8]>, error::GRFError> {
         let entry = self.search_file(path).ok_or(GRFError::FileNotFound)?;
-
+        info!("{entry:?}");
         let data = {
             let mut reader_guard = self.reader.lock()?;
             reader_guard.seek(std::io::SeekFrom::Start(
