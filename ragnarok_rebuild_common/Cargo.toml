@@ -10,10 +10,16 @@ workspace = true
 
 [dependencies]
 bevy = { workspace = true }
+wgpu = { workspace = true }
+futures = { workspace = true }
+
 tungstenite = { workspace = true }
 url = { workspace = true }
 
 serde = { workspace = true }
+toml = { workspace = true }
 
 flate2 = { workspace = true }
 encoding_rs ={ workspace = true }
+
+sqlx = { workspace = true }
