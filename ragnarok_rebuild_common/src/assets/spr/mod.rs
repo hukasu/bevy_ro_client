@@ -3,7 +3,7 @@ mod error;
 
 use bevy::{asset::Asset, reflect::TypePath, render::texture::Image};
 
-use crate::assets::buf_reader_ext::ReaderExt;
+use crate::assets::reader_ext::ReaderExt;
 
 pub use self::{asset_loader::SpriteAssetLoader, error::SpriteError};
 
@@ -29,8 +29,8 @@ impl Sprite {
             )))?
         };
 
-        let bitmap_image_count = bytes.read_u16()?;
-        let truecolor_image_count = bytes.read_u16()?;
+        let bitmap_image_count = bytes.read_le_u16()?;
+        let truecolor_image_count = bytes.read_le_u16()?;
 
         let bitmap_images = match version {
             [0, 2] => (0..bitmap_image_count)
@@ -74,8 +74,8 @@ impl Sprite {
     fn load_uncompressed_bitmap(
         reader: &mut &[u8],
     ) -> Result<bevy::render::texture::Image, SpriteError> {
-        let width = reader.read_u16()?;
-        let height = reader.read_u16()?;
+        let width = reader.read_le_u16()?;
+        let height = reader.read_le_u16()?;
 
         let buffer = reader.read_vec((width * height) as usize)?;
 
@@ -94,9 +94,9 @@ impl Sprite {
     fn load_compressed_bitmap(
         reader: &mut &[u8],
     ) -> Result<bevy::render::texture::Image, SpriteError> {
-        let width = reader.read_u16()?;
-        let height = reader.read_u16()?;
-        let compressed_buffer_size = reader.read_u16()?;
+        let width = reader.read_le_u16()?;
+        let height = reader.read_le_u16()?;
+        let compressed_buffer_size = reader.read_le_u16()?;
 
         let buffer = reader.read_vec(compressed_buffer_size as usize)?;
 
@@ -137,8 +137,8 @@ impl Sprite {
     fn load_truecolor_bitmap(
         reader: &mut &[u8],
     ) -> Result<bevy::render::texture::Image, SpriteError> {
-        let width = reader.read_u16()?;
-        let height = reader.read_u16()?;
+        let width = reader.read_le_u16()?;
+        let height = reader.read_le_u16()?;
 
         let buffer = reader
             .read_vec((width * height * 4) as usize)?

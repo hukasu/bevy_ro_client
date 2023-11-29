@@ -12,7 +12,6 @@ use std::{
 
 use bevy::{
     asset::io::{AssetReader, AssetReaderError, PathStream},
-    log::info,
     utils::BoxedFuture,
 };
 
@@ -20,11 +19,11 @@ use encoding_rs::EUC_KR;
 use flate2::read::ZlibDecoder;
 
 use crate::assets::{
-    buf_reader_ext::{BufReaderExt, ReaderExt},
     grf::{
         entry::Entry,
         header::{Header, Version, SIZE_OF_HEADER},
     },
+    reader_ext::{BufReaderExt, ReaderExt},
 };
 
 pub use self::error::GRFError;
@@ -75,7 +74,7 @@ impl GRF {
 
     pub fn read_file(&self, path: &Path) -> Result<Box<[u8]>, error::GRFError> {
         let entry = self.search_file(path).ok_or(GRFError::FileNotFound)?;
-        info!("{entry:?}");
+
         let data = {
             let mut reader_guard = self.reader.lock()?;
             reader_guard.seek(std::io::SeekFrom::Start(
@@ -130,9 +129,9 @@ impl GRF {
         let signature = reader.read_array()?;
         let allowed_encription = reader.read_array()?;
 
-        let filetableoffset = reader.read_u32()?;
-        let scrambling_seed = reader.read_u32()?;
-        let scrambled_file_count = reader.read_u32()?;
+        let filetableoffset = reader.read_le_u32()?;
+        let scrambling_seed = reader.read_le_u32()?;
+        let scrambled_file_count = reader.read_le_u32()?;
         let build = reader.read_u8()?;
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
@@ -157,8 +156,8 @@ impl GRF {
         reader: &mut BufReader<File>,
         file_count: usize,
     ) -> Result<Vec<Entry>, Error> {
-        let compressed_size = reader.read_u32()?;
-        let umcompressed_size = reader.read_u32()?;
+        let compressed_size = reader.read_le_u32()?;
+        let umcompressed_size = reader.read_le_u32()?;
 
         let compressed_table = reader.read_vec(compressed_size as usize)?;
         let uncompressed_table = {
@@ -196,11 +195,11 @@ impl GRF {
             PathBuf::from(f.replace('\\', "/"))
         };
 
-        let compressed_length = table_reader.read_u32()?;
-        let compressed_length_aligned = table_reader.read_u32()?;
-        let uncompressed_length = table_reader.read_u32()?;
+        let compressed_length = table_reader.read_le_u32()?;
+        let compressed_length_aligned = table_reader.read_le_u32()?;
+        let uncompressed_length = table_reader.read_le_u32()?;
         let flags = table_reader.read_u8()?;
-        let offset = table_reader.read_u32()?;
+        let offset = table_reader.read_le_u32()?;
 
         Ok(Entry {
             filename,
