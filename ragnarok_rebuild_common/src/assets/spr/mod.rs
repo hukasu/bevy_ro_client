@@ -3,7 +3,7 @@ mod error;
 
 use bevy::{asset::Asset, reflect::TypePath, render::texture::Image};
 
-use crate::buf_reader_ext::ReaderExt;
+use crate::assets::buf_reader_ext::ReaderExt;
 
 pub use self::{asset_loader::SpriteAssetLoader, error::SpriteError};
 

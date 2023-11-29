@@ -19,7 +19,7 @@ use bevy::{
 use encoding_rs::EUC_KR;
 use flate2::read::ZlibDecoder;
 
-use crate::{
+use crate::assets::{
     buf_reader_ext::{BufReaderExt, ReaderExt},
     grf::{
         entry::Entry,
@@ -88,13 +88,13 @@ impl GRF {
             entry.has_mixed_encryption(),
             entry.has_header_only_encryption(),
         ) {
-            (true, false) => Ok(crate::des::decode(
+            (true, false) => Ok(crate::assets::des::decode(
                 &data,
                 entry.compressed_length_aligned as usize,
                 entry.compressed_length as usize,
                 false,
             )?),
-            (false, true) => Ok(crate::des::decode(
+            (false, true) => Ok(crate::assets::des::decode(
                 &data,
                 entry.compressed_length_aligned as usize,
                 entry.compressed_length as usize,

@@ -3,7 +3,7 @@ mod tables;
 
 use std::{io::Error, ops::Shr};
 
-use crate::des::block::DesBlock;
+use crate::assets::des::block::DesBlock;
 
 pub fn decode(
     buffer: &[u8],
