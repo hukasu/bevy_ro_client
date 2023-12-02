@@ -1,21 +1,35 @@
-mod asset_loader;
 mod error;
 
-use bevy::{asset::Asset, reflect::TypePath, render::texture::Image};
+use crate::reader_ext::ReaderExt;
 
-use crate::assets::reader_ext::ReaderExt;
+pub use self::error::SpriteError;
 
-pub use self::{asset_loader::SpriteAssetLoader, error::SpriteError};
+#[derive(Debug)]
+pub struct SpriteABGR {
+    pub width: u16,
+    pub height: u16,
+    pub pixels: Box<[u8]>,
+}
 
-#[derive(Debug, Asset, TypePath)]
+#[derive(Debug)]
+pub struct SpriteIndexed {
+    pub width: u16,
+    pub height: u16,
+    pub pixels: Box<[u8]>,
+}
+
+#[derive(Debug)]
 pub struct Sprite {
     header: [u8; 2],
     version: [u8; 2],
     bitmap_image_count: u16,
     truecolor_image_count: u16,
-    bitmap_images: Box<[Image]>,
-    truecolor_image: Box<[Image]>,
-    palletes: Image,
+    /// Images storing only the index to a pallete
+    bitmap_images: Box<[SpriteIndexed]>,
+    /// Images storing ABGR bitmaps
+    truecolor_image: Box<[SpriteABGR]>,
+    /// 256 RGBA colors
+    palette: [u8; 1024],
 }
 
 impl Sprite {
@@ -49,16 +63,8 @@ impl Sprite {
             .map(|_| Self::load_truecolor_bitmap(&mut bytes))
             .collect::<Result<_, _>>()?;
 
-        let palletes = bevy::render::texture::Image::new(
-            wgpu::Extent3d {
-                width: 256,
-                height: 1,
-                depth_or_array_layers: 1,
-            },
-            wgpu::TextureDimension::D1,
-            bytes.read_vec(1024)?,
-            wgpu::TextureFormat::Rgba8Uint,
-        );
+        let palette = bytes.read_array()?;
+        dbg!(&palette[..256]);
 
         Ok(Sprite {
             header,
@@ -67,40 +73,33 @@ impl Sprite {
             truecolor_image_count,
             bitmap_images,
             truecolor_image,
-            palletes,
+            palette,
         })
     }
 
-    fn load_uncompressed_bitmap(
-        reader: &mut &[u8],
-    ) -> Result<bevy::render::texture::Image, SpriteError> {
+    fn load_uncompressed_bitmap(reader: &mut &[u8]) -> Result<SpriteIndexed, SpriteError> {
         let width = reader.read_le_u16()?;
         let height = reader.read_le_u16()?;
 
-        let buffer = reader.read_vec((width * height) as usize)?;
+        let pixels = reader
+            .read_vec((width * height) as usize)?
+            .into_boxed_slice();
 
-        Ok(bevy::render::texture::Image::new(
-            wgpu::Extent3d {
-                width: width as u32,
-                height: height as u32,
-                depth_or_array_layers: 1,
-            },
-            wgpu::TextureDimension::D2,
-            buffer,
-            wgpu::TextureFormat::R8Uint,
-        ))
+        Ok(SpriteIndexed {
+            width,
+            height,
+            pixels,
+        })
     }
 
-    fn load_compressed_bitmap(
-        reader: &mut &[u8],
-    ) -> Result<bevy::render::texture::Image, SpriteError> {
+    fn load_compressed_bitmap(reader: &mut &[u8]) -> Result<SpriteIndexed, SpriteError> {
         let width = reader.read_le_u16()?;
         let height = reader.read_le_u16()?;
         let compressed_buffer_size = reader.read_le_u16()?;
 
         let buffer = reader.read_vec(compressed_buffer_size as usize)?;
 
-        let decompressed = buffer
+        let pixels = buffer
             .into_iter()
             .scan(false, |seen_zero, cur| match seen_zero {
                 true => {
@@ -117,45 +116,33 @@ impl Sprite {
                 }
             })
             .flatten()
-            .collect::<Vec<_>>();
-        if decompressed.len().ne(&((width * height) as usize)) {
+            .collect::<Box<_>>();
+        if pixels.len().ne(&((width * height) as usize)) {
             Err(SpriteError::RLE)?
         }
 
-        Ok(bevy::render::texture::Image::new(
-            wgpu::Extent3d {
-                width: width as u32,
-                height: height as u32,
-                depth_or_array_layers: 1,
-            },
-            wgpu::TextureDimension::D2,
-            decompressed,
-            wgpu::TextureFormat::R8Uint,
-        ))
+        Ok(SpriteIndexed {
+            width,
+            height,
+            pixels,
+        })
     }
 
-    fn load_truecolor_bitmap(
-        reader: &mut &[u8],
-    ) -> Result<bevy::render::texture::Image, SpriteError> {
+    fn load_truecolor_bitmap(reader: &mut &[u8]) -> Result<SpriteABGR, SpriteError> {
         let width = reader.read_le_u16()?;
         let height = reader.read_le_u16()?;
 
-        let buffer = reader
-            .read_vec((width * height * 4) as usize)?
+        let pixels = reader
+            .read_vec((width as u32 * height as u32 * 4) as usize)?
             .chunks(4)
             .flat_map(|chunk| chunk.iter().rev().collect::<Vec<_>>())
             .copied()
             .collect();
 
-        Ok(bevy::render::texture::Image::new(
-            wgpu::Extent3d {
-                width: width as u32,
-                height: height as u32,
-                depth_or_array_layers: 1,
-            },
-            wgpu::TextureDimension::D2,
-            buffer,
-            wgpu::TextureFormat::Rgba8Uint,
-        ))
+        Ok(SpriteABGR {
+            width,
+            height,
+            pixels,
+        })
     }
 }

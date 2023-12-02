@@ -10,15 +10,10 @@ use std::{
     sync::Mutex,
 };
 
-use bevy::{
-    asset::io::{AssetReader, AssetReaderError, PathStream},
-    utils::BoxedFuture,
-};
-
 use encoding_rs::EUC_KR;
 use flate2::read::ZlibDecoder;
 
-use crate::assets::{
+use crate::{
     grf::{
         entry::Entry,
         header::{Header, Version, SIZE_OF_HEADER},
@@ -46,16 +41,16 @@ impl Display for GRF {
 }
 
 impl GRF {
-    pub fn new(path: &Path) -> Result<Self, error::GRFError> {
+    pub fn new(path: &Path) -> Result<Self, GRFError> {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
 
         let header = Self::read_header(&mut reader)?;
         if header.signature.ne(GRF_SIGNATURE.as_bytes()) {
-            Err(error::GRFError::WrongSignature)?;
+            Err(GRFError::WrongSignature)?;
         }
         if !Self::is_supported_version(&header) {
-            Err(error::GRFError::UnsupportedVersion)?;
+            Err(GRFError::UnsupportedVersion)?;
         }
 
         reader.seek_relative(header.filetableoffset as i64)?;
@@ -72,7 +67,7 @@ impl GRF {
         })
     }
 
-    pub fn read_file(&self, path: &Path) -> Result<Box<[u8]>, error::GRFError> {
+    pub fn read_file(&self, path: &Path) -> Result<Box<[u8]>, GRFError> {
         let entry = self.search_file(path).ok_or(GRFError::FileNotFound)?;
 
         let data = {
@@ -87,20 +82,20 @@ impl GRF {
             entry.has_mixed_encryption(),
             entry.has_header_only_encryption(),
         ) {
-            (true, false) => Ok(crate::assets::des::decode(
+            (true, false) => Ok(crate::des::decode(
                 &data,
                 entry.compressed_length_aligned as usize,
                 entry.compressed_length as usize,
                 false,
             )?),
-            (false, true) => Ok(crate::assets::des::decode(
+            (false, true) => Ok(crate::des::decode(
                 &data,
                 entry.compressed_length_aligned as usize,
                 entry.compressed_length as usize,
                 true,
             )?),
             (false, false) => Ok(data),
-            (true, true) => Err(error::GRFError::WrongSignature),
+            (true, true) => Err(GRFError::WrongSignature),
         }?;
 
         let uncompressed_data = {
@@ -113,6 +108,42 @@ impl GRF {
         };
 
         Ok(uncompressed_data.into_boxed_slice())
+    }
+
+    pub fn is_directory(&self, path: &Path) -> Result<bool, GRFError> {
+        self.search_file(path)
+            .map(|entry| !entry.is_file())
+            .ok_or(GRFError::FileNotFound)
+    }
+
+    pub fn read_directory(&self, path: &Path) -> Result<Box<[PathBuf]>, GRFError> {
+        let bin_search = self
+            .file_table
+            .binary_search_by_key(&path, |entry| &entry.filename);
+        match bin_search {
+            Ok(start) => {
+                let end = self
+                    .file_table
+                    .iter()
+                    .position(|entry| !entry.filename.starts_with(path));
+                let range = match end {
+                    Some(end) => &self.file_table[start..end],
+                    None => &self.file_table[start..],
+                };
+                Ok(range
+                    .iter()
+                    .filter(|&entry| {
+                        entry
+                            .filename
+                            .parent()
+                            .map(|parent| parent.eq(path))
+                            .unwrap_or(false)
+                    })
+                    .map(|entry| entry.filename.clone())
+                    .collect())
+            }
+            Err(_) => Err(GRFError::FileNotFound),
+        }
     }
 
     fn search_file<'a>(&'a self, path: &Path) -> Option<&'a Entry> {
@@ -222,69 +253,5 @@ impl GRF {
         SUPPORTED_VERSION
             .iter()
             .any(|version| version.eq(&header.version))
-    }
-}
-
-impl AssetReader for GRF {
-    fn read<'a>(
-        &'a self,
-        path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<bevy::asset::io::Reader<'a>>, AssetReaderError>> {
-        Box::pin(async {
-            let data = self.read_file(path)?;
-            let reader: Box<bevy::asset::io::Reader<'a>> =
-                Box::new(bevy::asset::io::VecReader::new(data.to_vec()));
-            Ok(reader)
-        })
-    }
-
-    fn read_meta<'a>(
-        &'a self,
-        path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<bevy::asset::io::Reader<'a>>, AssetReaderError>> {
-        Box::pin(async { Err(AssetReaderError::NotFound(path.to_path_buf())) })
-    }
-
-    fn is_directory<'a>(
-        &'a self,
-        path: &'a Path,
-    ) -> BoxedFuture<'a, Result<bool, AssetReaderError>> {
-        Box::pin(async move {
-            let entry = match self.search_file(path) {
-                Some(entry) => entry,
-                None => Err(AssetReaderError::NotFound(path.to_path_buf()))?,
-            };
-            Ok(!entry.is_file())
-        })
-    }
-
-    fn read_directory<'a>(
-        &'a self,
-        path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<PathStream>, AssetReaderError>> {
-        let files = self
-            .file_table
-            .iter()
-            .filter(|&entry| {
-                entry
-                    .filename
-                    .parent()
-                    .map(|parent| parent.eq(path))
-                    .unwrap_or(false)
-            })
-            .map(|entry| entry.filename.to_owned())
-            .collect::<Vec<_>>();
-        Box::pin(async {
-            match self.is_directory(path).await? {
-                true => {
-                    let stream: Box<PathStream> = Box::new(futures::stream::iter(files));
-                    Ok(stream)
-                }
-                false => Err(AssetReaderError::Io(std::io::Error::new(
-                    std::io::ErrorKind::InvalidInput,
-                    "Not a directory.",
-                ))),
-            }
-        })
     }
 }

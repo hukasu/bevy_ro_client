@@ -1,5 +1,5 @@
 [workspace]
-members = ["ragnarok_rebuild_common", "ragnarok_rebuild_client", "ragnarok_rebuild_server"]
+members = ["ragnarok_rebuild_bevy", "ragnarok_rebuild_common", "ragnarok_rebuild_client", "ragnarok_rebuild_server"]
 resolver = "2"
 
 [workspace.dependencies]

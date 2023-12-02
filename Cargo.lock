@@ -3349,10 +3349,28 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "17fd96390ed3feda12e1dfe2645ed587e0bea749e319333f104a33ff62f77a0b"
 
 [[package]]
+name = "ragnarok_rebuild_bevy"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "encoding_rs",
+ "flate2",
+ "futures",
+ "ragnarok_rebuild_common",
+ "serde",
+ "sqlx",
+ "toml",
+ "tungstenite",
+ "url",
+ "wgpu",
+]
+
+[[package]]
 name = "ragnarok_rebuild_client"
 version = "0.1.0"
 dependencies = [
  "bevy",
+ "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
  "serde",
  "toml",
@@ -3364,16 +3382,13 @@ dependencies = [
 name = "ragnarok_rebuild_common"
 version = "0.1.0"
 dependencies = [
- "bevy",
  "encoding_rs",
  "flate2",
- "futures",
  "serde",
  "sqlx",
  "toml",
  "tungstenite",
  "url",
- "wgpu",
 ]
 
 [[package]]
@@ -3382,6 +3397,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "futures",
+ "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
  "serde",
  "sqlx",

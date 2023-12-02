@@ -1,24 +1,32 @@
-use bevy::asset::AssetLoader;
+use bevy::{
+    asset::{Asset, AssetLoader},
+    reflect::TypePath,
+};
 use futures::AsyncReadExt;
 
-use super::{Sprite, SpriteError};
+use ragnarok_rebuild_common::act::{Actor, ActorError};
 
-pub struct SpriteAssetLoader;
+#[derive(Debug, Asset, TypePath)]
+pub struct ActorAsset {
+    actor: Actor,
+}
 
-impl SpriteAssetLoader {
-    async fn load_sprite<'a>(
+pub struct ActorAssetLoader;
+
+impl ActorAssetLoader {
+    async fn load_actor<'a>(
         reader: &mut bevy::asset::io::Reader<'a>,
     ) -> Result<<Self as AssetLoader>::Asset, <Self as AssetLoader>::Error> {
         let mut buffer = vec![];
         reader.read_to_end(&mut buffer).await?;
-        Sprite::from_bytes(&buffer)
+        Actor::from_bytes(&buffer).map(|actor| ActorAsset { actor })
     }
 }
 
-impl AssetLoader for SpriteAssetLoader {
-    type Asset = Sprite;
+impl AssetLoader for ActorAssetLoader {
+    type Asset = ActorAsset;
     type Settings = ();
-    type Error = SpriteError;
+    type Error = ActorError;
 
     fn load<'a>(
         &'a self,
@@ -26,10 +34,10 @@ impl AssetLoader for SpriteAssetLoader {
         _settings: &'a Self::Settings,
         _load_context: &'a mut bevy::asset::LoadContext,
     ) -> bevy::utils::BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
-        Box::pin(Self::load_sprite(reader))
+        Box::pin(Self::load_actor(reader))
     }
 
     fn extensions(&self) -> &[&str] {
-        &["spr"]
+        &["act"]
     }
 }

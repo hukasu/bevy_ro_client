@@ -1,4 +1,4 @@
-use crate::assets::des::tables::*;
+use crate::des::tables::*;
 
 pub trait DesBlock {
     fn decode_block(self) -> Self;
