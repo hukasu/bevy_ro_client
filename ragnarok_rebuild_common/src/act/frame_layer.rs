@@ -51,7 +51,7 @@ impl FrameLayer {
         (self.flags & 0x00000001) != 0
     }
 
-    pub fn is_pallete_sprite(&self) -> bool {
+    pub fn is_palette_sprite(&self) -> bool {
         self.sprite_type == 0
     }
 

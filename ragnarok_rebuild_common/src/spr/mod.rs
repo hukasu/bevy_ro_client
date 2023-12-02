@@ -24,7 +24,7 @@ pub struct Sprite {
     version: [u8; 2],
     bitmap_image_count: u16,
     truecolor_image_count: u16,
-    /// Images storing only the index to a pallete
+    /// Images storing only the index to a palette
     bitmap_images: Box<[SpriteIndexed]>,
     /// Images storing ABGR bitmaps
     truecolor_image: Box<[SpriteABGR]>,
@@ -64,7 +64,6 @@ impl Sprite {
             .collect::<Result<_, _>>()?;
 
         let palette = bytes.read_array()?;
-        dbg!(&palette[..256]);
 
         Ok(Sprite {
             header,
