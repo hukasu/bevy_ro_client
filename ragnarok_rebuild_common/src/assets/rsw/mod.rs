@@ -11,7 +11,15 @@ pub mod version;
 use std::io::Read;
 
 use self::{
-    effect::Effect, error::Error, light::Light, model::Model, sound::Sound, version::Version,
+    bounding_box::BoundingBox,
+    effect::Effect,
+    error::Error,
+    light::Light,
+    lighting_params::LightingParams,
+    model::Model,
+    quad_tree::{QuadTree, QuadTreeRange, QUAD_TREE_SIZE},
+    sound::Sound,
+    version::Version,
 };
 use super::water_plane::WaterPlane;
 use crate::reader_ext::ReaderExt;
@@ -27,11 +35,11 @@ pub struct RSW {
     pub gnd_file: Box<str>,
     pub gat_file: Box<str>,
     pub source_file: Box<str>,
-    pub water_configuration: Option<super::water_plane::WaterPlane>,
-    pub lighting_parameters: lighting_params::LightingParams,
-    pub map_boundaries: bounding_box::BoundingBox,
+    pub water_configuration: Option<WaterPlane>,
+    pub lighting_parameters: LightingParams,
+    pub map_boundaries: BoundingBox,
     pub objects: Objects,
-    // quad_tree: quad_tree::QuadTree,
+    pub quad_tree: QuadTree,
 }
 
 impl RSW {
@@ -54,11 +62,19 @@ impl RSW {
         } else {
             None
         };
-        let lighting_parameters = lighting_params::LightingParams::from_reader(reader)?;
+        let lighting_parameters = LightingParams::from_reader(reader)?;
 
-        let map_boundaries = bounding_box::BoundingBox::from_reader(reader)?;
+        let map_boundaries = BoundingBox::from_reader(reader)?;
 
         let objects = Self::read_objects(reader, &version)?;
+
+        let quad_tree = Self::read_quad_tree(reader)?;
+
+        let mut rest = vec![];
+        reader.read_to_end(&mut rest)?;
+        if !rest.is_empty() {
+            return Err(Error::IncompleteRead(version, rest.len()));
+        }
 
         Ok(Self {
             signature,
@@ -72,6 +88,7 @@ impl RSW {
             lighting_parameters,
             map_boundaries,
             objects,
+            quad_tree,
         })
     }
 
@@ -91,7 +108,7 @@ impl RSW {
         }
     }
 
-    fn read_version(mut reader: &mut dyn Read) -> Result<Version, error::Error> {
+    fn read_version(mut reader: &mut dyn Read) -> Result<Version, Error> {
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
         let build = if major == 2 && (2..5).contains(&minor) {
@@ -134,5 +151,39 @@ impl RSW {
             }
         }
         Ok((models, lights, sounds, effects))
+    }
+
+    fn read_quad_tree(mut reader: &mut dyn Read) -> Result<QuadTree, Error> {
+        let ranges = (0..QUAD_TREE_SIZE)
+            .map(|_| {
+                let top = (
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                );
+                let bottom = (
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                );
+                let diameter = (
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                );
+                let center = (
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                );
+                Ok(QuadTreeRange {
+                    top,
+                    bottom,
+                    diameter,
+                    center,
+                })
+            })
+            .collect::<Result<Box<[QuadTreeRange]>, Error>>()?;
+        Ok(QuadTree { ranges })
     }
 }

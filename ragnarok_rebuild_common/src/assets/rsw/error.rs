@@ -6,6 +6,7 @@ pub enum Error {
     UnknownVersion(Version),
     Io(std::io::Error),
     UnknownObjectType(u32),
+    IncompleteRead(Version, usize),
 }
 
 impl From<std::io::Error> for Error {
@@ -25,6 +26,10 @@ impl std::fmt::Display for Error {
             Self::UnknownObjectType(obj_type) => {
                 write!(f, "RSW had an object of unknown type ({obj_type}).")
             }
+            Self::IncompleteRead(version, unread) => write!(
+                f,
+                "Could not read RSW to the end. RSW V{version} had {unread} unread bytes."
+            ),
         }
     }
 }
