@@ -36,9 +36,7 @@ impl std::fmt::Display for Error {
             Error::UnsupportedVersion => "GRF in on a unsupported version.".to_owned(),
             Error::Io(io) => format!("An IO error occured. '{io}'"),
             Error::Zip(zip) => format!("An error occured while deflating GRF. '{zip}'"),
-            Error::MutexPoisoned => {
-                format!("The Mutex that hold the file is poisoned.")
-            }
+            Error::MutexPoisoned => "The Mutex that hold the file is poisoned.".to_string(),
         };
         write!(f, "{message}")
     }
