@@ -152,7 +152,6 @@ fn place_sounds(
                     None
                 }
             }) {
-                bevy::log::debug!("{:?}", raw_rsw.rsw.objects.2);
                 let sounds = raw_rsw
                     .sound_handles
                     .iter()
