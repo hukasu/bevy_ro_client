@@ -1,5 +1,5 @@
 mod entry;
-mod error;
+pub mod error;
 mod header;
 
 use std::{
@@ -14,14 +14,12 @@ use encoding_rs::EUC_KR;
 use flate2::read::ZlibDecoder;
 
 use crate::{
-    grf::{
+    assets::grf::{
         entry::Entry,
         header::{Header, Version, SIZE_OF_HEADER},
     },
     reader_ext::{BufReaderExt, ReaderExt},
 };
-
-pub use self::error::GRFError;
 
 const GRF_SIGNATURE: &str = "Master of Magic";
 
@@ -41,16 +39,16 @@ impl Display for GRF {
 }
 
 impl GRF {
-    pub fn new(path: &Path) -> Result<Self, GRFError> {
+    pub fn new(path: &Path) -> Result<Self, error::Error> {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
 
         let header = Self::read_header(&mut reader)?;
         if header.signature.ne(GRF_SIGNATURE.as_bytes()) {
-            Err(GRFError::WrongSignature)?;
+            Err(error::Error::WrongSignature)?;
         }
         if !Self::is_supported_version(&header) {
-            Err(GRFError::UnsupportedVersion)?;
+            Err(error::Error::UnsupportedVersion)?;
         }
 
         reader.seek_relative(header.filetableoffset as i64)?;
@@ -67,8 +65,12 @@ impl GRF {
         })
     }
 
-    pub fn read_file(&self, path: &Path) -> Result<Box<[u8]>, GRFError> {
-        let entry = self.search_file(path).ok_or(GRFError::FileNotFound)?;
+    pub fn iter_filenames(&self) -> impl Iterator<Item = &PathBuf> {
+        self.file_table.iter().map(|entry| &entry.filename)
+    }
+
+    pub fn read_file(&self, path: &Path) -> Result<Box<[u8]>, error::Error> {
+        let entry = self.search_file(path).ok_or(error::Error::FileNotFound)?;
 
         let data = {
             let mut reader_guard = self.reader.lock()?;
@@ -95,7 +97,7 @@ impl GRF {
                 true,
             )?),
             (false, false) => Ok(data),
-            (true, true) => Err(GRFError::WrongSignature),
+            (true, true) => Err(error::Error::WrongSignature),
         }?;
 
         let uncompressed_data = {
@@ -110,13 +112,13 @@ impl GRF {
         Ok(uncompressed_data.into_boxed_slice())
     }
 
-    pub fn is_directory(&self, path: &Path) -> Result<bool, GRFError> {
+    pub fn is_directory(&self, path: &Path) -> Result<bool, error::Error> {
         self.search_file(path)
             .map(|entry| !entry.is_file())
-            .ok_or(GRFError::FileNotFound)
+            .ok_or(error::Error::FileNotFound)
     }
 
-    pub fn read_directory(&self, path: &Path) -> Result<Box<[PathBuf]>, GRFError> {
+    pub fn read_directory(&self, path: &Path) -> Result<Box<[PathBuf]>, error::Error> {
         let bin_search = self
             .file_table
             .binary_search_by_key(&path, |entry| &entry.filename);
@@ -142,7 +144,7 @@ impl GRF {
                     .map(|entry| entry.filename.clone())
                     .collect())
             }
-            Err(_) => Err(GRFError::FileNotFound),
+            Err(_) => Err(error::Error::FileNotFound),
         }
     }
 
