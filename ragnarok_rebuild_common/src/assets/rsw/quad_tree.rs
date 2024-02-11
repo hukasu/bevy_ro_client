@@ -24,7 +24,7 @@ impl QuadTree {
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                 );
-                let diameter = (
+                let radius = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
@@ -37,7 +37,7 @@ impl QuadTree {
                 Ok(Range {
                     top,
                     bottom,
-                    diameter,
+                    radius,
                     center,
                 })
             })
@@ -54,7 +54,7 @@ impl QuadTree {
 pub struct Range {
     pub top: (f32, f32, f32),
     pub bottom: (f32, f32, f32),
-    pub diameter: (f32, f32, f32),
+    pub radius: (f32, f32, f32),
     pub center: (f32, f32, f32),
 }
 

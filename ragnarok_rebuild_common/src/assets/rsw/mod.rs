@@ -14,8 +14,14 @@ use super::water_plane::WaterPlane;
 use crate::reader_ext::ReaderExt;
 
 pub use self::{
-    bounding_box::BoundingBox, effect::Effect, error::Error, light::Light,
-    lighting_params::LightingParams, model::Model, quad_tree::QuadTree, sound::Sound,
+    bounding_box::BoundingBox,
+    effect::Effect,
+    error::Error,
+    light::Light,
+    lighting_params::LightingParams,
+    model::Model,
+    quad_tree::{QuadTree, Range, QUAD_TREE_MAX_DEPTH, QUAD_TREE_SIZE},
+    sound::Sound,
     version::Version,
 };
 
