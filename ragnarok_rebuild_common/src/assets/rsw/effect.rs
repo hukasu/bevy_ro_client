@@ -19,11 +19,16 @@ impl Effect {
         _version: &Version,
     ) -> Result<Self, std::io::Error> {
         let name = crate::assets::read_euc_kr_string(reader, 80)?;
+
+        // Ragnarok seems to be Y-up left-handed coordinate system with Z backwards
+        // Bevy is Y-up right-handed coordinate system with Z forwards
+        // https://bevy-cheatbook.github.io/img/handedness.png
         let position = (
             reader.read_le_f32()?,
             reader.read_le_f32()?,
-            reader.read_le_f32()?,
+            -reader.read_le_f32()?,
         );
+
         let id = reader.read_le_i32()?;
         let delay = reader.read_le_f32()?;
         let parameters = (
@@ -32,6 +37,7 @@ impl Effect {
             reader.read_le_f32()?,
             reader.read_le_f32()?,
         );
+
         Ok(Self {
             name,
             position,

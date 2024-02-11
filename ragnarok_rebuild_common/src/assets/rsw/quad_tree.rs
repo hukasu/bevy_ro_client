@@ -12,27 +12,30 @@ pub struct QuadTree {
 
 impl QuadTree {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<QuadTree, super::Error> {
+        // Ragnarok seems to be Y-up left-handed coordinate system with Z backwards
+        // Bevy is Y-up right-handed coordinate system with Z forwards
+        // https://bevy-cheatbook.github.io/img/handedness.png
         let ranges = (0..QUAD_TREE_SIZE)
             .map(|_| {
                 let top = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                    reader.read_le_f32()?,
+                    -reader.read_le_f32()?,
                 );
                 let bottom = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                    reader.read_le_f32()?,
+                    -reader.read_le_f32()?,
                 );
                 let radius = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                    reader.read_le_f32()?,
+                    -reader.read_le_f32()?,
                 );
                 let center = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                    reader.read_le_f32()?,
+                    -reader.read_le_f32()?,
                 );
                 Ok(Range {
                     top,
