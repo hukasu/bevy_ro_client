@@ -4,7 +4,7 @@ use bevy::{
     core::Name,
     ecs::{
         entity::Entity,
-        event::EventReader,
+        event::{Event, EventReader, EventWriter},
         query::With,
         system::{Commands, Query, Res},
     },
@@ -19,43 +19,57 @@ use crate::assets::rsw;
 
 use super::{Sounds, World};
 
-fn filter_events_that_are_tied_to_a_map(
-    event: &AssetEvent<rsw::Asset>,
-    query: &Query<(Entity, &Handle<rsw::Asset>), With<World>>,
-) -> Option<(Entity, Handle<rsw::Asset>)> {
-    if let AssetEvent::LoadedWithDependencies { id } = event {
-        query
-            .iter()
-            .find(|query_item| &query_item.1.id() == id)
-            .map(|(entity, handle)| (entity, handle.clone()))
-    } else {
-        None
-    }
+#[derive(Debug, Event)]
+pub struct RSWCompletedLoading {
+    world: Entity,
+    rsw: Handle<rsw::Asset>,
+}
+
+pub fn filter_events_that_are_tied_to_a_map(
+    query: Query<(Entity, &Handle<rsw::Asset>), With<World>>,
+    mut event_reader: EventReader<AssetEvent<rsw::Asset>>,
+    mut event_writer: EventWriter<RSWCompletedLoading>,
+) {
+    event_writer.send_batch(
+        event_reader
+            .read()
+            .filter_map(|event| {
+                if let AssetEvent::LoadedWithDependencies { id } = event {
+                    query
+                        .iter()
+                        .find(|query_item| &query_item.1.id() == id)
+                        .map(|(entity, handle)| (entity, handle.clone()))
+                } else {
+                    None
+                }
+            })
+            .map(|(world, rsw)| RSWCompletedLoading { world, rsw }),
+    );
 }
 
 pub fn clear_loaded_asset(
     mut commands: Commands,
-    query: Query<(Entity, &Handle<rsw::Asset>), With<World>>,
-    mut event_reader: EventReader<AssetEvent<rsw::Asset>>,
+    mut event_reader: EventReader<RSWCompletedLoading>,
 ) {
-    for (entity, _asset_handle) in event_reader
-        .read()
-        .filter_map(|event| filter_events_that_are_tied_to_a_map(event, &query))
+    for RSWCompletedLoading {
+        world: entity,
+        rsw: _,
+    } in event_reader.read()
     {
         bevy::log::debug!("Cleared Handle component.");
-        commands.entity(entity).remove::<Handle<rsw::Asset>>();
+        commands.entity(*entity).remove::<Handle<rsw::Asset>>();
     }
 }
 
 pub fn set_ambient_light(
     mut commands: Commands,
-    query: Query<(Entity, &Handle<rsw::Asset>), With<World>>,
-    mut event_reader: EventReader<AssetEvent<rsw::Asset>>,
+    mut event_reader: EventReader<RSWCompletedLoading>,
     rsw_assets: Res<Assets<rsw::Asset>>,
 ) {
-    for (_, asset_handle) in event_reader
-        .read()
-        .filter_map(|event| filter_events_that_are_tied_to_a_map(event, &query))
+    for RSWCompletedLoading {
+        world: _,
+        rsw: asset_handle,
+    } in event_reader.read()
     {
         if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
             bevy::log::debug!("Set ambient light.");
@@ -74,13 +88,13 @@ pub fn set_ambient_light(
 
 pub fn spawn_directional_light(
     mut commands: Commands,
-    query: Query<(Entity, &Handle<rsw::Asset>), With<World>>,
-    mut event_reader: EventReader<AssetEvent<rsw::Asset>>,
+    mut event_reader: EventReader<RSWCompletedLoading>,
     rsw_assets: Res<Assets<rsw::Asset>>,
 ) {
-    for (entity, asset_handle) in event_reader
-        .read()
-        .filter_map(|event| filter_events_that_are_tied_to_a_map(event, &query))
+    for RSWCompletedLoading {
+        world: entity,
+        rsw: asset_handle,
+    } in event_reader.read()
     {
         if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
             bevy::log::debug!("Spawn directional light.");
@@ -110,25 +124,25 @@ pub fn spawn_directional_light(
                     ..Default::default()
                 })
                 .id();
-            commands.entity(entity).add_child(directional_light);
+            commands.entity(*entity).add_child(directional_light);
         }
     }
 }
 
 pub fn place_sounds(
     mut commands: Commands,
-    query: Query<(Entity, &Handle<rsw::Asset>), With<World>>,
     world_sounds: Query<(Entity, &Parent), With<Sounds>>,
-    mut event_reader: EventReader<AssetEvent<rsw::Asset>>,
+    mut event_reader: EventReader<RSWCompletedLoading>,
     rsw_assets: Res<Assets<rsw::Asset>>,
 ) {
-    for (entity, asset_handle) in event_reader
-        .read()
-        .filter_map(|event| filter_events_that_are_tied_to_a_map(event, &query))
+    for RSWCompletedLoading {
+        world: entity,
+        rsw: asset_handle,
+    } in event_reader.read()
     {
         if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
             if let Some(world_sounds_entity) = world_sounds.iter().find_map(|world_sounds_entity| {
-                if world_sounds_entity.1.get() == entity {
+                if world_sounds_entity.1.get() == *entity {
                     Some(world_sounds_entity.0)
                 } else {
                     None
