@@ -200,11 +200,11 @@ pub fn spawn_water_plane(
     {
         if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
             let Some(water_configuration) = &rsw_asset.rsw.water_configuration else {
-                return;
+                continue;
             };
             let Some(water_textures) = &rsw_asset.water_textures else {
                 bevy::log::error!("World has water plane but did not have water textures.");
-                return;
+                continue;
             };
             use ragnarok_rebuild_common::assets::rsw::Range;
 
@@ -231,7 +231,6 @@ pub fn spawn_water_plane(
                 .iter()
                 .filter(|range| {
                     (range.radius.0 - smallest_quad.radius.0).abs() < std::f32::EPSILON
-                        && range.bottom.1 < water_configuration.water_level
                         && range.top.1 > water_configuration.water_level
                 })
                 .map(|range| {
@@ -242,6 +241,11 @@ pub fn spawn_water_plane(
                     ((x.round() as usize, z.round() as usize), range)
                 })
                 .collect::<BTreeMap<(usize, usize), &Range>>();
+
+            if quad_tree_ranges_that_contains_water.is_empty() {
+                bevy::log::debug!("World has empty water plane.");
+                continue;
+            }
 
             let mut vertexes = vec![];
             let mut uvs = vec![];
@@ -263,16 +267,12 @@ pub fn spawn_water_plane(
                         bevy::log::error!(
                             "Failed to build water plane. Could not find index of bottom left vertex."
                         );
-                        return;
+                        continue;
                     };
                     pos
                 } else {
                     let bottom_left = vertexes.len();
-                    vertexes.push([
-                        range.bottom.0,
-                        water_configuration.water_level,
-                        range.bottom.2,
-                    ]);
+                    vertexes.push([range.bottom.0, 0., range.bottom.2]);
                     uvs.push([key.0 as f32, key.1 as f32]);
                     bottom_left as u32
                 };
@@ -284,12 +284,12 @@ pub fn spawn_water_plane(
                         bevy::log::error!(
                                 "Failed to build water plane. Could not find index of bottom right vertex."
                             );
-                        return;
+                        continue;
                     };
                     pos
                 } else {
                     let bottom_right = vertexes.len();
-                    vertexes.push([range.top.0, water_configuration.water_level, range.bottom.2]);
+                    vertexes.push([range.top.0, 0., range.bottom.2]);
                     uvs.push([(key.0 + 1) as f32, key.1 as f32]);
                     bottom_right as u32
                 };
@@ -301,18 +301,18 @@ pub fn spawn_water_plane(
                         bevy::log::error!(
                             "Failed to build water plane. Could not find index of top left vertex."
                         );
-                        return;
+                        continue;
                     };
                     pos
                 } else {
                     let top_left = vertexes.len();
-                    vertexes.push([range.bottom.0, water_configuration.water_level, range.top.2]);
+                    vertexes.push([range.bottom.0, 0., range.top.2]);
                     uvs.push([key.0 as f32, (key.1 + 1) as f32]);
                     top_left as u32
                 };
                 // The top right vertex is always added
                 let top_right = vertexes.len() as u32;
-                vertexes.push([range.top.0, water_configuration.water_level, range.top.2]);
+                vertexes.push([range.top.0, 0., range.top.2]);
                 uvs.push([(key.0 + 1) as f32, (key.1 + 1) as f32]);
                 // bevy::render::mesh::shape::Box;
                 indeces.append(&mut vec![
@@ -345,7 +345,7 @@ pub fn spawn_water_plane(
                         mesh,
                         transform: Transform::from_xyz(
                             quad_tree_root.center.0,
-                            quad_tree_root.center.1,
+                            water_configuration.water_level,
                             quad_tree_root.center.2,
                         ),
                         material: material_assets.add(StandardMaterial {
