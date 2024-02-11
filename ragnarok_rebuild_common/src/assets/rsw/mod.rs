@@ -69,7 +69,14 @@ impl RSW {
 
         let objects = Self::read_objects(reader, &version)?;
 
-        let quad_tree = QuadTree::from_reader(reader)?;
+        let quad_tree = if version >= Version(2, 0, 0) {
+            QuadTree::from_reader(reader)?
+        } else {
+            QuadTree {
+                ranges: std::array::from_fn::<Range, QUAD_TREE_SIZE, _>(|_| Range::default())
+                    .into(),
+            }
+        };
 
         let mut rest = vec![];
         reader.read_to_end(&mut rest)?;
