@@ -19,20 +19,15 @@ impl BevyPlugin for Plugin {
             .add_systems(Update, systems::filter_events_that_are_tied_to_a_map)
             .add_systems(
                 Update,
-                systems::clear_loaded_asset.after(systems::filter_events_that_are_tied_to_a_map),
-            )
-            .add_systems(
-                Update,
-                systems::set_ambient_light.after(systems::filter_events_that_are_tied_to_a_map),
-            )
-            .add_systems(
-                Update,
-                systems::spawn_directional_light
+                (
+                    systems::clear_loaded_asset,
+                    systems::set_ambient_light,
+                    systems::spawn_directional_light,
+                    systems::place_sounds,
+                    systems::spawn_water_plane,
+                    systems::spawn_plane,
+                )
                     .after(systems::filter_events_that_are_tied_to_a_map),
-            )
-            .add_systems(
-                Update,
-                systems::place_sounds.after(systems::filter_events_that_are_tied_to_a_map),
             );
     }
 }

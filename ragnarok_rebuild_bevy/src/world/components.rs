@@ -1,9 +1,7 @@
-use bevy::ecs::{component::Component, entity::Entity};
+use bevy::ecs::component::Component;
 
 #[derive(Debug, Component)]
-pub struct World {
-    pub world_sounds: Entity,
-}
+pub struct World;
 
 #[derive(Debug, Component)]
 pub struct Sounds;
