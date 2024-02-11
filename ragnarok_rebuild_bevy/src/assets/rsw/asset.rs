@@ -2,6 +2,7 @@ use bevy::{
     asset::{Asset as BevyAsset, Handle, UntypedHandle},
     audio::AudioSource,
     reflect::TypePath,
+    render::texture::Image,
 };
 
 #[derive(Debug, BevyAsset, TypePath)]
@@ -14,4 +15,5 @@ pub struct Asset {
     pub rsm_handles: Vec<UntypedHandle>,
     pub sound_handles: Vec<Handle<AudioSource>>,
     pub effect_handles: Vec<UntypedHandle>,
+    pub water_textures: Option<[Handle<Image>; 32]>,
 }

@@ -3,11 +3,11 @@ members = ["ragnarok_rebuild_bevy", "ragnarok_rebuild_common", "ragnarok_rebuild
 resolver = "2"
 
 [workspace.dependencies]
-bevy = {version = "0.12", features = ["bmp", "wav"]}
-wgpu = "0.17.1"
+bevy = {version = "0.12", features = ["bmp", "jpeg", "wav"]}
+
 futures = "0.3.29"
 
-tungstenite = "0.20.1"
+tungstenite = "0.21.0"
 url = "2.4.1"
 
 serde = "1.0.193"

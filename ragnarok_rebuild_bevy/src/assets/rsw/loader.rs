@@ -35,6 +35,15 @@ impl BevyAssetLoader for AssetLoader {
 
             let effect_handles = vec![];
 
+            let water_textures = rsw.water_configuration.as_ref().map(|water_plane| {
+                std::array::from_fn(|i| {
+                    load_context.load(format!(
+                        "data/texture/워터/water{}{:02}.jpg",
+                        water_plane.water_type, i
+                    ))
+                })
+            });
+
             Ok(Self::Asset {
                 rsw,
                 ini_handle,
@@ -44,6 +53,7 @@ impl BevyAssetLoader for AssetLoader {
                 rsm_handles,
                 sound_handles,
                 effect_handles,
+                water_textures,
             })
         })
     }
