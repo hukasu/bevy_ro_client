@@ -1,22 +1,23 @@
 mod bounding_box;
-pub mod effect;
-pub mod error;
-pub mod light;
+mod effect;
+mod error;
+mod light;
 mod lighting_params;
-pub mod model;
+mod model;
 mod quad_tree;
-pub mod sound;
-pub mod version;
+mod sound;
+mod version;
 
 use std::io::Read;
 
-use self::{
+use super::water_plane::WaterPlane;
+use crate::reader_ext::ReaderExt;
+
+pub use self::{
     bounding_box::BoundingBox, effect::Effect, error::Error, light::Light,
     lighting_params::LightingParams, model::Model, quad_tree::QuadTree, sound::Sound,
     version::Version,
 };
-use super::water_plane::WaterPlane;
-use crate::reader_ext::ReaderExt;
 
 type Objects = (Vec<Model>, Vec<Light>, Vec<Sound>, Vec<Effect>);
 
