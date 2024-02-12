@@ -75,6 +75,7 @@ impl RSM {
                     .map(|_| VolumeBox::from_reader(reader, &version))
                     .collect::<Result<Box<[VolumeBox]>, io::Error>>()?,
                 Err(err) => {
+                    // V2.3 files seems to have a 50/50 on whether they have volume boxes or not
                     if err.kind().eq(&io::ErrorKind::UnexpectedEof) {
                         log::debug!("RSM V{version} did not have a volume boxes section.");
                         [].into()
@@ -85,17 +86,9 @@ impl RSM {
             }
         };
 
-        if version == Version(1, 5, 0) {
-            match reader.read_le_u32() {
-                Ok(data) => {
-                    log::debug!("RSM V{version} had padding after volume boxes with value {data}.");
-                }
-                Err(err) => {
-                    if err.kind().ne(&io::ErrorKind::UnexpectedEof) {
-                        return Err(self::Error::Io(err));
-                    }
-                }
-            }
+        if version >= Version(1, 5, 0) && version < Version(1, 6, 0) {
+            // All V1.5 seems to have this 4 bytes at the end of file
+            let _padding = reader.read_le_u32()?;
         }
 
         let mut rest = vec![];
