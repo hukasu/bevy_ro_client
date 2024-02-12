@@ -1,12 +1,12 @@
 use std::io::Read;
 
-use crate::reader_ext::ReaderExt;
+use crate::{assets::rsw, reader_ext::ReaderExt};
 
 #[derive(Debug, PartialEq, PartialOrd)]
 pub struct Version(pub u8, pub u8, pub u32);
 
 impl Version {
-    pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, super::Error> {
+    pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, rsw::Error> {
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
         let build = if major == 2 && (2..5).contains(&minor) {
@@ -18,7 +18,7 @@ impl Version {
         };
         let version = Version(major, minor, build);
         if major > 2 || (major == 2 && minor > 6) || (major == 2 && minor == 6 && build > 162) {
-            Err(super::Error::UnknownVersion(version))
+            Err(rsw::Error::UnknownVersion(version))
         } else {
             Ok(version)
         }

@@ -6,11 +6,10 @@ mod lighting_params;
 mod model;
 mod quad_tree;
 mod sound;
-mod version;
 
 use std::io::Read;
 
-use super::water_plane::WaterPlane;
+use super::common::{Version, WaterPlane};
 use crate::reader_ext::ReaderExt;
 
 pub use self::{
@@ -22,7 +21,6 @@ pub use self::{
     model::Model,
     quad_tree::{QuadTree, Range, QUAD_TREE_MAX_DEPTH, QUAD_TREE_SIZE},
     sound::Sound,
-    version::Version,
 };
 
 type Objects = (Vec<Model>, Vec<Light>, Vec<Sound>, Vec<Effect>);

@@ -1,4 +1,4 @@
-use super::version::Version;
+use crate::assets::common::Version;
 
 #[derive(Debug)]
 pub enum Error {
