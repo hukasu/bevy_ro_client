@@ -31,10 +31,8 @@ impl Face {
         ];
         let texture_id = reader.read_le_u16()?;
 
-        let _padding1 = reader.read_le_u16()?;
-        let two_side = reader.read_u8()?;
-        let _padding2 = reader.read_u8()?;
-        let _padding3 = reader.read_le_u16()?;
+        let flags = reader.read_vec(6)?;
+        let two_side = flags[2];
 
         let smoothing_group = if version >= &Version(1, 2, 0) {
             let count = (len - 20) / 4;
