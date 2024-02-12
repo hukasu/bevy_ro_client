@@ -44,7 +44,7 @@ pub struct RSW {
 impl RSW {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<RSW, Error> {
         let signature = Self::read_signature(reader)?;
-        let version = Version::from_reader(reader)?;
+        let version = Version::rsw_version_from_reader(reader)?;
         let flag = if version >= Version(2, 5, 0) {
             reader.read_u8()?
         } else {

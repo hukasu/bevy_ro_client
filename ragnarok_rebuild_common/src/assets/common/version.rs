@@ -6,7 +6,7 @@ use crate::{assets::rsw, reader_ext::ReaderExt};
 pub struct Version(pub u8, pub u8, pub u32);
 
 impl Version {
-    pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, rsw::Error> {
+    pub fn rsw_version_from_reader(mut reader: &mut dyn Read) -> Result<Self, rsw::Error> {
         let major = reader.read_u8()?;
         let minor = reader.read_u8()?;
         let build = if major == 2 && (2..5).contains(&minor) {
