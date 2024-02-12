@@ -1,11 +1,11 @@
 mod entry;
-pub mod error;
+mod error;
 mod header;
 
 use std::{
-    fmt::Display,
+    fmt::{Display, Formatter},
     fs::File,
-    io::{BufReader, Error, ErrorKind, Read, Seek},
+    io::{self, BufReader, ErrorKind, Read, Seek},
     path::{Path, PathBuf},
     sync::Mutex,
 };
@@ -16,10 +16,14 @@ use flate2::read::ZlibDecoder;
 use crate::{
     assets::grf::{
         entry::Entry,
-        header::{Header, Version, SIZE_OF_HEADER},
+        header::{Header, SIZE_OF_HEADER},
     },
     reader_ext::{BufReaderExt, ReaderExt},
 };
+
+pub use self::error::Error;
+
+use super::common::Version;
 
 const GRF_SIGNATURE: &str = "Master of Magic";
 
@@ -30,7 +34,7 @@ pub struct GRF {
 }
 
 impl Display for GRF {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "GRF {{")?;
         writeln!(f, "Header {{ {:?} }},", self.header)?;
         writeln!(f, "FileTable {{ {:?} }}", self.file_table)?;
@@ -43,7 +47,7 @@ impl GRF {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
 
-        let header = Self::read_header(&mut reader)?;
+        let header = Header::from_reader(&mut reader)?;
         if header.signature.ne(GRF_SIGNATURE.as_bytes()) {
             Err(error::Error::WrongSignature)?;
         }
@@ -158,37 +162,10 @@ impl GRF {
         }
     }
 
-    fn read_header(reader: &mut BufReader<File>) -> Result<Header, Error> {
-        let signature = reader.read_array()?;
-        let allowed_encription = reader.read_array()?;
-
-        let filetableoffset = reader.read_le_u32()?;
-        let scrambling_seed = reader.read_le_u32()?;
-        let scrambled_file_count = reader.read_le_u32()?;
-        let build = reader.read_u8()?;
-        let major = reader.read_u8()?;
-        let minor = reader.read_u8()?;
-        let padding = reader.read_u8()?;
-
-        Ok(Header {
-            signature,
-            allowed_encription,
-            filetableoffset,
-            scrambling_seed,
-            scrambled_file_count,
-            version: Version {
-                padding,
-                major,
-                minor,
-                build,
-            },
-        })
-    }
-
     fn read_file_table(
         reader: &mut BufReader<File>,
         file_count: usize,
-    ) -> Result<Vec<Entry>, Error> {
+    ) -> Result<Vec<Entry>, io::Error> {
         let compressed_size = reader.read_le_u32()?;
         let umcompressed_size = reader.read_le_u32()?;
 
@@ -210,17 +187,17 @@ impl GRF {
                     other => Some(other),
                 }
             })
-            .collect::<Result<Vec<Entry>, Error>>()
+            .collect::<Result<Vec<Entry>, io::Error>>()
     }
 
-    fn read_file_table_entry(table_reader: &mut BufReader<&[u8]>) -> Result<Entry, Error> {
+    fn read_file_table_entry(table_reader: &mut BufReader<&[u8]>) -> Result<Entry, io::Error> {
         let cp949_filename = table_reader.read_null_terminated_string()?;
 
         let filename = {
             let (f, _encoding, chars_replaced) =
                 EUC_KR.decode(&cp949_filename[..(cp949_filename.len() - 1)]);
             if chars_replaced {
-                Err(Error::new(
+                Err(io::Error::new(
                     ErrorKind::InvalidInput,
                     "String had invalid CP949 characters",
                 ))?
@@ -245,15 +222,6 @@ impl GRF {
     }
 
     fn is_supported_version(header: &Header) -> bool {
-        static SUPPORTED_VERSION: [Version; 1] = [Version {
-            padding: 0,
-            major: 2,
-            minor: 0,
-            build: 0,
-        }];
-
-        SUPPORTED_VERSION
-            .iter()
-            .any(|version| version.eq(&header.version))
+        header.version == Version(2, 0, 0)
     }
 }

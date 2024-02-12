@@ -1,4 +1,6 @@
-use std::fmt::Display;
+use std::io::Read;
+
+use crate::{assets::common::Version, reader_ext::ReaderExt};
 
 pub const SIZE_OF_HEADER: usize = 16 + 14 + 4 + 4 + 4 + 4;
 
@@ -12,16 +14,24 @@ pub struct Header {
     pub version: Version,
 }
 
-#[derive(Debug, PartialEq, Eq)]
-pub struct Version {
-    pub padding: u8,
-    pub major: u8,
-    pub minor: u8,
-    pub build: u8,
-}
+impl Header {
+    pub fn from_reader(mut reader: &mut dyn Read) -> Result<Header, super::Error> {
+        let signature = reader.read_array()?;
+        let allowed_encription = reader.read_array()?;
 
-impl Display for Version {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}.{}.{}", self.major, self.minor, self.build)
+        let filetableoffset = reader.read_le_u32()?;
+        let scrambling_seed = reader.read_le_u32()?;
+        let scrambled_file_count = reader.read_le_u32()?;
+
+        let version = Version::grf_version_from_reader(reader)?;
+
+        Ok(Header {
+            signature,
+            allowed_encription,
+            filetableoffset,
+            scrambling_seed,
+            scrambled_file_count,
+            version,
+        })
     }
 }
