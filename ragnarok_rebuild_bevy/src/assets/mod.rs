@@ -1,30 +1,24 @@
-pub mod actor_asset;
-pub mod grf_asset_reader;
-pub mod sprite_asset;
+pub mod grf;
+pub mod rsm;
+pub mod rsw;
 
 use bevy::{
-    app::{Plugin, PluginGroup, PluginGroupBuilder},
+    app::{Plugin, PluginGroup as BevyPluginGroup, PluginGroupBuilder},
     asset::{AssetApp, AssetPlugin},
 };
 
-use crate::assets::grf_asset_reader::GrfAssetReader;
+pub struct PluginGroup;
 
-use self::{
-    actor_asset::{ActorAsset, ActorAssetLoader},
-    sprite_asset::{SpriteAsset, SpriteAssetLoader},
-};
-
-pub struct RagnarokAssetPluginGroup;
-
-impl PluginGroup for RagnarokAssetPluginGroup {
-    fn build(self) -> bevy::app::PluginGroupBuilder {
-        PluginGroupBuilder::start::<RagnarokAssetPluginGroup>()
+impl BevyPluginGroup for PluginGroup {
+    fn build(self) -> PluginGroupBuilder {
+        PluginGroupBuilder::start::<Self>()
             .add(AssetPlugin {
                 file_path: "data/".to_owned(),
                 ..Default::default()
             })
             .add_before::<AssetPlugin, RagnarokAssetReaderPlugin>(RagnarokAssetReaderPlugin)
-            .add_after::<AssetPlugin, RagnarokAssetsPlugin>(RagnarokAssetsPlugin)
+            .add_after::<AssetPlugin, rsw::Plugin>(rsw::Plugin)
+            .add_after::<AssetPlugin, rsm::Plugin>(rsm::Plugin)
     }
 }
 
@@ -35,20 +29,9 @@ impl Plugin for RagnarokAssetReaderPlugin {
         app.register_asset_source(
             bevy::asset::io::AssetSourceId::Default,
             bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
-                let grf = GrfAssetReader::new(&std::path::Path::new("data.grf")).unwrap();
+                let grf = grf::AssetReader::new(&std::path::Path::new("data.grf")).unwrap();
                 Box::new(grf)
             }),
         );
-    }
-}
-
-struct RagnarokAssetsPlugin;
-
-impl Plugin for RagnarokAssetsPlugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app.init_asset::<SpriteAsset>()
-            .init_asset::<ActorAsset>()
-            .register_asset_loader(SpriteAssetLoader)
-            .register_asset_loader(ActorAssetLoader);
     }
 }

@@ -10,7 +10,7 @@ pub struct RagnarokPlugin;
 
 impl Plugin for RagnarokPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins(assets::RagnarokAssetPluginGroup)
+        app.add_plugins(assets::PluginGroup)
             .add_plugins(water_plane::Plugin)
             .add_plugins(world::Plugin);
     }
