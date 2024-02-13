@@ -11,7 +11,7 @@ use bevy::{
         system::{Commands, Query, Res, ResMut},
     },
     hierarchy::BuildChildren,
-    math::Vec3,
+    math::{Quat, Vec3},
     pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PbrBundle, StandardMaterial},
     render::{
         color::Color,
@@ -23,7 +23,7 @@ use bevy::{
 
 use crate::{assets::rsw, water_plane};
 
-use super::{Sounds, World};
+use super::components;
 
 #[derive(Debug, Event)]
 pub struct RSWCompletedLoading {
@@ -32,7 +32,7 @@ pub struct RSWCompletedLoading {
 }
 
 pub fn filter_events_that_are_tied_to_a_map(
-    query: Query<(Entity, &Handle<rsw::Asset>), With<World>>,
+    query: Query<(Entity, &Handle<rsw::Asset>), With<components::World>>,
     mut event_reader: EventReader<AssetEvent<rsw::Asset>>,
     mut event_writer: EventWriter<RSWCompletedLoading>,
 ) {
@@ -147,7 +147,11 @@ pub fn place_sounds(
     {
         if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
             let world_sounds = commands
-                .spawn((Sounds, Name::new("Sounds"), TransformBundle::default()))
+                .spawn((
+                    components::Sounds,
+                    Name::new("Sounds"),
+                    TransformBundle::default(),
+                ))
                 .id();
             commands.entity(*entity).add_child(world_sounds);
 
@@ -355,12 +359,64 @@ pub fn spawn_water_plane(
                             ior: 1.33,
                             ..Default::default()
                         }),
-
                         ..Default::default()
                     },
                 ))
                 .id();
             commands.entity(*entity).add_child(water_plane_entity);
+        }
+    }
+}
+
+pub fn spawn_models(
+    mut commands: Commands,
+    mut event_reader: EventReader<RSWCompletedLoading>,
+    rsw_assets: Res<Assets<rsw::Asset>>,
+) {
+    for RSWCompletedLoading {
+        world: entity,
+        rsw: asset_handle,
+    } in event_reader.read()
+    {
+        if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
+            let world_models = commands
+                .spawn((
+                    components::Models,
+                    Name::new("Models"),
+                    TransformBundle::default(),
+                ))
+                .id();
+            commands.entity(*entity).add_child(world_models);
+
+            let models = rsw_asset
+                .rsw
+                .objects
+                .0
+                .iter()
+                .zip(rsw_asset.rsm_handles.iter())
+                .map(|(rsm, rsm_handle)| {
+                    commands
+                        .spawn((
+                            Name::new(rsm.name.to_string()),
+                            rsm_handle.clone(),
+                            TransformBundle {
+                                local: Transform {
+                                    translation: Vec3::from_array(rsm.position.into()),
+                                    rotation: Quat::from_euler(
+                                        bevy::math::EulerRot::XYZ,
+                                        rsm.rotation.0,
+                                        rsm.rotation.1,
+                                        rsm.rotation.2,
+                                    ),
+                                    scale: Vec3::from_array(rsm.scale.into()),
+                                },
+                                ..Default::default()
+                            },
+                        ))
+                        .id()
+                })
+                .collect::<Box<[_]>>();
+            commands.entity(world_models).push_children(&models);
         }
     }
 }

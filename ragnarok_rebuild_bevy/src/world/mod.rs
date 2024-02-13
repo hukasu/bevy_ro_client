@@ -6,7 +6,7 @@ use bevy::{
     ecs::schedule::IntoSystemConfigs,
 };
 
-pub use self::components::{Sounds, World};
+pub use self::components::World;
 
 pub struct Plugin;
 
@@ -25,6 +25,7 @@ impl BevyPlugin for Plugin {
                     systems::spawn_directional_light,
                     systems::place_sounds,
                     systems::spawn_water_plane,
+                    systems::spawn_models,
                     systems::spawn_plane,
                 )
                     .after(systems::filter_events_that_are_tied_to_a_map),
