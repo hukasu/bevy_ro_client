@@ -1,5 +1,7 @@
 use bevy::asset::{io::Reader, AssetLoader as BevyAssetLoader, AsyncReadExt, LoadContext};
 
+use crate::assets::paths;
+
 pub struct AssetLoader;
 
 impl BevyAssetLoader for AssetLoader {
@@ -28,14 +30,16 @@ impl BevyAssetLoader for AssetLoader {
                 .objects
                 .0
                 .iter()
-                .map(|model| load_context.load(format!("data/model/{}", model.filename)))
+                .map(|model| {
+                    load_context.load(format!("{}{}", paths::MODELS_FOLDER, model.filename))
+                })
                 .collect();
 
             let sound_handles = rsw
                 .objects
                 .2
                 .iter()
-                .map(|sound| load_context.load(format!("data/wav/{}", sound.filename)))
+                .map(|sound| load_context.load(format!("{}{}", paths::WAVS_FOLDER, sound.filename)))
                 .collect();
 
             let effect_handles = vec![];
@@ -43,8 +47,10 @@ impl BevyAssetLoader for AssetLoader {
             let water_textures = rsw.water_configuration.as_ref().map(|water_plane| {
                 std::array::from_fn(|i| {
                     load_context.load(format!(
-                        "data/texture/워터/water{}{:02}.jpg",
-                        water_plane.water_type, i
+                        "{}water{}{:02}.jpg",
+                        paths::WATER_TEXTURES_FOLDER,
+                        water_plane.water_type,
+                        i
                     ))
                 })
             });

@@ -3,6 +3,8 @@ use bevy::{
     utils::HashMap,
 };
 
+use crate::assets::paths;
+
 pub struct AssetLoader;
 
 impl BevyAssetLoader for AssetLoader {
@@ -27,7 +29,9 @@ impl BevyAssetLoader for AssetLoader {
                 "root".into(),
                 rsm.textures
                     .iter()
-                    .map(|filename| load_context.load(format!("data/texture/{filename}")))
+                    .map(|filename| {
+                        load_context.load(format!("{}{}", paths::TEXTURES_FOLDER, filename))
+                    })
                     .collect(),
             );
             for mesh in rsm.meshes.iter() {
@@ -35,7 +39,9 @@ impl BevyAssetLoader for AssetLoader {
                     mesh.name.clone(),
                     mesh.textures
                         .iter()
-                        .map(|filename| load_context.load(format!("data/texture/{filename}")))
+                        .map(|filename| {
+                            load_context.load(format!("{}{}", paths::TEXTURES_FOLDER, filename))
+                        })
                         .collect(),
                 );
             }

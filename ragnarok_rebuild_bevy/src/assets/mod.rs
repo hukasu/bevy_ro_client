@@ -1,4 +1,5 @@
 pub mod grf;
+mod paths;
 pub mod rsm;
 pub mod rsw;
 
@@ -13,7 +14,7 @@ impl BevyPluginGroup for PluginGroup {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(AssetPlugin {
-                file_path: "data/".to_owned(),
+                file_path: paths::BASE_DATA_FOLDER.to_owned(),
                 ..Default::default()
             })
             .add_before::<AssetPlugin, RagnarokAssetReaderPlugin>(RagnarokAssetReaderPlugin)
@@ -29,7 +30,7 @@ impl Plugin for RagnarokAssetReaderPlugin {
         app.register_asset_source(
             bevy::asset::io::AssetSourceId::Default,
             bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
-                let grf = grf::AssetReader::new(&std::path::Path::new("data.grf")).unwrap();
+                let grf = grf::AssetReader::new(std::path::Path::new("data.grf")).unwrap();
                 Box::new(grf)
             }),
         );
