@@ -5,6 +5,8 @@ use bevy::{
     render::texture::Image,
 };
 
+use crate::assets::rsm;
+
 #[derive(Debug, BevyAsset, TypePath)]
 pub struct Asset {
     pub rsw: super::RSW,
@@ -12,7 +14,7 @@ pub struct Asset {
     pub gnd_handle: Option<UntypedHandle>,
     pub gat_handle: Option<UntypedHandle>,
     pub source_handle: Option<UntypedHandle>,
-    pub rsm_handles: Vec<UntypedHandle>,
+    pub rsm_handles: Vec<Handle<rsm::Asset>>,
     pub sound_handles: Vec<Handle<AudioSource>>,
     pub effect_handles: Vec<UntypedHandle>,
     pub water_textures: Option<[Handle<Image>; 32]>,

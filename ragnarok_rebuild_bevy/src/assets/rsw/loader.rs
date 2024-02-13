@@ -24,7 +24,12 @@ impl BevyAssetLoader for AssetLoader {
             let gat_handle = None;
             let source_handle = None;
 
-            let rsm_handles = vec![];
+            let rsm_handles = rsw
+                .objects
+                .0
+                .iter()
+                .map(|model| load_context.load(format!("data/model/{}", model.filename)))
+                .collect();
 
             let sound_handles = rsw
                 .objects
