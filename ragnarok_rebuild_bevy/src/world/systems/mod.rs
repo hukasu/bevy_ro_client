@@ -62,7 +62,7 @@ pub fn clear_loaded_asset(
         rsw: _,
     } in event_reader.read()
     {
-        bevy::log::debug!("Cleared Handle component.");
+        bevy::log::trace!("Cleared Handle component.");
         commands.entity(*entity).remove::<Handle<rsw::Asset>>();
     }
 }
@@ -78,7 +78,7 @@ pub fn set_ambient_light(
     } in event_reader.read()
     {
         if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
-            bevy::log::debug!("Set ambient light.");
+            bevy::log::trace!("Set ambient light.");
             commands.insert_resource(AmbientLight {
                 color: Color::RgbaLinear {
                     red: raw_rsw.rsw.lighting_parameters.ambient_red,
@@ -103,7 +103,7 @@ pub fn spawn_directional_light(
     } in event_reader.read()
     {
         if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
-            bevy::log::debug!("Spawn directional light.");
+            bevy::log::trace!("Spawn directional light.");
             let base_distance = 1000.;
             let latitude_radians = (raw_rsw.rsw.lighting_parameters.latitude as f32).to_radians();
             let longitude_radians = (raw_rsw.rsw.lighting_parameters.longitude as f32).to_radians();
@@ -247,7 +247,7 @@ pub fn spawn_water_plane(
                 .collect::<BTreeMap<(usize, usize), &Range>>();
 
             if quad_tree_ranges_that_contains_water.is_empty() {
-                bevy::log::debug!("World has empty water plane.");
+                bevy::log::trace!("World has empty water plane.");
                 continue;
             }
 
