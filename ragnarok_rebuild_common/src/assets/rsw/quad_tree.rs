@@ -6,36 +6,38 @@ pub const QUAD_TREE_MAX_DEPTH: usize = 5;
 pub const QUAD_TREE_SIZE: usize = 1365;
 
 #[derive(Debug)]
+/// A QuadTree
+///
+/// # Note
+/// Ragnarok uses a `Left-handed Y-down` coordinate system, which means the top of the [QuadTree] has a
+/// `negative Y` and the bottom has a `positive Y`.
 pub struct QuadTree {
     pub ranges: Box<[Range]>,
 }
 
 impl QuadTree {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<QuadTree, super::Error> {
-        // Ragnarok seems to be Y-up left-handed coordinate system with Z backwards
-        // Bevy is Y-up right-handed coordinate system with Z forwards
-        // https://bevy-cheatbook.github.io/img/handedness.png
         let ranges = (0..QUAD_TREE_SIZE)
             .map(|_| {
-                let top = (
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                    -reader.read_le_f32()?,
-                );
                 let bottom = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                    -reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                );
+                let top = (
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
                 );
                 let radius = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                    -reader.read_le_f32()?,
+                    reader.read_le_f32()?,
                 );
                 let center = (
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                    -reader.read_le_f32()?,
+                    reader.read_le_f32()?,
                 );
                 Ok(Range {
                     top,
@@ -54,14 +56,27 @@ impl QuadTree {
 }
 
 #[derive(Debug, Default)]
+/// A node in the [QuadTree]
+///
+/// # Note
+/// Ragnarok uses a `Left-handed Y-down` coordinate system, and the name of the
+/// members reflect that.
 pub struct Range {
+    /// The top(Y) bottom-left(XY) point of the bounding box.
+    /// Due to the coordinate system, the Y of the bottom > top.
     pub top: (f32, f32, f32),
+    /// The bottom(Y) top-right(XY) point of the bounding box.
+    /// Due to the coordinate system, the Y of the bottom > top.
     pub bottom: (f32, f32, f32),
+    /// The radius of the bounding box, each component represents the
+    /// distance between the center and the edge axis aligned.
     pub radius: (f32, f32, f32),
+    // The center of the bounding box.
     pub center: (f32, f32, f32),
 }
 
 #[derive(Debug, Clone)]
+/// An Iterator-like object to crawl through a [QuadTree]
 pub struct Crawler<'a> {
     quad_tree: &'a QuadTree,
     stack: VecDeque<usize>,
@@ -69,6 +84,8 @@ pub struct Crawler<'a> {
     index: usize,
 }
 
+#[derive(Debug, PartialEq)]
+/// The directions that a [Crawler] can move through the [QuadTree]
 enum CrawlDirection {
     BottomLeft,
     BottomRight,

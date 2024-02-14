@@ -21,7 +21,7 @@ use bevy::{
     transform::{components::Transform, TransformBundle},
 };
 
-use crate::{assets::rsw, water_plane};
+use crate::{assets::rsw, model, water_plane};
 
 use super::components;
 
@@ -197,7 +197,7 @@ pub fn spawn_water_plane(
     mut mesh_assets: ResMut<Assets<Mesh>>,
     mut material_assets: ResMut<Assets<StandardMaterial>>,
 ) {
-    for RSWCompletedLoading {
+    'event: for RSWCompletedLoading {
         world: entity,
         rsw: asset_handle,
     } in event_reader.read()
@@ -224,24 +224,27 @@ pub fn spawn_water_plane(
 
             // Get the root and one of the leaves from the QuadTree
             let quad_tree_root = &rsw_asset.rsw.quad_tree.ranges[0];
-            let smallest_quad = &rsw_asset.rsw.quad_tree.ranges
+            let leaf_quad = &rsw_asset.rsw.quad_tree.ranges
                 [ragnarok_rebuild_common::assets::rsw::QUAD_TREE_MAX_DEPTH];
-
+            bevy::log::debug!("{quad_tree_root:?}");
+            bevy::log::debug!("{leaf_quad:?}");
             // Get all leaves that contains the water level
             let quad_tree_ranges_that_contains_water = rsw_asset
                 .rsw
                 .quad_tree
                 .ranges
                 .iter()
+                // filter leaf nodes
+                .filter(|range| (range.radius.0 - leaf_quad.radius.0).abs() < std::f32::EPSILON)
                 .filter(|range| {
-                    (range.radius.0 - smallest_quad.radius.0).abs() < std::f32::EPSILON
-                        && range.top.1 > water_configuration.water_level
+                    // Ragnarok has a left-handed Y-down coordinate system,
+                    // so the top has a SMALLER Y than bottom.
+                    (range.top.1..range.bottom.1).contains(&water_configuration.water_level)
                 })
                 .map(|range| {
-                    let x =
-                        (range.bottom.0 - quad_tree_root.bottom.0) / (smallest_quad.radius.0 * 2.);
-                    let z =
-                        (range.bottom.2 - quad_tree_root.bottom.2) / (smallest_quad.radius.2 * 2.);
+                    // The top(Y) field holds the bottom-left(XZ) point of the box
+                    let x = (range.top.0 - quad_tree_root.top.0) / (leaf_quad.radius.0 * 2.);
+                    let z = (range.top.2 - quad_tree_root.top.2) / (leaf_quad.radius.2 * 2.);
                     ((x.round() as usize, z.round() as usize), range)
                 })
                 .collect::<BTreeMap<(usize, usize), &Range>>();
@@ -253,30 +256,44 @@ pub fn spawn_water_plane(
 
             let mut vertexes = vec![];
             let mut uvs = vec![];
-            let mut indeces = vec![];
+            let mut indices = vec![];
             for (key, range) in quad_tree_ranges_that_contains_water.iter() {
                 // TODO verify if there is ever water on the edges and treat that case
                 // The bottom left vertex might already be included if the tile to
                 // the left, down, or diagonally down-left also contains water
                 let bottom_left = if [
-                    (key.0 - 1, key.1),
-                    (key.0, key.1 - 1),
-                    (key.0 - 1, key.1 - 1),
+                    if key.0 != 0 {
+                        Some((key.0 - 1, key.1))
+                    } else {
+                        None
+                    },
+                    if key.1 != 0 {
+                        Some((key.0, key.1 - 1))
+                    } else {
+                        None
+                    },
+                    if key.0 != 0 && key.1 != 0 {
+                        Some((key.0 - 1, key.1 - 1))
+                    } else {
+                        None
+                    },
                 ]
                 .iter()
+                .flatten()
                 .any(|adj_key| quad_tree_ranges_that_contains_water.contains_key(adj_key))
                 {
-                    let Some(pos) = find_vertex(&vertexes, &[range.bottom.0, range.bottom.2])
-                    else {
+                    // The top(Y) field holds the bottom-left(XZ) point of the box
+                    let Some(pos) = find_vertex(&vertexes, &[range.top.0, range.top.2]) else {
                         bevy::log::error!(
                             "Failed to build water plane. Could not find index of bottom left vertex."
                         );
-                        continue;
+                        continue 'event;
                     };
                     pos
                 } else {
                     let bottom_left = vertexes.len();
-                    vertexes.push([range.bottom.0, 0., range.bottom.2]);
+                    // The top(Y) field holds the bottom-left(XZ) point of the box
+                    vertexes.push([range.top.0, 0., range.top.2]);
                     uvs.push([key.0 as f32, key.1 as f32]);
                     bottom_left as u32
                 };
@@ -284,16 +301,20 @@ pub fn spawn_water_plane(
                 let bottom_right = if quad_tree_ranges_that_contains_water
                     .contains_key(&(key.0, key.1 - 1))
                 {
-                    let Some(pos) = find_vertex(&vertexes, &[range.top.0, range.bottom.2]) else {
+                    // The top(Y) field holds the bottom-left(XZ) point of the box
+                    // The bottom(Y) field holds the top-right(XZ) point of the box
+                    let Some(pos) = find_vertex(&vertexes, &[range.bottom.0, range.top.2]) else {
                         bevy::log::error!(
                                 "Failed to build water plane. Could not find index of bottom right vertex."
                             );
-                        continue;
+                        continue 'event;
                     };
                     pos
                 } else {
                     let bottom_right = vertexes.len();
-                    vertexes.push([range.top.0, 0., range.bottom.2]);
+                    // The top(Y) field holds the bottom-left(XZ) point of the box
+                    // The bottom(Y) field holds the top-right(XZ) point of the box
+                    vertexes.push([range.bottom.0, 0., range.top.2]);
                     uvs.push([(key.0 + 1) as f32, key.1 as f32]);
                     bottom_right as u32
                 };
@@ -301,25 +322,30 @@ pub fn spawn_water_plane(
                 let top_left = if quad_tree_ranges_that_contains_water
                     .contains_key(&(key.0 - 1, key.1))
                 {
-                    let Some(pos) = find_vertex(&vertexes, &[range.bottom.0, range.top.2]) else {
+                    // The top(Y) field holds the bottom-left(XZ) point of the box
+                    // The bottom(Y) field holds the top-right(XZ) point of the box
+                    let Some(pos) = find_vertex(&vertexes, &[range.top.0, range.bottom.2]) else {
                         bevy::log::error!(
                             "Failed to build water plane. Could not find index of top left vertex."
                         );
-                        continue;
+                        continue 'event;
                     };
                     pos
                 } else {
                     let top_left = vertexes.len();
-                    vertexes.push([range.bottom.0, 0., range.top.2]);
+                    // The top(Y) field holds the bottom-left(XZ) point of the box
+                    // The bottom(Y) field holds the top-right(XZ) point of the box
+                    vertexes.push([range.top.0, 0., range.bottom.2]);
                     uvs.push([key.0 as f32, (key.1 + 1) as f32]);
                     top_left as u32
                 };
                 // The top right vertex is always added
                 let top_right = vertexes.len() as u32;
-                vertexes.push([range.top.0, 0., range.top.2]);
+                // The bottom(Y) field holds the top-right(XZ) point of the box
+                vertexes.push([range.bottom.0, 0., range.bottom.2]);
                 uvs.push([(key.0 + 1) as f32, (key.1 + 1) as f32]);
-                // bevy::render::mesh::shape::Box;
-                indeces.append(&mut vec![
+
+                indices.append(&mut vec![
                     bottom_left,
                     bottom_right,
                     top_left,
@@ -335,7 +361,7 @@ pub fn spawn_water_plane(
                     .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertexes)
                     .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
                     .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-                    .with_indices(Some(Indices::U32(indeces))),
+                    .with_indices(Some(Indices::U32(indices))),
             );
 
             let water_plane_entity = commands
@@ -394,21 +420,23 @@ pub fn spawn_models(
                 .0
                 .iter()
                 .zip(rsw_asset.rsm_handles.iter())
-                .map(|(rsm, rsm_handle)| {
+                .take(1)
+                .map(|(world_model, rsm_handle)| {
                     commands
                         .spawn((
-                            Name::new(rsm.name.to_string()),
+                            Name::new(world_model.name.to_string()),
+                            model::Model,
                             rsm_handle.clone(),
                             TransformBundle {
                                 local: Transform {
-                                    translation: Vec3::from_array(rsm.position.into()),
+                                    translation: Vec3::from_array(world_model.position.into()),
                                     rotation: Quat::from_euler(
                                         bevy::math::EulerRot::XYZ,
-                                        rsm.rotation.0,
-                                        rsm.rotation.1,
-                                        rsm.rotation.2,
+                                        world_model.rotation.0.to_radians(),
+                                        world_model.rotation.1.to_radians(),
+                                        world_model.rotation.2.to_radians(),
                                     ),
-                                    scale: Vec3::from_array(rsm.scale.into()),
+                                    scale: Vec3::from_array(world_model.scale.into()),
                                 },
                                 ..Default::default()
                             },
@@ -434,21 +462,25 @@ pub fn spawn_plane(
     {
         if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
             let quad_tree_root = &rsw_asset.rsw.quad_tree.ranges[0];
+            bevy::log::debug!("{:?}", quad_tree_root);
             let plane = commands
                 .spawn((
                     Name::new("WorldBottom"),
                     PbrBundle {
                         mesh: mesh_assets.add(bevy::render::mesh::shape::Plane::default().into()),
-                        transform: Transform::from_xyz(
-                            quad_tree_root.center.0,
-                            quad_tree_root.center.1,
-                            quad_tree_root.center.2,
-                        )
-                        .with_scale(Vec3::new(
-                            -quad_tree_root.radius.0 * 2.,
-                            1.,
-                            quad_tree_root.radius.2 * 2.,
-                        )),
+                        transform: Transform {
+                            translation: Vec3::new(
+                                quad_tree_root.center.0,
+                                quad_tree_root.bottom.1,
+                                quad_tree_root.center.2,
+                            ),
+                            rotation: Quat::from_rotation_x(std::f32::consts::PI),
+                            scale: Vec3::new(
+                                quad_tree_root.radius.0 * 2.,
+                                1.,
+                                quad_tree_root.radius.2 * 2.,
+                            ),
+                        },
                         ..Default::default()
                     },
                 ))

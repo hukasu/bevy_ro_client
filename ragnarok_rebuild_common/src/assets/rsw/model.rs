@@ -30,13 +30,10 @@ impl Model {
         // There are models were this field is corrupt
         let node_name = crate::assets::read_euc_kr_string(reader, 80).unwrap_or_default();
 
-        // Ragnarok seems to be Y-up left-handed coordinate system with Z backwards
-        // Bevy is Y-up right-handed coordinate system with Z forwards
-        // https://bevy-cheatbook.github.io/img/handedness.png
         let position = (
             reader.read_le_f32()?,
             reader.read_le_f32()?,
-            -reader.read_le_f32()?,
+            reader.read_le_f32()?,
         );
         let rotation = (
             reader.read_le_f32()?,
