@@ -104,13 +104,18 @@ pub fn spawn_directional_light(
     {
         if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
             bevy::log::trace!("Spawn directional light.");
-            let base_distance = 1000.;
+            let base_distance = 2500.;
             let latitude_radians = (raw_rsw.rsw.lighting_parameters.latitude as f32).to_radians();
             let longitude_radians = (raw_rsw.rsw.lighting_parameters.longitude as f32).to_radians();
-            let spherical_coordinate = Transform::from_xyz(
+
+            let mut spherical_coordinate = Transform::from_xyz(
                 base_distance * longitude_radians.sin() * latitude_radians.cos(),
                 base_distance * longitude_radians.cos(),
                 base_distance * longitude_radians.sin() * latitude_radians.sin(),
+            );
+            spherical_coordinate.rotate_around(
+                Vec3::ZERO,
+                Quat::from_rotation_y(std::f32::consts::PI / -2.),
             );
 
             let directional_light = commands
@@ -150,7 +155,13 @@ pub fn place_sounds(
                 .spawn((
                     components::Sounds,
                     Name::new("Sounds"),
-                    TransformBundle::default(),
+                    // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
+                    TransformBundle {
+                        local: Transform::from_rotation(Quat::from_rotation_x(
+                            std::f32::consts::PI,
+                        )),
+                        ..Default::default()
+                    },
                 ))
                 .id();
             commands.entity(*entity).add_child(world_sounds);
@@ -203,6 +214,21 @@ pub fn spawn_water_plane(
     } in event_reader.read()
     {
         if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
+            let world_water_planes = commands
+                .spawn((
+                    components::WaterPlanes,
+                    Name::new("WaterPlanes"),
+                    // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
+                    TransformBundle {
+                        local: Transform::from_rotation(Quat::from_rotation_x(
+                            std::f32::consts::PI,
+                        )),
+                        ..Default::default()
+                    },
+                ))
+                .id();
+            commands.entity(*entity).add_child(world_water_planes);
+
             let Some(water_configuration) = &rsw_asset.rsw.water_configuration else {
                 continue;
             };
@@ -226,8 +252,7 @@ pub fn spawn_water_plane(
             let quad_tree_root = &rsw_asset.rsw.quad_tree.ranges[0];
             let leaf_quad = &rsw_asset.rsw.quad_tree.ranges
                 [ragnarok_rebuild_common::assets::rsw::QUAD_TREE_MAX_DEPTH];
-            bevy::log::debug!("{quad_tree_root:?}");
-            bevy::log::debug!("{leaf_quad:?}");
+
             // Get all leaves that contains the water level
             let quad_tree_ranges_that_contains_water = rsw_asset
                 .rsw
@@ -364,13 +389,12 @@ pub fn spawn_water_plane(
                     .with_indices(Some(Indices::U32(indices))),
             );
 
-            let water_plane_entity = commands
+            let water_plane_mesh = commands
                 .spawn((
                     water_plane::WaterPlane::new(
                         water_textures.clone(),
                         water_configuration.texture_cyclical_interval,
                     ),
-                    Name::new("WaterPlane"),
                     PbrBundle {
                         mesh,
                         transform: Transform::from_xyz(
@@ -389,7 +413,9 @@ pub fn spawn_water_plane(
                     },
                 ))
                 .id();
-            commands.entity(*entity).add_child(water_plane_entity);
+            commands
+                .entity(world_water_planes)
+                .add_child(water_plane_mesh);
         }
     }
 }
@@ -409,7 +435,13 @@ pub fn spawn_models(
                 .spawn((
                     components::Models,
                     Name::new("Models"),
-                    TransformBundle::default(),
+                    // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
+                    TransformBundle {
+                        local: Transform::from_rotation(Quat::from_rotation_x(
+                            std::f32::consts::PI,
+                        )),
+                        ..Default::default()
+                    },
                 ))
                 .id();
             commands.entity(*entity).add_child(world_models);
@@ -420,7 +452,7 @@ pub fn spawn_models(
                 .0
                 .iter()
                 .zip(rsw_asset.rsm_handles.iter())
-                .take(1)
+                // .take(1)
                 .map(|(world_model, rsm_handle)| {
                     commands
                         .spawn((
@@ -462,7 +494,6 @@ pub fn spawn_plane(
     {
         if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
             let quad_tree_root = &rsw_asset.rsw.quad_tree.ranges[0];
-            bevy::log::debug!("{:?}", quad_tree_root);
             let plane = commands
                 .spawn((
                     Name::new("WorldBottom"),
@@ -471,10 +502,10 @@ pub fn spawn_plane(
                         transform: Transform {
                             translation: Vec3::new(
                                 quad_tree_root.center.0,
-                                quad_tree_root.bottom.1,
+                                quad_tree_root.top.1,
                                 quad_tree_root.center.2,
                             ),
-                            rotation: Quat::from_rotation_x(std::f32::consts::PI),
+                            rotation: Quat::default(),
                             scale: Vec3::new(
                                 quad_tree_root.radius.0 * 2.,
                                 1.,
