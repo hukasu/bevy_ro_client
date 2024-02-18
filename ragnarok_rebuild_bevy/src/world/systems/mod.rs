@@ -11,8 +11,9 @@ use bevy::{
         system::{Commands, Query, Res, ResMut},
     },
     hierarchy::BuildChildren,
-    math::{Quat, Vec3},
+    math::{EulerRot, Quat, Vec3},
     pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PbrBundle, StandardMaterial},
+    prelude::SpatialBundle,
     render::{
         color::Color,
         mesh::{Indices, Mesh},
@@ -115,7 +116,7 @@ pub fn spawn_directional_light(
             );
             spherical_coordinate.rotate_around(
                 Vec3::ZERO,
-                Quat::from_rotation_y(std::f32::consts::PI / -2.),
+                Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
             );
 
             let directional_light = commands
@@ -219,8 +220,8 @@ pub fn spawn_water_plane(
                     components::WaterPlanes,
                     Name::new("WaterPlanes"),
                     // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
-                    TransformBundle {
-                        local: Transform::from_rotation(Quat::from_rotation_x(
+                    SpatialBundle {
+                        transform: Transform::from_rotation(Quat::from_rotation_x(
                             std::f32::consts::PI,
                         )),
                         ..Default::default()
@@ -379,7 +380,7 @@ pub fn spawn_water_plane(
                     top_left,
                 ]);
             }
-            let normals = vec![[0., 1., 0.]; vertexes.len()];
+            let normals = vec![[0., -1., 0.]; vertexes.len()];
 
             let mesh = mesh_assets.add(
                 Mesh::new(PrimitiveTopology::TriangleList)
@@ -391,6 +392,7 @@ pub fn spawn_water_plane(
 
             let water_plane_mesh = commands
                 .spawn((
+                    Name::new("WorldWaterPlane"),
                     water_plane::WaterPlane::new(
                         water_textures.clone(),
                         water_configuration.texture_cyclical_interval,
@@ -436,8 +438,8 @@ pub fn spawn_models(
                     components::Models,
                     Name::new("Models"),
                     // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
-                    TransformBundle {
-                        local: Transform::from_rotation(Quat::from_rotation_x(
+                    SpatialBundle {
+                        transform: Transform::from_rotation(Quat::from_rotation_x(
                             std::f32::consts::PI,
                         )),
                         ..Default::default()
@@ -452,18 +454,17 @@ pub fn spawn_models(
                 .0
                 .iter()
                 .zip(rsw_asset.rsm_handles.iter())
-                // .take(1)
                 .map(|(world_model, rsm_handle)| {
                     commands
                         .spawn((
                             Name::new(world_model.name.to_string()),
                             model::Model,
                             rsm_handle.clone(),
-                            TransformBundle {
-                                local: Transform {
+                            SpatialBundle {
+                                transform: Transform {
                                     translation: Vec3::from_array(world_model.position.into()),
                                     rotation: Quat::from_euler(
-                                        bevy::math::EulerRot::XYZ,
+                                        EulerRot::XYZ,
                                         world_model.rotation.0.to_radians(),
                                         world_model.rotation.1.to_radians(),
                                         world_model.rotation.2.to_radians(),
