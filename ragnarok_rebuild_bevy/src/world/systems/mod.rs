@@ -105,19 +105,14 @@ pub fn spawn_directional_light(
     {
         if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
             bevy::log::trace!("Spawn directional light.");
-            let base_distance = 2500.;
+            // Ragnarok is Y-down coordinate system, so we use a negative base distance
+            let base_distance = -2500.;
             let latitude_radians = (raw_rsw.rsw.lighting_parameters.latitude as f32).to_radians();
             let longitude_radians = (raw_rsw.rsw.lighting_parameters.longitude as f32).to_radians();
 
-            let mut spherical_coordinate = Transform::from_xyz(
-                base_distance * longitude_radians.sin() * latitude_radians.cos(),
-                base_distance * longitude_radians.cos(),
-                base_distance * longitude_radians.sin() * latitude_radians.sin(),
-            );
-            spherical_coordinate.rotate_around(
-                Vec3::ZERO,
-                Quat::from_rotation_y(std::f32::consts::FRAC_PI_2),
-            );
+            let mut light_transform = Transform::from_xyz(0., base_distance, 0.);
+            light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_x(longitude_radians));
+            light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_y(latitude_radians));
 
             let directional_light = commands
                 .spawn(DirectionalLightBundle {
@@ -132,7 +127,7 @@ pub fn spawn_directional_light(
                         shadows_enabled: true,
                         ..Default::default()
                     },
-                    transform: spherical_coordinate.looking_at(Vec3::ZERO, Vec3::Y),
+                    transform: light_transform.looking_at(Vec3::ZERO, Vec3::Y),
                     ..Default::default()
                 })
                 .id();
@@ -156,13 +151,7 @@ pub fn place_sounds(
                 .spawn((
                     components::Sounds,
                     Name::new("Sounds"),
-                    // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
-                    TransformBundle {
-                        local: Transform::from_rotation(Quat::from_rotation_x(
-                            std::f32::consts::PI,
-                        )),
-                        ..Default::default()
-                    },
+                    TransformBundle::default(),
                 ))
                 .id();
             commands.entity(*entity).add_child(world_sounds);
@@ -219,13 +208,7 @@ pub fn spawn_water_plane(
                 .spawn((
                     components::WaterPlanes,
                     Name::new("WaterPlanes"),
-                    // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
-                    SpatialBundle {
-                        transform: Transform::from_rotation(Quat::from_rotation_x(
-                            std::f32::consts::PI,
-                        )),
-                        ..Default::default()
-                    },
+                    SpatialBundle::default(),
                 ))
                 .id();
             commands.entity(*entity).add_child(world_water_planes);
@@ -437,13 +420,7 @@ pub fn spawn_models(
                 .spawn((
                     components::Models,
                     Name::new("Models"),
-                    // Ragnarok's coordinate system is Left-handed Y-down, so we rotate 180 degrees
-                    SpatialBundle {
-                        transform: Transform::from_rotation(Quat::from_rotation_x(
-                            std::f32::consts::PI,
-                        )),
-                        ..Default::default()
-                    },
+                    SpatialBundle::default(),
                 ))
                 .id();
             commands.entity(*entity).add_child(world_models);
@@ -503,10 +480,10 @@ pub fn spawn_plane(
                         transform: Transform {
                             translation: Vec3::new(
                                 quad_tree_root.center.0,
-                                quad_tree_root.top.1,
+                                quad_tree_root.bottom.1,
                                 quad_tree_root.center.2,
                             ),
-                            rotation: Quat::default(),
+                            rotation: Quat::from_rotation_x(std::f32::consts::PI),
                             scale: Vec3::new(
                                 quad_tree_root.radius.0 * 2.,
                                 1.,
