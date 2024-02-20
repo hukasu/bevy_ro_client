@@ -3,9 +3,8 @@ use bevy::{
     audio::AudioSource,
     reflect::TypePath,
     render::texture::Image,
+    scene::Scene,
 };
-
-use crate::assets::rsm;
 
 #[derive(Debug, BevyAsset, TypePath)]
 pub struct Asset {
@@ -14,7 +13,7 @@ pub struct Asset {
     pub gnd_handle: Option<UntypedHandle>,
     pub gat_handle: Option<UntypedHandle>,
     pub source_handle: Option<UntypedHandle>,
-    pub rsm_handles: Vec<Handle<rsm::Asset>>,
+    pub rsm_handles: Vec<Handle<Scene>>,
     pub sound_handles: Vec<Handle<AudioSource>>,
     pub effect_handles: Vec<UntypedHandle>,
     pub water_textures: Option<[Handle<Image>; 32]>,
