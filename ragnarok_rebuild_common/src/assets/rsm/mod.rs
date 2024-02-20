@@ -12,12 +12,19 @@ pub use self::{error::Error, volume_box::VolumeBox};
 
 type TextureAndMeshNames = (Box<[Box<str>]>, Box<[Box<str>]>);
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum ShadeType {
+    Unlit,
+    Flat,
+    Smooth,
+}
+
 #[derive(Debug)]
 pub struct RSM {
     pub signature: Box<str>,
     pub version: Version,
     pub animation_length: i32,
-    pub shade_type: i32,
+    pub shade_type: ShadeType,
     pub alpha: u8,
     pub frames_per_second: f32,
     pub textures: Box<[Box<str>]>,
@@ -32,7 +39,14 @@ impl RSM {
         let signature = Self::read_signature(reader)?;
         let version = Version::rsm_version_from_reader(reader)?;
         let animation_length = reader.read_le_i32()?;
-        let shade_type = reader.read_le_i32()?;
+        let shade_type = match reader.read_le_i32()? {
+            0 => ShadeType::Unlit,
+            1 => ShadeType::Flat,
+            2 => ShadeType::Smooth,
+            invalid => {
+                return Err(self::Error::InvalidShadeType(invalid));
+            }
+        };
 
         let alpha = if version >= Version(1, 4, 0) {
             reader.read_u8()?
