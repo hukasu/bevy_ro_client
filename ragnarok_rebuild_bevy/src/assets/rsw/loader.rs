@@ -1,4 +1,10 @@
-use bevy::asset::{io::Reader, AssetLoader as BevyAssetLoader, AsyncReadExt, LoadContext};
+use bevy::{
+    asset::{io::Reader, AssetLoader as BevyAssetLoader, AsyncReadExt, LoadContext},
+    render::texture::{
+        ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
+        ImageSamplerDescriptor,
+    },
+};
 
 use crate::assets::paths;
 
@@ -46,12 +52,25 @@ impl BevyAssetLoader for AssetLoader {
 
             let water_textures = rsw.water_configuration.as_ref().map(|water_plane| {
                 std::array::from_fn(|i| {
-                    load_context.load(format!(
-                        "{}water{}{:02}.jpg",
-                        paths::WATER_TEXTURES_FOLDER,
-                        water_plane.water_type,
-                        i
-                    ))
+                    load_context.load_with_settings(
+                        format!(
+                            "{}water{}{:02}.jpg",
+                            paths::WATER_TEXTURES_FOLDER,
+                            water_plane.water_type,
+                            i
+                        ),
+                        |m: &mut ImageLoaderSettings| {
+                            m.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
+                                label: Some("WaterSample".to_owned()),
+                                address_mode_u: ImageAddressMode::Repeat,
+                                address_mode_v: ImageAddressMode::Repeat,
+                                address_mode_w: ImageAddressMode::Repeat,
+                                mag_filter: ImageFilterMode::Linear,
+                                min_filter: ImageFilterMode::Linear,
+                                ..Default::default()
+                            })
+                        },
+                    )
                 })
             });
 

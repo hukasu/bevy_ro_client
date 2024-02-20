@@ -7,10 +7,7 @@ use bevy::{
     log::LogPlugin,
     math::Quat,
     prelude::SpatialBundle,
-    render::{
-        color::Color,
-        texture::{ImagePlugin, ImageSamplerDescriptor},
-    },
+    render::color::Color,
     transform::components::Transform,
     DefaultPlugins,
 };
@@ -35,14 +32,6 @@ fn main() {
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
                     filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_common={log_level}"),
-                })
-                .set(ImagePlugin {
-                    default_sampler: ImageSamplerDescriptor {
-                        address_mode_u: bevy::render::texture::ImageAddressMode::Repeat,
-                        address_mode_v: bevy::render::texture::ImageAddressMode::Repeat,
-                        address_mode_w: bevy::render::texture::ImageAddressMode::Repeat,
-                        ..Default::default()
-                    }
                 }),
         )
         .add_systems(Startup, load_map);
