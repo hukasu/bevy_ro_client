@@ -4,7 +4,6 @@ mod loader;
 use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
 
 pub use self::{asset::Asset, loader::AssetLoader};
-pub use ragnarok_rebuild_common::assets::rsm::{Error, RSM};
 
 pub struct Plugin;
 
