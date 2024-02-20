@@ -12,7 +12,10 @@ use bevy::{
     },
     hierarchy::BuildChildren,
     math::{EulerRot, Quat, Vec3},
-    pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PbrBundle, StandardMaterial},
+    pbr::{
+        AmbientLight, DirectionalLight, DirectionalLightBundle, PbrBundle, PointLight,
+        PointLightBundle, StandardMaterial,
+    },
     prelude::SpatialBundle,
     render::{
         color::Color,
@@ -22,7 +25,7 @@ use bevy::{
     transform::{components::Transform, TransformBundle},
 };
 
-use crate::{assets::rsw, model, water_plane};
+use crate::{assets::rsw, water_plane};
 
 use super::components;
 
@@ -78,18 +81,21 @@ pub fn set_ambient_light(
         rsw: asset_handle,
     } in event_reader.read()
     {
-        if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
-            bevy::log::trace!("Set ambient light.");
-            commands.insert_resource(AmbientLight {
-                color: Color::RgbaLinear {
-                    red: raw_rsw.rsw.lighting_parameters.ambient_red,
-                    green: raw_rsw.rsw.lighting_parameters.ambient_green,
-                    blue: raw_rsw.rsw.lighting_parameters.ambient_blue,
-                    alpha: 1.,
-                },
-                brightness: raw_rsw.rsw.lighting_parameters.shadow_map_alpha,
-            });
-        }
+        let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
+            bevy::log::error!("RSW handle did not point to an Asset.");
+            continue;
+        };
+
+        bevy::log::trace!("Set ambient light.");
+        commands.insert_resource(AmbientLight {
+            color: Color::RgbaLinear {
+                red: rsw_asset.rsw.lighting_parameters.ambient_red,
+                green: rsw_asset.rsw.lighting_parameters.ambient_green,
+                blue: rsw_asset.rsw.lighting_parameters.ambient_blue,
+                alpha: 1.,
+            },
+            brightness: rsw_asset.rsw.lighting_parameters.shadow_map_alpha,
+        });
     }
 }
 
@@ -103,40 +109,168 @@ pub fn spawn_directional_light(
         rsw: asset_handle,
     } in event_reader.read()
     {
-        if let Some(raw_rsw) = rsw_assets.get(asset_handle) {
-            bevy::log::trace!("Spawn directional light.");
-            // Ragnarok is Y-down coordinate system, so we use a negative base distance
-            let base_distance = -2500.;
-            let latitude_radians = (raw_rsw.rsw.lighting_parameters.latitude as f32).to_radians();
-            let longitude_radians = (raw_rsw.rsw.lighting_parameters.longitude as f32).to_radians();
+        let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
+            bevy::log::error!("RSW handle did not point to an Asset.");
+            continue;
+        };
 
-            let mut light_transform = Transform::from_xyz(0., base_distance, 0.);
-            light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_x(longitude_radians));
-            light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_y(latitude_radians));
+        bevy::log::trace!("Spawn directional light.");
+        // Ragnarok is Y-down coordinate system, so we use a negative base distance
+        let base_distance = -2500.;
+        let latitude_radians = (rsw_asset.rsw.lighting_parameters.latitude as f32).to_radians();
+        let longitude_radians = (rsw_asset.rsw.lighting_parameters.longitude as f32).to_radians();
 
-            let directional_light = commands
-                .spawn(DirectionalLightBundle {
-                    directional_light: DirectionalLight {
-                        color: Color::RgbaLinear {
-                            red: raw_rsw.rsw.lighting_parameters.diffuse_red,
-                            green: raw_rsw.rsw.lighting_parameters.diffuse_green,
-                            blue: raw_rsw.rsw.lighting_parameters.diffuse_blue,
-                            alpha: 1.,
-                        },
-                        illuminance: 32000.,
-                        shadows_enabled: true,
-                        ..Default::default()
+        let mut light_transform = Transform::from_xyz(0., base_distance, 0.);
+        light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_x(longitude_radians));
+        light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_y(latitude_radians));
+
+        let directional_light = commands
+            .spawn(DirectionalLightBundle {
+                directional_light: DirectionalLight {
+                    color: Color::RgbaLinear {
+                        red: rsw_asset.rsw.lighting_parameters.diffuse_red,
+                        green: rsw_asset.rsw.lighting_parameters.diffuse_green,
+                        blue: rsw_asset.rsw.lighting_parameters.diffuse_blue,
+                        alpha: 1.,
                     },
-                    transform: light_transform.looking_at(Vec3::ZERO, Vec3::Y),
+                    illuminance: 32000.,
+                    shadows_enabled: true,
                     ..Default::default()
-                })
-                .id();
-            commands.entity(*entity).add_child(directional_light);
-        }
+                },
+                transform: light_transform.looking_at(Vec3::ZERO, Vec3::Y),
+                ..Default::default()
+            })
+            .id();
+        commands.entity(*entity).add_child(directional_light);
     }
 }
 
-pub fn place_sounds(
+pub fn spawn_models(
+    mut commands: Commands,
+    mut event_reader: EventReader<RSWCompletedLoading>,
+    rsw_assets: Res<Assets<rsw::Asset>>,
+) {
+    for RSWCompletedLoading {
+        world: entity,
+        rsw: asset_handle,
+    } in event_reader.read()
+    {
+        let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
+            bevy::log::error!("RSW handle did not point to an Asset.");
+            continue;
+        };
+
+        let world_models = commands
+            .spawn((
+                components::Models,
+                Name::new("Models"),
+                SpatialBundle::default(),
+            ))
+            .id();
+        commands.entity(*entity).add_child(world_models);
+
+        let file_with_error = "프론테라/민가04.rsm"; // "프론테라/민가04.rsm" "프론테라/여관.rsm" "프론테라\시계탑벽.rsm"
+        let models = rsw_asset
+            .rsw
+            .objects
+            .0
+            .iter()
+            .zip(rsw_asset.rsm_handles.iter())
+            // .filter(|(world_model, _)| (*world_model.filename).eq(file_with_error))
+            // .take(1)
+            .map(|(world_model, rsm_handle)| {
+                commands
+                    .spawn((
+                        Name::new(if (*world_model.filename).eq(file_with_error) {
+                            format!("Wrong {}", world_model.name)
+                        } else {
+                            world_model.name.to_string()
+                        }),
+                        rsm_handle.clone(),
+                        SpatialBundle {
+                            transform: Transform {
+                                translation: Vec3::from_array(world_model.position.into()),
+                                rotation: Quat::from_euler(
+                                    EulerRot::XYZ,
+                                    world_model.rotation.0.to_radians(),
+                                    world_model.rotation.1.to_radians(),
+                                    world_model.rotation.2.to_radians(),
+                                ),
+                                scale: Vec3::from_array(world_model.scale.into()),
+                            },
+                            ..Default::default()
+                        },
+                    ))
+                    .id()
+            })
+            .collect::<Box<[_]>>();
+        commands.entity(world_models).push_children(&models);
+    }
+}
+
+pub fn spawn_enviroment_light_sources(
+    mut commands: Commands,
+    mut event_reader: EventReader<RSWCompletedLoading>,
+    rsw_assets: Res<Assets<rsw::Asset>>,
+) {
+    // TODO
+    // Stop crash
+    // return;
+    for RSWCompletedLoading {
+        world: entity,
+        rsw: asset_handle,
+    } in event_reader.read()
+    {
+        let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
+            bevy::log::error!("RSW handle did not point to an Asset.");
+            continue;
+        };
+
+        let world_lights = commands
+            .spawn((
+                components::EnvironmentLights,
+                Name::new("Lights"),
+                TransformBundle::default(),
+            ))
+            .id();
+        commands.entity(*entity).add_child(world_lights);
+
+        let lights = rsw_asset
+            .rsw
+            .objects
+            .1
+            .iter()
+            .map(|light| {
+                commands
+                    .spawn((
+                        Name::new(light.name.to_string()),
+                        PointLightBundle {
+                            transform: Transform::from_translation(Vec3::from_array(
+                                light.position.into(),
+                            )),
+                            point_light: PointLight {
+                                color: Color::Rgba {
+                                    red: light.color.0,
+                                    green: light.color.0,
+                                    blue: light.color.0,
+                                    alpha: 1.,
+                                },
+                                intensity: 4000.,
+                                range: light.range,
+                                shadows_enabled: true,
+                                ..Default::default()
+                            },
+                            ..Default::default()
+                        },
+                    ))
+                    .id()
+            })
+            .collect::<Vec<_>>();
+        commands.entity(world_lights).push_children(&lights);
+    }
+}
+
+pub fn spawn_environment_sounds(
     mut commands: Commands,
     mut event_reader: EventReader<RSWCompletedLoading>,
     rsw_assets: Res<Assets<rsw::Asset>>,
@@ -401,60 +535,6 @@ pub fn spawn_water_plane(
             commands
                 .entity(world_water_planes)
                 .add_child(water_plane_mesh);
-        }
-    }
-}
-
-pub fn spawn_models(
-    mut commands: Commands,
-    mut event_reader: EventReader<RSWCompletedLoading>,
-    rsw_assets: Res<Assets<rsw::Asset>>,
-) {
-    for RSWCompletedLoading {
-        world: entity,
-        rsw: asset_handle,
-    } in event_reader.read()
-    {
-        if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
-            let world_models = commands
-                .spawn((
-                    components::Models,
-                    Name::new("Models"),
-                    SpatialBundle::default(),
-                ))
-                .id();
-            commands.entity(*entity).add_child(world_models);
-
-            let models = rsw_asset
-                .rsw
-                .objects
-                .0
-                .iter()
-                .zip(rsw_asset.rsm_handles.iter())
-                .map(|(world_model, rsm_handle)| {
-                    commands
-                        .spawn((
-                            Name::new(world_model.name.to_string()),
-                            model::Model,
-                            rsm_handle.clone(),
-                            SpatialBundle {
-                                transform: Transform {
-                                    translation: Vec3::from_array(world_model.position.into()),
-                                    rotation: Quat::from_euler(
-                                        EulerRot::XYZ,
-                                        world_model.rotation.0.to_radians(),
-                                        world_model.rotation.1.to_radians(),
-                                        world_model.rotation.2.to_radians(),
-                                    ),
-                                    scale: Vec3::from_array(world_model.scale.into()),
-                                },
-                                ..Default::default()
-                            },
-                        ))
-                        .id()
-                })
-                .collect::<Box<[_]>>();
-            commands.entity(world_models).push_children(&models);
         }
     }
 }
