@@ -23,7 +23,7 @@ impl AssetLoader {
         let textures: Vec<Handle<Image>> = gnd
             .textures
             .iter()
-            .map(|path| load_context.load(format!("{}{}", paths::TEXTURES_FOLDER, path)))
+            .map(|path| load_context.load(format!("{}{}", paths::TEXTURE_FILES_FOLDER, path)))
             .collect();
         let materials: Vec<Handle<StandardMaterial>> = textures
             .iter()

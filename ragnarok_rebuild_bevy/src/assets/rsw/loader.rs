@@ -28,7 +28,8 @@ impl BevyAssetLoader for AssetLoader {
 
             // TODO
             let ini_handle = None;
-            let gnd_handle = load_context.load(format!("{}{}", paths::GROUND_FOLDER, rsw.gnd_file));
+            let gnd_handle =
+                load_context.load(format!("{}{}", paths::GROUND_FILES_FOLDER, rsw.gnd_file));
             let gat_handle = None;
             let source_handle = None;
 
@@ -37,7 +38,7 @@ impl BevyAssetLoader for AssetLoader {
                 .0
                 .iter()
                 .map(|model| {
-                    load_context.load(format!("{}{}", paths::MODELS_FOLDER, model.filename))
+                    load_context.load(format!("{}{}", paths::MODEL_FILES_FOLDER, model.filename))
                 })
                 .collect();
 
@@ -45,7 +46,9 @@ impl BevyAssetLoader for AssetLoader {
                 .objects
                 .2
                 .iter()
-                .map(|sound| load_context.load(format!("{}{}", paths::WAVS_FOLDER, sound.filename)))
+                .map(|sound| {
+                    load_context.load(format!("{}{}", paths::WAV_FILES_FOLDER, sound.filename))
+                })
                 .collect();
 
             let effect_handles = vec![];
@@ -55,7 +58,7 @@ impl BevyAssetLoader for AssetLoader {
                     load_context.load_with_settings(
                         format!(
                             "{}water{}{:02}.jpg",
-                            paths::WATER_TEXTURES_FOLDER,
+                            paths::WATER_TEXTURE_FILES_FOLDER,
                             water_plane.water_type,
                             i
                         ),

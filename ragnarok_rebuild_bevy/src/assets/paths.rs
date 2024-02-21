@@ -2,9 +2,17 @@
 pub const BASE_DATA_FOLDER: &str = "data/";
 
 // Folders for each archetype of file
-pub const MODELS_FOLDER: &str = "data/model/";
-pub const TEXTURES_FOLDER: &str = "data/texture/";
-pub const WAVS_FOLDER: &str = "data/wav/";
+/// Folder prefix for World files (`.rsw`)
+pub const WORLD_FILES_FOLDER: &str = "data/";
+/// Folder prefix for Ground files (`.gnd`)
+pub const GROUND_FILES_FOLDER: &str = "data/";
+/// Folder prefix for Model (animated props) files `.rsm`
+pub const MODEL_FILES_FOLDER: &str = "data/model/";
+/// Folder prefix for Texture files (`.bmp`, `.jpg`, `.tga`)
+pub const TEXTURE_FILES_FOLDER: &str = "data/texture/";
+/// Folder prefix for Audio files (`.wav`)
+pub const WAV_FILES_FOLDER: &str = "data/wav/";
 
 // Folders for specific types
-pub const WATER_TEXTURES_FOLDER: &str = "data/texture/워터/";
+/// Folder prefix for Texture files for water types (`.bmp`)
+pub const WATER_TEXTURE_FILES_FOLDER: &str = "data/texture/워터/";

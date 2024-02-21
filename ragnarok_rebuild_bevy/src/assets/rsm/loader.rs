@@ -53,7 +53,7 @@ impl AssetLoader {
         paths
             .iter()
             .map(|texture_path| {
-                load_context.load(format!("{}{texture_path}", paths::TEXTURES_FOLDER))
+                load_context.load(format!("{}{texture_path}", paths::TEXTURE_FILES_FOLDER))
             })
             .collect::<Vec<_>>()
     }
@@ -223,14 +223,11 @@ impl AssetLoader {
                 w_axis: offset.extend(1.),
             })
         };
-        bevy::log::debug!("tm {:?}", transformation_matrix);
-        bevy::log::debug!("tmmat4 {:?}", transformation_matrix.compute_matrix());
 
         let translation = Vec3::from_array(mesh.position);
         let rotation = {
             let rotation_axis = Vec3::from_array(mesh.rotation_axis);
             if rotation_axis.length() <= 0. {
-                bevy::log::debug!("Zero axis");
                 Quat::default()
             } else {
                 Quat::from_axis_angle(rotation_axis, mesh.rotation_angle)
@@ -242,12 +239,8 @@ impl AssetLoader {
             rotation,
             scale,
         };
-        bevy::log::debug!("it {:?}", initial_transform);
-        bevy::log::debug!("itmat4 {:?}", initial_transform.compute_matrix());
 
         let world_space_position = initial_transform * transformation_matrix;
-        bevy::log::debug!("wsp {:?}", world_space_position);
-        bevy::log::debug!("wspmat4 {:?}", world_space_position.compute_matrix());
 
         world_space_position
     }
