@@ -2,6 +2,7 @@ use std::io::Read;
 
 use crate::reader_ext::ReaderExt;
 
+#[derive(Debug)]
 pub struct Lightmap {
     pub pixel_format: i32,
     pub width: u32,

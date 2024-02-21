@@ -2,6 +2,7 @@ use std::io::Read;
 
 use crate::reader_ext::ReaderExt;
 
+#[derive(Debug)]
 pub struct GroundMeshCube {
     pub bottom_left_height: f32,
     pub bottom_right_height: f32,

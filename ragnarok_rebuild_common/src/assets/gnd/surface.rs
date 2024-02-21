@@ -2,11 +2,12 @@ use std::io::Read;
 
 use crate::reader_ext::ReaderExt;
 
+#[derive(Debug)]
 pub struct Surface {
-    pub bottom_left: (f32, f32),
-    pub bottom_right: (f32, f32),
-    pub top_left: (f32, f32),
-    pub top_right: (f32, f32),
+    pub bottom_left: [f32; 2],
+    pub bottom_right: [f32; 2],
+    pub top_left: [f32; 2],
+    pub top_right: [f32; 2],
     pub texture_id: i16,
     pub lightmap_id: i16,
     pub bottom_left_vertex_color: [u8; 4],
@@ -32,7 +33,7 @@ impl Surface {
         })
     }
 
-    fn read_uvs(mut reader: &mut dyn Read) -> Result<[(f32, f32); 4], super::Error> {
+    fn read_uvs(mut reader: &mut dyn Read) -> Result<[[f32; 2]; 4], super::Error> {
         let blu = reader.read_le_f32()?;
         let bru = reader.read_le_f32()?;
         let tlu = reader.read_le_f32()?;
@@ -41,7 +42,7 @@ impl Surface {
         let brv = reader.read_le_f32()?;
         let tlv = reader.read_le_f32()?;
         let trv = reader.read_le_f32()?;
-        Ok([(blu, blv), (bru, brv), (tlu, tlv), (tru, trv)])
+        Ok([[blu, blv], [bru, brv], [tlu, tlv], [tru, trv]])
     }
 
     fn read_vertex_color(mut reader: &mut dyn Read) -> Result<[u8; 4], super::Error> {

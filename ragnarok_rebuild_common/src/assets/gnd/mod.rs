@@ -13,6 +13,7 @@ pub use self::{
     error::Error, ground_mesh_cube::GroundMeshCube, lightmap::Lightmap, surface::Surface,
 };
 
+#[derive(Debug)]
 pub struct GND {
     pub signature: Box<str>,
     pub version: Version,
