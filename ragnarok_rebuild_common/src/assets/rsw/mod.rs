@@ -57,7 +57,7 @@ impl RSW {
         let source_file = super::read_euc_kr_string(reader, 40)?;
 
         let water_configuration = if version < Version(2, 6, 0) {
-            Some(WaterPlane::read_single(reader)?)
+            Some(WaterPlane::from_reader(reader)?)
         } else {
             None
         };

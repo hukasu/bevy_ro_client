@@ -13,7 +13,7 @@ pub struct WaterPlane {
 }
 
 impl WaterPlane {
-    pub fn read_single(mut reader: &mut dyn Read) -> Result<Self, std::io::Error> {
+    pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, std::io::Error> {
         let water_level = reader.read_le_f32()?;
         let water_type = reader.read_le_i32()?;
         let wave_height = reader.read_le_f32()?;

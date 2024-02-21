@@ -100,7 +100,7 @@ impl GND {
         if version < &Version(1, 8, 0) {
             Ok(Box::new([]))
         } else if version < &Version(1, 9, 0) {
-            let base_water_plane = WaterPlane::read_single(reader)?;
+            let base_water_plane = WaterPlane::from_reader(reader)?;
             let horizontal = reader.read_le_i32()?;
             let vertical = reader.read_le_i32()?;
             let extras = (0..(horizontal * vertical))
@@ -119,11 +119,11 @@ impl GND {
                 }))
                 .collect())
         } else {
-            let base_water_plane = WaterPlane::read_single(reader)?;
+            let base_water_plane = WaterPlane::from_reader(reader)?;
             let horizontal = reader.read_le_i32()?;
             let vertical = reader.read_le_i32()?;
             let extras = (0..(horizontal * vertical))
-                .map(|_| WaterPlane::read_single(reader).map_err(Error::from))
+                .map(|_| WaterPlane::from_reader(reader).map_err(Error::from))
                 .collect::<Result<Vec<WaterPlane>, Error>>()?;
             let base_water_level = base_water_plane.water_level;
             Ok([base_water_plane]
