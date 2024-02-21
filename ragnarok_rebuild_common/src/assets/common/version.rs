@@ -1,7 +1,7 @@
 use std::io::Read;
 
 use crate::{
-    assets::{grf, rsm, rsw},
+    assets::{gnd, grf, rsm, rsw},
     reader_ext::ReaderExt,
 };
 
@@ -9,6 +9,12 @@ use crate::{
 pub struct Version(pub u8, pub u8, pub u32);
 
 impl Version {
+    pub fn gnd_version_from_reader(mut reader: &mut dyn Read) -> Result<Self, gnd::Error> {
+        let major = reader.read_u8()?;
+        let minor = reader.read_u8()?;
+        Ok(Version(major, minor, 0))
+    }
+
     pub fn grf_version_from_reader(mut reader: &mut dyn Read) -> Result<Self, grf::Error> {
         let _padding = reader.read_u8()?;
         let major = reader.read_u8()?;

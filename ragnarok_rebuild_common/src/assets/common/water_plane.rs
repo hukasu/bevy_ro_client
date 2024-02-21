@@ -2,7 +2,7 @@ use std::io::Read;
 
 use crate::reader_ext::ReaderExt;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct WaterPlane {
     pub water_level: f32,
     pub water_type: i32,
