@@ -1,6 +1,7 @@
 use bevy::{
-    app::{App, PluginGroup, Startup},
+    app::{App, PluginGroup, PostStartup, Startup},
     asset::{AssetServer, Handle},
+    audio::{AudioPlugin, SpatialScale},
     core::Name,
     core_pipeline::clear_color::ClearColor,
     ecs::system::{Commands, Res},
@@ -11,8 +12,15 @@ use bevy::{
     transform::components::Transform,
     DefaultPlugins,
 };
+#[cfg(feature = "with-inspector")]
+use bevy::{
+    audio::SpatialListener,
+    ecs::{entity::Entity, query::With, system::Query},
+};
 #[cfg(not(feature = "with-inspector"))]
 use bevy::{core_pipeline::core_3d::Camera3dBundle, math::Vec3};
+#[cfg(feature = "with-inspector")]
+use bevy_flycam::FlyCam;
 
 use ragnarok_rebuild_bevy::{assets::rsw, world, RagnarokPlugin};
 
@@ -32,6 +40,10 @@ fn main() {
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
                     filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_common={log_level}"),
+                })
+                .set(AudioPlugin {
+                    spatial_scale: SpatialScale::new(1. / 50.),
+                    ..Default::default()
                 }),
         )
         .add_systems(Startup, load_map);
@@ -47,7 +59,8 @@ fn main() {
             .insert_resource(bevy_flycam::prelude::MovementSettings {
                 sensitivity: 0.00015, // default: 0.00012
                 speed: 120.0,         // default: 12.0
-            });
+            })
+            .add_systems(PostStartup, add_listener_to_fly_cam);
     }
 
     app.run();
@@ -60,6 +73,16 @@ fn spawn_camera(mut commands: Commands) {
             .looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
         ..Default::default()
     });
+}
+
+#[cfg(feature = "with-inspector")]
+fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
+    let Ok(flycam) = flycams.get_single() else {
+        bevy::log::error!("Zero or more than one FlyCam present.");
+        return;
+    };
+
+    commands.entity(flycam).insert(SpatialListener::default());
 }
 
 fn load_map(mut commands: Commands, asset_server: Res<AssetServer>) {
