@@ -258,7 +258,7 @@ pub fn spawn_enviroment_light_sources(
             .spawn((
                 components::EnvironmentLights,
                 Name::new("Lights"),
-                TransformBundle::default(),
+                SpatialBundle::default(),
             ))
             .id();
         commands.entity(*entity).add_child(world_lights);
@@ -277,10 +277,10 @@ pub fn spawn_enviroment_light_sources(
                                 light.position.into(),
                             )),
                             point_light: PointLight {
-                                color: Color::Rgba {
+                                color: Color::RgbaLinear {
                                     red: light.color.0,
-                                    green: light.color.0,
-                                    blue: light.color.0,
+                                    green: light.color.1,
+                                    blue: light.color.2,
                                     alpha: 1.,
                                 },
                                 intensity: 4000.,
