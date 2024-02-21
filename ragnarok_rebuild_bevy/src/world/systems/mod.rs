@@ -22,6 +22,7 @@ use bevy::{
         mesh::{Indices, Mesh},
         render_resource::PrimitiveTopology,
     },
+    scene::SceneBundle,
     transform::{components::Transform, TransformBundle},
 };
 
@@ -145,6 +146,34 @@ pub fn spawn_directional_light(
     }
 }
 
+pub fn spawn_ground(
+    mut commands: Commands,
+    mut event_reader: EventReader<RSWCompletedLoading>,
+    rsw_assets: Res<Assets<rsw::Asset>>,
+) {
+    for RSWCompletedLoading {
+        world: entity,
+        rsw: asset_handle,
+    } in event_reader.read()
+    {
+        let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
+            bevy::log::error!("RSW handle did not point to an Asset.");
+            continue;
+        };
+
+        let world_ground = commands
+            .spawn((
+                Name::new("Ground"),
+                SceneBundle {
+                    scene: rsw_asset.gnd_handle.clone(),
+                    ..Default::default()
+                },
+            ))
+            .id();
+        commands.entity(*entity).add_child(world_ground);
+    }
+}
+
 pub fn spawn_models(
     mut commands: Commands,
     mut event_reader: EventReader<RSWCompletedLoading>,
@@ -215,7 +244,6 @@ pub fn spawn_enviroment_light_sources(
 ) {
     // TODO
     // Stop crash
-    // return;
     for RSWCompletedLoading {
         world: entity,
         rsw: asset_handle,
@@ -535,46 +563,6 @@ pub fn spawn_water_plane(
             commands
                 .entity(world_water_planes)
                 .add_child(water_plane_mesh);
-        }
-    }
-}
-
-pub fn spawn_plane(
-    mut commands: Commands,
-    mut event_reader: EventReader<RSWCompletedLoading>,
-    rsw_assets: Res<Assets<rsw::Asset>>,
-    mut mesh_assets: ResMut<Assets<Mesh>>,
-) {
-    for RSWCompletedLoading {
-        world: entity,
-        rsw: asset_handle,
-    } in event_reader.read()
-    {
-        if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
-            let quad_tree_root = &rsw_asset.rsw.quad_tree.ranges[0];
-            let plane = commands
-                .spawn((
-                    Name::new("WorldBottom"),
-                    PbrBundle {
-                        mesh: mesh_assets.add(bevy::render::mesh::shape::Plane::default().into()),
-                        transform: Transform {
-                            translation: Vec3::new(
-                                quad_tree_root.center.0,
-                                quad_tree_root.bottom.1,
-                                quad_tree_root.center.2,
-                            ),
-                            rotation: Quat::from_rotation_x(std::f32::consts::PI),
-                            scale: Vec3::new(
-                                quad_tree_root.radius.0 * 2.,
-                                1.,
-                                quad_tree_root.radius.2 * 2.,
-                            ),
-                        },
-                        ..Default::default()
-                    },
-                ))
-                .id();
-            commands.entity(*entity).add_child(plane);
         }
     }
 }

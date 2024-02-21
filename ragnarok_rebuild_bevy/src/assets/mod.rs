@@ -1,3 +1,4 @@
+pub mod gnd;
 pub mod grf;
 mod paths;
 pub mod rsm;
@@ -18,8 +19,9 @@ impl BevyPluginGroup for PluginGroup {
                 ..Default::default()
             })
             .add_before::<AssetPlugin, RagnarokAssetReaderPlugin>(RagnarokAssetReaderPlugin)
-            .add_after::<AssetPlugin, rsw::Plugin>(rsw::Plugin)
+            .add_after::<AssetPlugin, gnd::Plugin>(gnd::Plugin)
             .add_after::<AssetPlugin, rsm::Plugin>(rsm::Plugin)
+            .add_after::<AssetPlugin, rsw::Plugin>(rsw::Plugin)
     }
 }
 

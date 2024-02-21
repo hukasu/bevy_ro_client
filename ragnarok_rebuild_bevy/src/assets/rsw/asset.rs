@@ -10,7 +10,7 @@ use bevy::{
 pub struct Asset {
     pub rsw: super::RSW,
     pub ini_handle: Option<UntypedHandle>,
-    pub gnd_handle: Option<UntypedHandle>,
+    pub gnd_handle: Handle<Scene>,
     pub gat_handle: Option<UntypedHandle>,
     pub source_handle: Option<UntypedHandle>,
     pub rsm_handles: Vec<Handle<Scene>>,

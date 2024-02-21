@@ -28,7 +28,7 @@ impl BevyAssetLoader for AssetLoader {
 
             // TODO
             let ini_handle = None;
-            let gnd_handle = None;
+            let gnd_handle = load_context.load(format!("{}{}", paths::GROUND_FOLDER, rsw.gnd_file));
             let gat_handle = None;
             let source_handle = None;
 
