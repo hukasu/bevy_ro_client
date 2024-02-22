@@ -22,25 +22,15 @@ pub struct AssetLoader;
 
 impl AssetLoader {
     fn generate_model(rsm: &rsm::RSM, load_context: &mut LoadContext) -> Scene {
+        bevy::log::trace!("Generating animated prop {:?}.", load_context.path());
         let mut world = World::new();
 
         let textures = Self::load_textures(&rsm.textures, load_context);
 
         let mut parent = world.spawn((Name::new("root"), SpatialBundle::INHERITED_IDENTITY));
         parent.with_children(|parent| {
-            for root_mesh in rsm
-                .meshes
-                .iter()
-                .filter(|mesh| rsm.root_meshes.contains(&mesh.name))
-            {
-                Self::build_mesh(
-                    rsm,
-                    &textures,
-                    root_mesh,
-                    rsm.shade_type,
-                    parent,
-                    load_context,
-                );
+            for root_mesh in rsm.meshes.iter() {
+                Self::build_mesh(root_mesh, &textures, rsm.shade_type, parent, load_context);
             }
         });
 
@@ -50,6 +40,10 @@ impl AssetLoader {
     }
 
     fn load_textures(paths: &[Box<str>], load_context: &mut LoadContext) -> Vec<Handle<Image>> {
+        bevy::log::trace!(
+            "Loading textures for animated prop {:?}.",
+            load_context.path()
+        );
         paths
             .iter()
             .map(|texture_path| {
@@ -63,10 +57,14 @@ impl AssetLoader {
         parent: &mut EntityWorldMut,
         load_context: &mut LoadContext,
     ) {
+        bevy::log::trace!(
+            "Generating animation for animated prop {:?}.",
+            load_context.path()
+        );
         parent.insert(AnimationPlayer::default());
 
         let mut clip = AnimationClip::default();
-        if rsm.version < Version(1, 6, 0) {
+        if rsm.version < Version(2, 0, 0) {
             clip.add_curve_to_path(
                 EntityPath {
                     parts: vec!["root".into()],
@@ -92,13 +90,16 @@ impl AssetLoader {
     }
 
     fn build_mesh(
-        rsm: &rsm::RSM,
-        rsm_textures: &[Handle<Image>],
         rsm_mesh: &rsm::mesh::Mesh,
+        rsm_textures: &[Handle<Image>],
         shade_type: rsm::ShadeType,
         parent: &mut WorldChildBuilder,
         load_context: &mut LoadContext,
     ) {
+        bevy::log::trace!(
+            "Generating mesh for animated prop {:?}.",
+            load_context.path()
+        );
         let mut node = parent.spawn((
             Name::new(rsm_mesh.name.to_string()),
             SpatialBundle::from_transform(Self::mesh_transform(rsm_mesh)),
@@ -139,6 +140,17 @@ impl AssetLoader {
                     .iter()
                     .enumerate()
             {
+                let transformation_matrix = {
+                    let offset = Vec3::from_array(rsm_mesh.offset);
+                    let trasn_matrix = Mat3::from_cols_array(&rsm_mesh.transformation_matrix);
+                    Transform::from_matrix(Mat4 {
+                        x_axis: trasn_matrix.x_axis.extend(0.),
+                        y_axis: trasn_matrix.y_axis.extend(0.),
+                        z_axis: trasn_matrix.z_axis.extend(0.),
+                        w_axis: offset.extend(1.),
+                    })
+                };
+
                 let mesh = load_context.add_labeled_asset(
                     format!("{}Primitive{}", rsm_mesh.name, i),
                     match shade_type {
@@ -170,26 +182,10 @@ impl AssetLoader {
                     PbrBundle {
                         mesh,
                         material,
+                        transform: transformation_matrix,
                         ..Default::default()
                     },
                 ));
-            }
-        });
-
-        node.with_children(|parent| {
-            for child_mesh in rsm
-                .meshes
-                .iter()
-                .filter(|child_mesh| child_mesh.parent_name.eq(&rsm_mesh.name))
-            {
-                Self::build_mesh(
-                    rsm,
-                    rsm_textures,
-                    child_mesh,
-                    shade_type,
-                    parent,
-                    load_context,
-                );
             }
         });
     }
@@ -213,17 +209,6 @@ impl AssetLoader {
 
     #[must_use]
     fn mesh_transform(mesh: &rsm::mesh::Mesh) -> Transform {
-        let transform_matrix = Mat3::from_cols_array(&mesh.transformation_matrix);
-        let offset = Vec3::from_array(mesh.offset);
-        let transformation_matrix = {
-            Transform::from_matrix(Mat4 {
-                x_axis: transform_matrix.x_axis.extend(0.),
-                y_axis: transform_matrix.y_axis.extend(0.),
-                z_axis: transform_matrix.z_axis.extend(0.),
-                w_axis: offset.extend(1.),
-            })
-        };
-
         let translation = Vec3::from_array(mesh.position);
         let rotation = {
             let rotation_axis = Vec3::from_array(mesh.rotation_axis);
@@ -234,15 +219,12 @@ impl AssetLoader {
             }
         };
         let scale = Vec3::from_array(mesh.scale);
-        let initial_transform = Transform {
+
+        Transform {
             translation,
             rotation,
             scale,
-        };
-
-        let world_space_position = initial_transform * transformation_matrix;
-
-        world_space_position
+        }
     }
 
     #[must_use]
@@ -407,7 +389,6 @@ impl BevyAssetLoader for AssetLoader {
         load_context: &'a mut LoadContext,
     ) -> bevy::utils::BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
         Box::pin(async {
-            bevy::log::trace!("Loading RSM {:?}.", load_context.path());
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
             let rsm = rsm::RSM::from_reader(&mut data.as_slice())?;
