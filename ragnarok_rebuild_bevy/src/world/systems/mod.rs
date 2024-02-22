@@ -82,6 +82,7 @@ pub fn set_ambient_light(
         rsw: asset_handle,
     } in event_reader.read()
     {
+        bevy::log::trace!("Spawning ambient light.");
         let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
             bevy::log::error!("RSW handle did not point to an Asset.");
             continue;
@@ -110,6 +111,7 @@ pub fn spawn_directional_light(
         rsw: asset_handle,
     } in event_reader.read()
     {
+        bevy::log::trace!("Spawning directional light.");
         let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
             bevy::log::error!("RSW handle did not point to an Asset.");
             continue;
@@ -156,6 +158,7 @@ pub fn spawn_ground(
         rsw: asset_handle,
     } in event_reader.read()
     {
+        bevy::log::trace!("Spawning ground.");
         let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
             bevy::log::error!("RSW handle did not point to an Asset.");
             continue;
@@ -184,6 +187,7 @@ pub fn spawn_models(
         rsw: asset_handle,
     } in event_reader.read()
     {
+        bevy::log::trace!("Spawning animated props.");
         let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
             bevy::log::error!("RSW handle did not point to an Asset.");
             continue;
@@ -249,6 +253,7 @@ pub fn spawn_enviroment_light_sources(
         rsw: asset_handle,
     } in event_reader.read()
     {
+        bevy::log::trace!("Spawning environment lights.");
         let Some(rsw_asset) = rsw_assets.get(asset_handle) else {
             bevy::log::error!("RSW handle did not point to an Asset.");
             continue;
@@ -308,6 +313,7 @@ pub fn spawn_environment_sounds(
         rsw: asset_handle,
     } in event_reader.read()
     {
+        bevy::log::trace!("Spawning environment sounds.");
         if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
             let world_sounds = commands
                 .spawn((
@@ -363,6 +369,7 @@ pub fn spawn_water_plane(
         rsw: asset_handle,
     } in event_reader.read()
     {
+        bevy::log::trace!("Spawning world water plane.");
         if let Some(rsw_asset) = rsw_assets.get(asset_handle) {
             let world_water_planes = commands
                 .spawn((

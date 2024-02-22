@@ -1,5 +1,5 @@
 mod components;
-mod systems;
+// mod systems;
 
 use bevy::{
     app::{App, Plugin as BevyPlugin, Update},
