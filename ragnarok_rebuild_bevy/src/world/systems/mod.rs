@@ -327,11 +327,9 @@ pub fn spawn_environment_sounds(
                         .spawn((
                             Name::new(sound.name.to_string()),
                             TransformBundle {
-                                local: Transform::from_xyz(
-                                    sound.position.0,
-                                    sound.position.1,
-                                    sound.position.2,
-                                ),
+                                local: Transform::from_translation(Vec3::from_array(
+                                    sound.position,
+                                )),
                                 ..Default::default()
                             },
                             AudioSourceBundle {
