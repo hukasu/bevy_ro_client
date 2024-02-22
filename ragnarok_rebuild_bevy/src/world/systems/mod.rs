@@ -274,13 +274,13 @@ pub fn spawn_enviroment_light_sources(
                         Name::new(light.name.to_string()),
                         PointLightBundle {
                             transform: Transform::from_translation(Vec3::from_array(
-                                light.position.into(),
+                                light.position,
                             )),
                             point_light: PointLight {
                                 color: Color::RgbaLinear {
-                                    red: light.color.0,
-                                    green: light.color.1,
-                                    blue: light.color.2,
+                                    red: light.color[0],
+                                    green: light.color[1],
+                                    blue: light.color[2],
                                     alpha: 1.,
                                 },
                                 intensity: 4000.,
