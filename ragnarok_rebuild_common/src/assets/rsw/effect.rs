@@ -7,10 +7,10 @@ use super::Version;
 #[derive(Debug)]
 pub struct Effect {
     pub name: Box<str>,
-    pub position: (f32, f32, f32),
+    pub position: [f32; 3],
     pub id: i32,
     pub delay: f32,
-    pub parameters: (f32, f32, f32, f32),
+    pub parameters: [f32; 4],
 }
 
 impl Effect {
@@ -20,20 +20,20 @@ impl Effect {
     ) -> Result<Self, std::io::Error> {
         let name = crate::assets::read_euc_kr_string(reader, 80)?;
 
-        let position = (
+        let position = [
             reader.read_le_f32()?,
             reader.read_le_f32()?,
             reader.read_le_f32()?,
-        );
+        ];
 
         let id = reader.read_le_i32()?;
         let delay = reader.read_le_f32()?;
-        let parameters = (
+        let parameters = [
             reader.read_le_f32()?,
             reader.read_le_f32()?,
             reader.read_le_f32()?,
             reader.read_le_f32()?,
-        );
+        ];
 
         Ok(Self {
             name,
