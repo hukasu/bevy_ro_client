@@ -19,26 +19,26 @@ impl QuadTree {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<QuadTree, super::Error> {
         let ranges = (0..QUAD_TREE_SIZE)
             .map(|_| {
-                let bottom = (
+                let bottom = [
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                );
-                let top = (
+                ];
+                let top = [
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                );
-                let radius = (
+                ];
+                let radius = [
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                );
-                let center = (
+                ];
+                let center = [
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
-                );
+                ];
                 Ok(Range {
                     top,
                     bottom,
@@ -64,15 +64,15 @@ impl QuadTree {
 pub struct Range {
     /// The top(Y) bottom-left(XY) point of the bounding box.
     /// Due to the coordinate system, the Y of the bottom > top.
-    pub top: (f32, f32, f32),
+    pub top: [f32; 3],
     /// The bottom(Y) top-right(XY) point of the bounding box.
     /// Due to the coordinate system, the Y of the bottom > top.
-    pub bottom: (f32, f32, f32),
+    pub bottom: [f32; 3],
     /// The radius of the bounding box, each component represents the
     /// distance between the center and the edge axis aligned.
-    pub radius: (f32, f32, f32),
+    pub radius: [f32; 3],
     // The center of the bounding box.
-    pub center: (f32, f32, f32),
+    pub center: [f32; 3],
 }
 
 #[derive(Debug, Clone)]

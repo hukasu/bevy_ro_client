@@ -406,16 +406,16 @@ pub fn spawn_water_plane(
                 .ranges
                 .iter()
                 // filter leaf nodes
-                .filter(|range| (range.radius.0 - leaf_quad.radius.0).abs() < std::f32::EPSILON)
+                .filter(|range| (range.radius[0] - leaf_quad.radius[0]).abs() < std::f32::EPSILON)
                 .filter(|range| {
                     // Ragnarok has a left-handed Y-down coordinate system,
                     // so the top has a SMALLER Y than bottom.
-                    (range.top.1..range.bottom.1).contains(&water_configuration.water_level)
+                    (range.top[1]..range.bottom[1]).contains(&water_configuration.water_level)
                 })
                 .map(|range| {
                     // The top(Y) field holds the bottom-left(XZ) point of the box
-                    let x = (range.top.0 - quad_tree_root.top.0) / (leaf_quad.radius.0 * 2.);
-                    let z = (range.top.2 - quad_tree_root.top.2) / (leaf_quad.radius.2 * 2.);
+                    let x = (range.top[0] - quad_tree_root.top[0]) / (leaf_quad.radius[0] * 2.);
+                    let z = (range.top[2] - quad_tree_root.top[2]) / (leaf_quad.radius[2] * 2.);
                     ((x.round() as usize, z.round() as usize), range)
                 })
                 .collect::<BTreeMap<(usize, usize), &Range>>();
@@ -454,7 +454,7 @@ pub fn spawn_water_plane(
                 .any(|adj_key| quad_tree_ranges_that_contains_water.contains_key(adj_key))
                 {
                     // The top(Y) field holds the bottom-left(XZ) point of the box
-                    let Some(pos) = find_vertex(&vertexes, &[range.top.0, range.top.2]) else {
+                    let Some(pos) = find_vertex(&vertexes, &[range.top[0], range.top[2]]) else {
                         bevy::log::error!(
                             "Failed to build water plane. Could not find index of bottom left vertex."
                         );
@@ -464,7 +464,7 @@ pub fn spawn_water_plane(
                 } else {
                     let bottom_left = vertexes.len();
                     // The top(Y) field holds the bottom-left(XZ) point of the box
-                    vertexes.push([range.top.0, 0., range.top.2]);
+                    vertexes.push([range.top[0], 0., range.top[2]]);
                     uvs.push([key.0 as f32, key.1 as f32]);
                     bottom_left as u32
                 };
@@ -474,7 +474,7 @@ pub fn spawn_water_plane(
                 {
                     // The top(Y) field holds the bottom-left(XZ) point of the box
                     // The bottom(Y) field holds the top-right(XZ) point of the box
-                    let Some(pos) = find_vertex(&vertexes, &[range.bottom.0, range.top.2]) else {
+                    let Some(pos) = find_vertex(&vertexes, &[range.bottom[0], range.top[2]]) else {
                         bevy::log::error!(
                                 "Failed to build water plane. Could not find index of bottom right vertex."
                             );
@@ -485,7 +485,7 @@ pub fn spawn_water_plane(
                     let bottom_right = vertexes.len();
                     // The top(Y) field holds the bottom-left(XZ) point of the box
                     // The bottom(Y) field holds the top-right(XZ) point of the box
-                    vertexes.push([range.bottom.0, 0., range.top.2]);
+                    vertexes.push([range.bottom[0], 0., range.top[2]]);
                     uvs.push([(key.0 + 1) as f32, key.1 as f32]);
                     bottom_right as u32
                 };
@@ -495,7 +495,7 @@ pub fn spawn_water_plane(
                 {
                     // The top(Y) field holds the bottom-left(XZ) point of the box
                     // The bottom(Y) field holds the top-right(XZ) point of the box
-                    let Some(pos) = find_vertex(&vertexes, &[range.top.0, range.bottom.2]) else {
+                    let Some(pos) = find_vertex(&vertexes, &[range.top[0], range.bottom[2]]) else {
                         bevy::log::error!(
                             "Failed to build water plane. Could not find index of top left vertex."
                         );
@@ -506,14 +506,14 @@ pub fn spawn_water_plane(
                     let top_left = vertexes.len();
                     // The top(Y) field holds the bottom-left(XZ) point of the box
                     // The bottom(Y) field holds the top-right(XZ) point of the box
-                    vertexes.push([range.top.0, 0., range.bottom.2]);
+                    vertexes.push([range.top[0], 0., range.bottom[2]]);
                     uvs.push([key.0 as f32, (key.1 + 1) as f32]);
                     top_left as u32
                 };
                 // The top right vertex is always added
                 let top_right = vertexes.len() as u32;
                 // The bottom(Y) field holds the top-right(XZ) point of the box
-                vertexes.push([range.bottom.0, 0., range.bottom.2]);
+                vertexes.push([range.bottom[0], 0., range.bottom[2]]);
                 uvs.push([(key.0 + 1) as f32, (key.1 + 1) as f32]);
 
                 indices.append(&mut vec![
@@ -545,9 +545,9 @@ pub fn spawn_water_plane(
                     PbrBundle {
                         mesh,
                         transform: Transform::from_xyz(
-                            quad_tree_root.center.0,
+                            quad_tree_root.center[0],
                             water_configuration.water_level,
-                            quad_tree_root.center.2,
+                            quad_tree_root.center[2],
                         ),
                         material: material_assets.add(StandardMaterial {
                             base_color: Color::WHITE.with_a(0.56),
