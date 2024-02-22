@@ -283,7 +283,7 @@ pub fn spawn_enviroment_light_sources(
                                     blue: light.color[2],
                                     alpha: 1.,
                                 },
-                                intensity: 4000.,
+                                intensity: 32000.,
                                 range: light.range,
                                 shadows_enabled: true,
                                 ..Default::default()
