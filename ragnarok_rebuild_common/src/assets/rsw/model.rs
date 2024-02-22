@@ -12,9 +12,9 @@ pub struct Model {
     pub block_type: i32,
     pub filename: Box<str>,
     pub node_name: Box<str>,
-    pub position: (f32, f32, f32),
-    pub rotation: (f32, f32, f32),
-    pub scale: (f32, f32, f32),
+    pub position: [f32; 3],
+    pub rotation: [f32; 3],
+    pub scale: [f32; 3],
 }
 
 impl Model {
@@ -30,21 +30,21 @@ impl Model {
         // There are models were this field is corrupt
         let node_name = crate::assets::read_euc_kr_string(reader, 80).unwrap_or_default();
 
-        let position = (
+        let position = [
             reader.read_le_f32()?,
             reader.read_le_f32()?,
             reader.read_le_f32()?,
-        );
-        let rotation = (
+        ];
+        let rotation = [
             reader.read_le_f32()?,
             reader.read_le_f32()?,
             reader.read_le_f32()?,
-        );
-        let scale = (
+        ];
+        let scale = [
             reader.read_le_f32()?,
             reader.read_le_f32()?,
             reader.read_le_f32()?,
-        );
+        ];
 
         Ok(Self {
             name,

@@ -218,14 +218,14 @@ pub fn spawn_models(
                         rsm_handle.clone(),
                         SpatialBundle {
                             transform: Transform {
-                                translation: Vec3::from_array(world_model.position.into()),
+                                translation: Vec3::from_array(world_model.position),
                                 rotation: Quat::from_euler(
                                     EulerRot::XYZ,
-                                    world_model.rotation.0.to_radians(),
-                                    world_model.rotation.1.to_radians(),
-                                    world_model.rotation.2.to_radians(),
+                                    world_model.rotation[0].to_radians(),
+                                    world_model.rotation[1].to_radians(),
+                                    world_model.rotation[2].to_radians(),
                                 ),
-                                scale: Vec3::from_array(world_model.scale.into()),
+                                scale: Vec3::from_array(world_model.scale),
                             },
                             ..Default::default()
                         },
