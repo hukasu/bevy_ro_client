@@ -90,12 +90,12 @@ pub fn set_ambient_light(
         bevy::log::trace!("Set ambient light.");
         commands.insert_resource(AmbientLight {
             color: Color::RgbaLinear {
-                red: rsw_asset.rsw.lighting_parameters.ambient_red,
-                green: rsw_asset.rsw.lighting_parameters.ambient_green,
-                blue: rsw_asset.rsw.lighting_parameters.ambient_blue,
-                alpha: 1.,
+                red: rsw_asset.rsw.lighting_parameters.ambient_color[0],
+                green: rsw_asset.rsw.lighting_parameters.ambient_color[1],
+                blue: rsw_asset.rsw.lighting_parameters.ambient_color[2],
+                alpha: rsw_asset.rsw.lighting_parameters.shadow_map_alpha,
             },
-            brightness: rsw_asset.rsw.lighting_parameters.shadow_map_alpha,
+            ..Default::default()
         });
     }
 }
@@ -129,9 +129,9 @@ pub fn spawn_directional_light(
             .spawn(DirectionalLightBundle {
                 directional_light: DirectionalLight {
                     color: Color::RgbaLinear {
-                        red: rsw_asset.rsw.lighting_parameters.diffuse_red,
-                        green: rsw_asset.rsw.lighting_parameters.diffuse_green,
-                        blue: rsw_asset.rsw.lighting_parameters.diffuse_blue,
+                        red: rsw_asset.rsw.lighting_parameters.diffuse_color[0],
+                        green: rsw_asset.rsw.lighting_parameters.diffuse_color[1],
+                        blue: rsw_asset.rsw.lighting_parameters.diffuse_color[2],
                         alpha: 1.,
                     },
                     illuminance: 32000.,
