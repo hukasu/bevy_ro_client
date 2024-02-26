@@ -28,22 +28,22 @@ impl AssetLoader {
         let textures = Self::load_textures(&rsm.textures, load_context);
 
         let mut parent = world.spawn((Name::new("root"), SpatialBundle::INHERITED_IDENTITY));
-        if let Some(bounds) = Self::model_bounds(rsm) {
-            parent.with_children(|parent| {
-                for root_mesh in rsm.meshes.iter() {
-                    Self::build_mesh(
-                        root_mesh,
-                        &textures,
-                        &bounds,
-                        rsm.shade_type,
-                        parent,
-                        load_context,
-                    );
-                }
-            });
-        } else {
-            bevy::log::warn!("Animated prop {:?} has no meshes.", load_context.path());
-        }
+        parent.with_children(|parent| {
+            for root_mesh in rsm
+                .meshes
+                .iter()
+                .filter(|mesh| rsm.root_meshes.contains(&mesh.name))
+            {
+                Self::build_mesh(
+                    rsm,
+                    root_mesh,
+                    &textures,
+                    rsm.shade_type,
+                    parent,
+                    load_context,
+                );
+            }
+        });
 
         Self::build_animation(rsm, &mut parent, load_context);
 
@@ -101,9 +101,9 @@ impl AssetLoader {
     }
 
     fn build_mesh(
+        rsm: &rsm::RSM,
         rsm_mesh: &rsm::mesh::Mesh,
         rsm_textures: &[Handle<Image>],
-        rsm_bounds: &Aabb,
         shade_type: rsm::ShadeType,
         parent: &mut WorldChildBuilder,
         load_context: &mut LoadContext,
@@ -114,9 +114,24 @@ impl AssetLoader {
             load_context.path()
         );
 
+        let Some(mesh_bounds) = Self::mesh_bounds(rsm_mesh) else {
+            bevy::log::warn!(
+                "Mesh {} from model's {:?} had no vertexes.",
+                rsm_mesh.name,
+                load_context.path()
+            );
+            return;
+        };
+
+        let node_transform = if rsm_mesh.parent_name.is_empty() {
+            Self::recentered_mesh_transform(rsm_mesh, &mesh_bounds)
+        } else {
+            Self::mesh_transform(rsm_mesh)
+        };
+
         let mut node = parent.spawn((
             Name::new(rsm_mesh.name.to_string()),
-            SpatialBundle::from_transform(Self::recentered_mesh_transform(rsm_mesh, rsm_bounds)),
+            SpatialBundle::from_transform(node_transform),
         ));
 
         let mesh_textures = if rsm_mesh.textures.is_empty() {
@@ -200,6 +215,22 @@ impl AssetLoader {
                         ));
                     }
                 });
+
+            // Spawn children nodes
+            for child_mesh in rsm
+                .meshes
+                .iter()
+                .filter(|mesh| (*mesh.parent_name).eq(&*rsm_mesh.name))
+            {
+                Self::build_mesh(
+                    rsm,
+                    child_mesh,
+                    &rsm_textures,
+                    shade_type,
+                    parent,
+                    load_context,
+                );
+            }
         });
     }
 
@@ -241,9 +272,13 @@ impl AssetLoader {
     }
 
     #[must_use]
-    fn recentered_mesh_transform(mesh: &rsm::mesh::Mesh, rsm_bounds: &Aabb) -> Transform {
+    fn recentered_mesh_transform(mesh: &rsm::mesh::Mesh, mesh_bounds: &Aabb) -> Transform {
         let translation = Vec3::from_array(mesh.position)
-            - Vec3::new(rsm_bounds.center.x, rsm_bounds.max().y, rsm_bounds.center.z);
+            - Vec3::new(
+                mesh_bounds.center.x,
+                mesh_bounds.max().y,
+                mesh_bounds.center.z,
+            );
         let rotation = {
             let rotation_axis = Vec3::from_array(mesh.rotation_axis);
             if rotation_axis.length() <= 0. {
@@ -383,15 +418,13 @@ impl AssetLoader {
     }
 
     #[must_use]
-    fn model_bounds(rsm: &rsm::RSM) -> Option<Aabb> {
-        Aabb::enclosing(rsm.meshes.iter().flat_map(|mesh| {
-            let transformation_matrix = Self::mesh_transformation_matrix(mesh);
-            let transform = Self::mesh_transform(mesh);
-            mesh.vertices.iter().map(move |vertex| {
-                transform.transform_point(
-                    transformation_matrix.transform_point(Vec3::from_array(*vertex)),
-                )
-            })
+    fn mesh_bounds(mesh: &rsm::mesh::Mesh) -> Option<Aabb> {
+        let transformation_matrix = Self::mesh_transformation_matrix(mesh);
+        let transform = Self::mesh_transform(mesh);
+
+        Aabb::enclosing(mesh.vertices.iter().map(move |vertex| {
+            transform
+                .transform_point(transformation_matrix.transform_point(Vec3::from_array(*vertex)))
         }))
     }
 }
