@@ -9,7 +9,7 @@ use bevy::{
     math::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4},
     pbr::{PbrBundle, StandardMaterial},
     prelude::SpatialBundle,
-    render::{mesh::Mesh, render_resource::PrimitiveTopology, texture::Image},
+    render::{mesh::Mesh, primitives::Aabb, render_resource::PrimitiveTopology, texture::Image},
     scene::Scene,
     transform::components::Transform,
     utils::hashbrown::{hash_map::Entry, HashMap},
@@ -28,11 +28,22 @@ impl AssetLoader {
         let textures = Self::load_textures(&rsm.textures, load_context);
 
         let mut parent = world.spawn((Name::new("root"), SpatialBundle::INHERITED_IDENTITY));
-        parent.with_children(|parent| {
-            for root_mesh in rsm.meshes.iter() {
-                Self::build_mesh(root_mesh, &textures, rsm.shade_type, parent, load_context);
-            }
-        });
+        if let Some(bounds) = Self::model_bounds(rsm) {
+            parent.with_children(|parent| {
+                for root_mesh in rsm.meshes.iter() {
+                    Self::build_mesh(
+                        root_mesh,
+                        &textures,
+                        &bounds,
+                        rsm.shade_type,
+                        parent,
+                        load_context,
+                    );
+                }
+            });
+        } else {
+            bevy::log::warn!("Animated prop {:?} has no meshes.", load_context.path());
+        }
 
         Self::build_animation(rsm, &mut parent, load_context);
 
@@ -92,17 +103,20 @@ impl AssetLoader {
     fn build_mesh(
         rsm_mesh: &rsm::mesh::Mesh,
         rsm_textures: &[Handle<Image>],
+        rsm_bounds: &Aabb,
         shade_type: rsm::ShadeType,
         parent: &mut WorldChildBuilder,
         load_context: &mut LoadContext,
     ) {
         bevy::log::trace!(
-            "Generating mesh for animated prop {:?}.",
+            "Generating mesh '{}' for animated prop {:?}.",
+            rsm_mesh.name,
             load_context.path()
         );
+
         let mut node = parent.spawn((
             Name::new(rsm_mesh.name.to_string()),
-            SpatialBundle::from_transform(Self::mesh_transform(rsm_mesh)),
+            SpatialBundle::from_transform(Self::recentered_mesh_transform(rsm_mesh, rsm_bounds)),
         ));
 
         let mesh_textures = if rsm_mesh.textures.is_empty() {
@@ -135,58 +149,57 @@ impl AssetLoader {
             .collect::<Vec<_>>();
 
         node.with_children(|parent| {
-            for (i, ((texture_id, two_sided), primitive_faces)) in
-                Self::split_mesh_into_primitives(rsm_mesh)
-                    .iter()
-                    .enumerate()
-            {
-                let transformation_matrix = {
-                    let offset = Vec3::from_array(rsm_mesh.offset);
-                    let trasn_matrix = Mat3::from_cols_array(&rsm_mesh.transformation_matrix);
-                    Transform::from_matrix(Mat4 {
-                        x_axis: trasn_matrix.x_axis.extend(0.),
-                        y_axis: trasn_matrix.y_axis.extend(0.),
-                        z_axis: trasn_matrix.z_axis.extend(0.),
-                        w_axis: offset.extend(1.),
-                    })
-                };
-
-                let mesh = load_context.add_labeled_asset(
-                    format!("{}Primitive{}", rsm_mesh.name, i),
-                    match shade_type {
-                        rsm::ShadeType::Unlit | rsm::ShadeType::Flat => Self::flat_mesh(
-                            primitive_faces,
-                            &mesh_vertexes,
-                            &mesh_vertex_colors,
-                            &mesh_uvs,
-                        ),
-                        rsm::ShadeType::Smooth => Self::flat_mesh(
-                            primitive_faces,
-                            &mesh_vertexes,
-                            &mesh_vertex_colors,
-                            &mesh_uvs,
-                        ),
-                    },
-                );
-                let material = load_context.add_labeled_asset(
-                    format!("{}Material{}", rsm_mesh.name, i),
-                    Self::mesh_material(
-                        mesh_textures[*texture_id as usize].clone(),
-                        shade_type == rsm::ShadeType::Unlit,
-                        two_sided == &1,
-                    ),
-                );
-
-                parent.spawn((
-                    Name::new(format!("Primitive{i}")),
-                    PbrBundle {
-                        mesh,
-                        material,
-                        transform: transformation_matrix,
+            let transform = Self::mesh_transformation_matrix(rsm_mesh);
+            parent
+                .spawn((
+                    Name::new("Primitives"),
+                    SpatialBundle {
+                        transform,
                         ..Default::default()
                     },
-                ));
-            }
+                ))
+                .with_children(|parent| {
+                    for (i, ((texture_id, two_sided), primitive_faces)) in
+                        Self::split_mesh_into_primitives(rsm_mesh)
+                            .iter()
+                            .enumerate()
+                    {
+                        let mesh = load_context.add_labeled_asset(
+                            format!("{}Primitive{}", rsm_mesh.name, i),
+                            match shade_type {
+                                rsm::ShadeType::Unlit | rsm::ShadeType::Flat => Self::flat_mesh(
+                                    primitive_faces,
+                                    &mesh_vertexes,
+                                    &mesh_vertex_colors,
+                                    &mesh_uvs,
+                                ),
+                                rsm::ShadeType::Smooth => Self::flat_mesh(
+                                    primitive_faces,
+                                    &mesh_vertexes,
+                                    &mesh_vertex_colors,
+                                    &mesh_uvs,
+                                ),
+                            },
+                        );
+                        let material = load_context.add_labeled_asset(
+                            format!("{}Material{}", rsm_mesh.name, i),
+                            Self::mesh_material(
+                                mesh_textures[*texture_id as usize].clone(),
+                                shade_type == rsm::ShadeType::Unlit,
+                                two_sided == &1,
+                            ),
+                        );
+
+                        parent.spawn((
+                            Name::new(format!("Primitive{i}")),
+                            PbrBundle {
+                                mesh,
+                                material,
+                                ..Default::default()
+                            },
+                        ));
+                    }
+                });
         });
     }
 
@@ -225,6 +238,39 @@ impl AssetLoader {
             rotation,
             scale,
         }
+    }
+
+    #[must_use]
+    fn recentered_mesh_transform(mesh: &rsm::mesh::Mesh, rsm_bounds: &Aabb) -> Transform {
+        let translation = Vec3::from_array(mesh.position)
+            - Vec3::new(rsm_bounds.center.x, rsm_bounds.max().y, rsm_bounds.center.z);
+        let rotation = {
+            let rotation_axis = Vec3::from_array(mesh.rotation_axis);
+            if rotation_axis.length() <= 0. {
+                Quat::default()
+            } else {
+                Quat::from_axis_angle(rotation_axis, mesh.rotation_angle)
+            }
+        };
+        let scale = Vec3::from_array(mesh.scale);
+
+        Transform {
+            translation,
+            rotation,
+            scale,
+        }
+    }
+
+    #[must_use]
+    fn mesh_transformation_matrix(mesh: &rsm::mesh::Mesh) -> Transform {
+        let offset = Vec3::from_array(mesh.offset);
+        let trasn_matrix = Mat3::from_cols_array(&mesh.transformation_matrix);
+        Transform::from_matrix(Mat4 {
+            x_axis: trasn_matrix.x_axis.extend(0.),
+            y_axis: trasn_matrix.y_axis.extend(0.),
+            z_axis: trasn_matrix.z_axis.extend(0.),
+            w_axis: offset.extend(1.),
+        })
     }
 
     #[must_use]
@@ -284,47 +330,7 @@ impl AssetLoader {
         shade_type: rsm::ShadeType,
         normal: Vec3,
     ) -> Mesh {
-        let faces_indices = face_tris
-            .iter()
-            .flat_map(|tri| tri.0.iter().copied().zip(tri.1.iter().copied()))
-            .collect::<BTreeSet<_>>()
-            .into_iter()
-            .enumerate()
-            .map(|(i, tri)| (tri, i))
-            .collect::<BTreeMap<_, _>>();
-
-        let (vertexes, (normals, (vertex_colors, uvs))): (Vec<_>, (Vec<_>, (Vec<_>, Vec<_>))) =
-            faces_indices
-                .keys()
-                .map(|(vertex, uv)| {
-                    (
-                        mesh_vertexes[*vertex as usize],
-                        (
-                            normal,
-                            (mesh_vertex_colors[*uv as usize], mesh_uvs[*uv as usize]),
-                        ),
-                    )
-                })
-                .unzip();
-
-        let indices = face_tris
-            .iter()
-            .flat_map(|tri| tri.0.iter().copied().zip(tri.1.iter().copied()))
-            .map(|id| {
-                faces_indices
-                    .get(&id)
-                    .copied()
-                    .map(|index| index as u16)
-                    .unwrap_or(u16::MAX)
-            })
-            .collect::<Vec<_>>();
-
-        Mesh::new(PrimitiveTopology::TriangleList)
-            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertexes)
-            // .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vertex_colors)
-            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
-            .with_indices(Some(bevy::render::mesh::Indices::U16(indices)))
+        todo!()
     }
 
     #[must_use]
@@ -374,6 +380,19 @@ impl AssetLoader {
         let u = v2 - v1;
         let v = v3 - v1;
         u.cross(v).normalize()
+    }
+
+    #[must_use]
+    fn model_bounds(rsm: &rsm::RSM) -> Option<Aabb> {
+        Aabb::enclosing(rsm.meshes.iter().flat_map(|mesh| {
+            let transformation_matrix = Self::mesh_transformation_matrix(mesh);
+            let transform = Self::mesh_transform(mesh);
+            mesh.vertices.iter().map(move |vertex| {
+                transform.transform_point(
+                    transformation_matrix.transform_point(Vec3::from_array(*vertex)),
+                )
+            })
+        }))
     }
 }
 
