@@ -115,9 +115,9 @@ impl AssetLoader {
                             transform: Transform {
                                 translation: Vec3::from_array(prop.position),
                                 rotation: Quat::from_euler(
-                                    EulerRot::XZY,
-                                    prop.rotation[0].to_radians(),
+                                    EulerRot::ZXY,
                                     prop.rotation[2].to_radians(),
+                                    prop.rotation[0].to_radians(),
                                     prop.rotation[1].to_radians(),
                                 ),
                                 scale: Vec3::from_array(prop.scale),
