@@ -3,11 +3,10 @@ use bevy::{
     asset::Handle,
     core::Name,
     ecs::{
-        entity::Entity,
         query::{Added, With},
         system::Query,
     },
-    hierarchy::{Children, Parent},
+    hierarchy::Children,
     scene::Scene,
 };
 
@@ -43,14 +42,14 @@ pub fn start_animations(
         let children_of_model = children.iter().collect::<Vec<_>>();
         let [single_child] = children_of_model.as_slice() else {
             bevy::log::error!("Model {name} has more than one root.");
-            return;
+            continue;
         };
 
         let Ok((model_animation, mut animation_player)) = models_query.get_mut(**single_child)
         else {
-            bevy::log::error!("Child of Model {name} does not have AnimationPlayer.");
-            return;
+            continue;
         };
+
         animation_player
             .play(model_animation.animation.clone())
             .set_speed(model.animation_speed)
