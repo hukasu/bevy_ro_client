@@ -66,6 +66,20 @@ impl AssetLoader {
         parent: &mut EntityWorldMut,
         load_context: &mut LoadContext,
     ) {
+        if rsm.scale_key_frames.is_empty()
+            && rsm.meshes.iter().all(|mesh| {
+                mesh.scale_key_frames.is_empty()
+                    && mesh.position_key_frames.is_empty()
+                    && mesh.rotation_key_frames.is_empty()
+            })
+        {
+            bevy::log::trace!(
+                "Animated prop {:?} does not have any animation.",
+                load_context.path()
+            );
+            return;
+        }
+
         bevy::log::trace!(
             "Generating animation for animated prop {:?}.",
             load_context.path()
@@ -73,8 +87,29 @@ impl AssetLoader {
 
         let mut clip = AnimationClip::default();
 
-        // RSM Scale
-        clip.add_curve_to_path(
+        Self::build_model_scale_animation(rsm, &mut clip);
+
+        for root_mesh in rsm
+            .meshes
+            .iter()
+            .filter(|mesh| rsm.root_meshes.contains(&mesh.name))
+        {
+            Self::build_mesh_animation(
+                rsm,
+                root_mesh,
+                &vec!["root".into()],
+                &mut clip,
+                load_context,
+            );
+        }
+
+        let animation = load_context.add_labeled_asset("Animation0".to_owned(), clip);
+
+        parent.insert((AnimationPlayer::default(), super::Model { animation }));
+    }
+
+    fn build_model_scale_animation(rsm: &rsm::RSM, animation_clip: &mut AnimationClip) {
+        animation_clip.add_curve_to_path(
             EntityPath {
                 parts: vec!["root".into()],
             },
@@ -92,10 +127,88 @@ impl AssetLoader {
                 ),
             },
         );
+    }
 
-        let animation = load_context.add_labeled_asset("Animation0".to_owned(), clip.clone());
+    fn build_mesh_animation(
+        rsm: &rsm::RSM,
+        mesh: &rsm::mesh::Mesh,
+        parent_parts: &[Name],
+        animation_clip: &mut AnimationClip,
+        load_context: &mut LoadContext,
+    ) {
+        bevy::log::trace!(
+            "Building animation for mesh {:?} of model {:?}.",
+            mesh.name,
+            load_context.path()
+        );
+        let mut parts = parent_parts.to_vec();
+        parts.append(&mut vec![mesh.name.as_ref().into()]);
 
-        parent.insert((AnimationPlayer::default(), super::Model { animation }));
+        animation_clip.add_curve_to_path(
+            EntityPath {
+                parts: parts.clone(),
+            },
+            VariableCurve {
+                keyframe_timestamps: mesh
+                    .scale_key_frames
+                    .iter()
+                    .map(|frame| frame.frame as f32 / 1000.)
+                    .collect(),
+                keyframes: bevy::animation::Keyframes::Scale(
+                    mesh.scale_key_frames
+                        .iter()
+                        .map(|frame| Vec3::from_array(frame.scale))
+                        .collect(),
+                ),
+            },
+        );
+
+        animation_clip.add_curve_to_path(
+            EntityPath {
+                parts: parts.clone(),
+            },
+            VariableCurve {
+                keyframe_timestamps: mesh
+                    .position_key_frames
+                    .iter()
+                    .map(|frame| frame.frame as f32 / 1000.)
+                    .collect(),
+                keyframes: bevy::animation::Keyframes::Translation(
+                    mesh.position_key_frames
+                        .iter()
+                        .map(|frame| Vec3::from_array(frame.position))
+                        .collect(),
+                ),
+            },
+        );
+
+        animation_clip.add_curve_to_path(
+            EntityPath {
+                parts: parts.clone(),
+            },
+            VariableCurve {
+                keyframe_timestamps: mesh
+                    .rotation_key_frames
+                    .iter()
+                    .map(|frame| frame.frame as f32 / 1000.)
+                    .collect(),
+                keyframes: bevy::animation::Keyframes::Rotation(
+                    mesh.rotation_key_frames
+                        .iter()
+                        .map(|frame| Quat::from_array(frame.quaternion))
+                        .collect(),
+                ),
+            },
+        );
+
+        for child_mesh in rsm
+            .meshes
+            .iter()
+            .filter(|child_mesh| child_mesh.name.ne(&mesh.name))
+            .filter(|child_mesh| child_mesh.parent_name.eq(&mesh.name))
+        {
+            Self::build_mesh_animation(rsm, child_mesh, &parts, animation_clip, load_context);
+        }
     }
 
     fn build_mesh(
