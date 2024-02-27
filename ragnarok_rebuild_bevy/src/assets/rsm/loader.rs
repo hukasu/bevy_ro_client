@@ -1,5 +1,3 @@
-use std::collections::{BTreeMap, BTreeSet};
-
 use bevy::{
     animation::{AnimationClip, AnimationPlayer, EntityPath, VariableCurve},
     asset::{io::Reader, AssetLoader as BevyAssetLoader, AsyncReadExt, Handle, LoadContext},
@@ -14,7 +12,7 @@ use bevy::{
     transform::components::Transform,
     utils::hashbrown::{hash_map::Entry, HashMap},
 };
-use ragnarok_rebuild_common::assets::{common::Version, rsm};
+use ragnarok_rebuild_common::assets::rsm;
 
 use crate::assets::paths;
 
@@ -72,32 +70,32 @@ impl AssetLoader {
             "Generating animation for animated prop {:?}.",
             load_context.path()
         );
-        parent.insert(AnimationPlayer::default());
 
         let mut clip = AnimationClip::default();
-        if rsm.version < Version(2, 0, 0) {
-            clip.add_curve_to_path(
-                EntityPath {
-                    parts: vec!["root".into()],
-                },
-                VariableCurve {
-                    keyframe_timestamps: rsm
-                        .scale_key_frames
+
+        // RSM Scale
+        clip.add_curve_to_path(
+            EntityPath {
+                parts: vec!["root".into()],
+            },
+            VariableCurve {
+                keyframe_timestamps: rsm
+                    .scale_key_frames
+                    .iter()
+                    .map(|frame| frame.frame as f32 / 1000.)
+                    .collect(),
+                keyframes: bevy::animation::Keyframes::Scale(
+                    rsm.scale_key_frames
                         .iter()
-                        .map(|frame| frame.frame as f32 / 1000.)
+                        .map(|frame| Vec3::from_array(frame.scale))
                         .collect(),
-                    keyframes: bevy::animation::Keyframes::Scale(
-                        rsm.scale_key_frames
-                            .iter()
-                            .map(|frame| Vec3::from_array(frame.scale))
-                            .collect(),
-                    ),
-                },
-            );
-        } else {
-            todo!()
-        }
-        load_context.add_labeled_asset("Animation0".to_owned(), clip);
+                ),
+            },
+        );
+
+        let animation = load_context.add_labeled_asset("Animation0".to_owned(), clip.clone());
+
+        parent.insert((AnimationPlayer::default(), super::Model { animation }));
     }
 
     fn build_mesh(

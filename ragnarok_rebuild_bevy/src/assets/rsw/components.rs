@@ -31,7 +31,7 @@ pub struct EnvironmentalSounds;
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// Environmental sound that plays in the world
+/// Environmental sound that plays in the [World]
 pub struct EnvironmentalSound {
     pub source: Handle<AudioSource>,
     pub volume: f32,
