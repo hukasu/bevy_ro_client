@@ -18,6 +18,7 @@ impl BevyPlugin for Plugin {
             // Types
             .register_type::<components::Ground>()
             .register_type::<components::Models>()
+            .register_type::<components::WorldModel>()
             .register_type::<components::EnvironmentalLights>()
             .register_type::<components::EnvironmentalSounds>()
             .register_type::<components::EnvironmentalSound>()

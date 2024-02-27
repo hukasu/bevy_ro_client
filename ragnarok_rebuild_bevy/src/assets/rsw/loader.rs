@@ -110,6 +110,10 @@ impl AssetLoader {
                     ));
                     parent.spawn((
                         Name::new(prop.name.to_string()),
+                        super::components::WorldModel {
+                            animation_type: prop.animation_type,
+                            animation_speed: prop.animation_speed,
+                        },
                         SceneBundle {
                             scene: prop_handle,
                             transform: Transform {
