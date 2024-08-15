@@ -25,23 +25,36 @@ use crate::assets::paths;
 
 pub struct AssetLoader;
 
+struct AssetLoaderContext<'a, 'b, 'c> {
+    world: World,
+    load_context: &'a mut LoadContext<'b>,
+    rsm: &'c rsm::RSM,
+}
+
 impl BevyAssetLoader for AssetLoader {
     type Asset = Scene;
     type Settings = ();
     type Error = rsm::Error;
 
-    fn load<'a>(
+    fn load<'a, 'b>(
         &'a self,
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
+        load_context: &'a mut LoadContext<'b>,
     ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
         Box::pin(async {
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
             let rsm = rsm::RSM::from_reader(&mut data.as_slice())?;
 
-            Ok(Self::generate_model(&rsm, load_context))
+            let context = AssetLoaderContext {
+                world: World::new(),
+                load_context,
+                rsm: &rsm,
+            };
+            let scene = Self::generate_model(context);
+
+            Ok(scene)
         })
     }
 
@@ -51,55 +64,64 @@ impl BevyAssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    fn generate_model(rsm: &rsm::RSM, load_context: &mut LoadContext) -> Scene {
-        bevy::log::trace!("Generating animated prop {:?}.", load_context.path());
-        let mut world = World::new();
+    fn generate_model(mut asset_loader_context: AssetLoaderContext) -> Scene {
+        bevy::log::trace!(
+            "Generating animated prop {:?}.",
+            asset_loader_context.load_context.path()
+        );
 
-        let rsm_root = world
+        let rsm_root = asset_loader_context
+            .world
             .spawn((Name::new("root"), SpatialBundle::INHERITED_IDENTITY))
             .id();
 
         // Load the texture defined at the top level of the model.
         // Some versions of RSM defines textures at the Mesh level.
-        let model_textures = Self::load_textures(&rsm.textures, load_context);
+        let model_textures = Self::load_textures(
+            &asset_loader_context.rsm.textures,
+            asset_loader_context.load_context,
+        );
 
         // Create empty animation clip
         let mut animation_clip = AnimationClip::default();
 
         // Builds root meshes and their children recursively
         let root_meshes = Self::build_root_meshes(
-            &mut world,
-            load_context,
+            &mut asset_loader_context,
             rsm_root,
-            rsm,
             &model_textures,
             &mut animation_clip,
         );
 
         // RSM has a scale animation on the whole model
         if let Some(model_scale_animation_target_id) =
-            Self::build_model_scale_animation(rsm, &mut animation_clip)
+            Self::build_model_scale_animation(&asset_loader_context, &mut animation_clip)
         {
             bevy::log::trace!(
                 "Model '{:?}' does not have scale animation.",
-                load_context.path()
+                asset_loader_context.load_context.path()
             );
             let animation_target = AnimationTarget {
                 id: model_scale_animation_target_id,
                 player: rsm_root,
             };
-            world.entity_mut(rsm_root).insert(animation_target);
+            asset_loader_context
+                .world
+                .entity_mut(rsm_root)
+                .insert(animation_target);
         }
 
         // Finalizing animations
-        let animation_clip_handle =
-            load_context.add_labeled_asset("Animation0".to_owned(), animation_clip);
+        let animation_clip_handle = asset_loader_context
+            .load_context
+            .add_labeled_asset("Animation0".to_owned(), animation_clip);
         let (animation_graph, animation_node_index) =
             AnimationGraph::from_clip(animation_clip_handle.clone());
-        let animation_graph_handle =
-            load_context.add_labeled_asset("AnimationGraph0".into(), animation_graph);
+        let animation_graph_handle = asset_loader_context
+            .load_context
+            .add_labeled_asset("AnimationGraph0".into(), animation_graph);
 
-        let mut rsm_root_mut = world.entity_mut(rsm_root);
+        let mut rsm_root_mut = asset_loader_context.world.entity_mut(rsm_root);
         // Insert Animation components
         rsm_root_mut.insert((
             AnimationTransitions::default(),
@@ -113,15 +135,20 @@ impl AssetLoader {
         // Pushing children meshes
         rsm_root_mut.push_children(&root_meshes);
 
-        Scene { world }
+        Scene {
+            world: asset_loader_context.world,
+        }
     }
 
-    fn load_textures(paths: &[Box<str>], load_context: &mut LoadContext) -> Vec<Handle<Image>> {
+    fn load_textures(
+        texture_paths: &[Box<str>],
+        load_context: &mut LoadContext,
+    ) -> Vec<Handle<Image>> {
         bevy::log::trace!(
             "Loading textures for animated prop {:?}.",
             load_context.path()
         );
-        paths
+        texture_paths
             .iter()
             .map(|texture_path| {
                 load_context.load(format!("{}{texture_path}", paths::TEXTURE_FILES_FOLDER))
@@ -130,25 +157,22 @@ impl AssetLoader {
     }
 
     fn build_root_meshes(
-        world: &mut World,
-        load_context: &mut LoadContext,
+        asset_loader_context: &mut AssetLoaderContext,
         rsm_root: Entity,
-        rsm: &rsm::RSM,
         textures: &[Handle<Image>],
         animation_clip: &mut AnimationClip,
     ) -> Vec<Entity> {
-        rsm.meshes
+        asset_loader_context
+            .rsm
+            .meshes
             .iter()
-            .filter(|mesh| rsm.root_meshes.contains(&mesh.name))
+            .filter(|mesh| asset_loader_context.rsm.root_meshes.contains(&mesh.name))
             .filter_map(|rsm_mesh| {
                 Self::build_rsm_mesh(
-                    world,
-                    load_context,
+                    asset_loader_context,
                     rsm_root,
-                    rsm,
                     rsm_mesh,
                     textures,
-                    rsm.shade_type,
                     animation_clip,
                 )
             })
@@ -156,26 +180,23 @@ impl AssetLoader {
     }
 
     fn build_rsm_mesh(
-        world: &mut World,
-        load_context: &mut LoadContext,
+        asset_loader_context: &mut AssetLoaderContext,
         rsm_root: Entity,
-        rsm: &rsm::RSM,
         rsm_mesh: &rsm::mesh::Mesh,
         rsm_textures: &[Handle<Image>],
-        shade_type: rsm::ShadeType,
         animation_clip: &mut AnimationClip,
     ) -> Option<Entity> {
         bevy::log::trace!(
             "Generating mesh '{}' for animated prop {:?}.",
             rsm_mesh.name,
-            load_context.path()
+            asset_loader_context.load_context.path()
         );
 
         let Some(mesh_bounds) = Self::mesh_bounds(rsm_mesh) else {
             bevy::log::warn!(
                 "Mesh {} from model's {:?} had no vertexes.",
                 rsm_mesh.name,
-                load_context.path()
+                asset_loader_context.load_context.path()
             );
             return None;
         };
@@ -187,33 +208,26 @@ impl AssetLoader {
         };
 
         // Spawn children nodes
-        let children = rsm
+        let children = asset_loader_context
+            .rsm
             .meshes
             .iter()
             .filter(|child_mesh| (*child_mesh.parent_name).eq(&*rsm_mesh.name))
             .filter_map(|child_mesh| {
                 Self::build_rsm_mesh(
-                    world,
-                    load_context,
+                    asset_loader_context,
                     rsm_root,
-                    rsm,
                     child_mesh,
                     rsm_textures,
-                    shade_type,
                     animation_clip,
                 )
             })
             .collect::<Vec<_>>();
 
-        let primitives = Self::build_rsm_mesh_primitives(
-            world,
-            load_context,
-            rsm_mesh,
-            rsm_textures,
-            shade_type,
-        );
+        let primitives =
+            Self::build_rsm_mesh_primitives(asset_loader_context, rsm_mesh, rsm_textures);
 
-        let mut node = world.spawn((
+        let mut node = asset_loader_context.world.spawn((
             Name::new(rsm_mesh.name.to_string()),
             SpatialBundle::from_transform(node_transform),
         ));
@@ -232,7 +246,7 @@ impl AssetLoader {
         .push_children(&children);
 
         if let Some(node_animation_target_id) =
-            Self::build_mesh_animation(load_context, rsm_mesh, animation_clip)
+            Self::build_mesh_animation(asset_loader_context.load_context, rsm_mesh, animation_clip)
         {
             node.insert(AnimationTarget {
                 id: node_animation_target_id,
@@ -243,11 +257,9 @@ impl AssetLoader {
     }
 
     fn build_rsm_mesh_primitives(
-        world: &mut World,
-        load_context: &mut LoadContext,
+        asset_loader_context: &mut AssetLoaderContext,
         rsm_mesh: &rsm::mesh::Mesh,
         rsm_textures: &[Handle<Image>],
-        shade_type: rsm::ShadeType,
     ) -> Vec<Entity> {
         let mesh_textures = if rsm_mesh.textures.is_empty() {
             rsm_mesh
@@ -256,8 +268,10 @@ impl AssetLoader {
                 .map(|id| rsm_textures[*id as usize].clone())
                 .collect()
         } else {
-            Self::load_textures(&rsm_mesh.textures, load_context)
+            Self::load_textures(&rsm_mesh.textures, asset_loader_context.load_context)
         };
+
+        let shade_type = asset_loader_context.rsm.shade_type;
 
         let mesh_vertexes = rsm_mesh
             .vertices
@@ -282,7 +296,7 @@ impl AssetLoader {
             .iter()
             .enumerate()
             .map(|(i, ((texture_id, two_sided), primitive_faces))| {
-                let mesh = load_context.add_labeled_asset(
+                let mesh = asset_loader_context.load_context.add_labeled_asset(
                     format!("{}Primitive{}", rsm_mesh.name, i),
                     match shade_type {
                         rsm::ShadeType::Unlit | rsm::ShadeType::Flat => Self::flat_mesh(
@@ -299,7 +313,7 @@ impl AssetLoader {
                         ),
                     },
                 );
-                let material = load_context.add_labeled_asset(
+                let material = asset_loader_context.load_context.add_labeled_asset(
                     format!("{}Material{}", rsm_mesh.name, i),
                     Self::mesh_material(
                         mesh_textures[*texture_id as usize].clone(),
@@ -308,7 +322,8 @@ impl AssetLoader {
                     ),
                 );
 
-                world
+                asset_loader_context
+                    .world
                     .spawn((
                         Name::new(format!("Primitive{i}")),
                         PbrBundle {
@@ -323,12 +338,13 @@ impl AssetLoader {
     }
 
     fn build_model_scale_animation(
-        rsm: &rsm::RSM,
+        asset_loader_context: &AssetLoaderContext,
         animation_clip: &mut AnimationClip,
     ) -> Option<AnimationTargetId> {
-        if rsm.scale_key_frames.is_empty() {
+        if asset_loader_context.rsm.scale_key_frames.is_empty() {
             return None;
         }
+        let rsm = asset_loader_context.rsm;
         let animation_target_id = AnimationTargetId(Uuid::new_v4());
 
         animation_clip.add_curve_to_target(
