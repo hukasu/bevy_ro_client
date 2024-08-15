@@ -21,8 +21,7 @@ impl BevyPlugin for Plugin {
             // Loader
             .register_asset_loader(AssetLoader)
             // Observers
-            // .observe(start_rsm_animation)
-            ;
+            .observe(start_rsm_animation);
     }
 }
 
@@ -30,7 +29,6 @@ pub fn start_rsm_animation(
     trigger: Trigger<OnAdd, Model>,
     mut animation_graphs: Query<(&Model, &mut AnimationPlayer, &mut AnimationTransitions)>,
 ) {
-    bevy::log::warn!("Starting RSM animation");
     let Ok((model, mut animation_player, mut animation_trasition)) =
         animation_graphs.get_mut(trigger.entity())
     else {
