@@ -6,6 +6,7 @@ use bevy::{
     log::LogPlugin,
     math::{Quat, Vec3},
     prelude::SpatialBundle,
+    render::texture::{ImagePlugin, ImageSamplerDescriptor},
     scene::Scene,
     transform::components::Transform,
     DefaultPlugins,
@@ -39,6 +40,8 @@ fn main() {
                     level: bevy::log::Level::INFO,
                     filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_common={log_level}"),
                     custom_layer: |_| None
+                }).set(ImagePlugin {
+                    default_sampler: ImageSamplerDescriptor::nearest()
                 }),
         )
         .add_systems(Startup, load_map);
@@ -82,7 +85,7 @@ fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<F
 
 fn load_map(mut commands: Commands, asset_server: Res<AssetServer>) {
     bevy::log::trace!("Loading map");
-    let rsw_handle: Handle<Scene> = asset_server.load("data/anthell01.rsw");
+    let rsw_handle: Handle<Scene> = asset_server.load("data/prontera.rsw");
 
     commands.spawn((
         Name::new("World"),
