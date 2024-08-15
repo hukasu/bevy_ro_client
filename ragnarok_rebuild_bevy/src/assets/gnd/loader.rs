@@ -8,11 +8,12 @@ use bevy::{
     prelude::SpatialBundle,
     render::{
         mesh::{Mesh, PrimitiveTopology},
+        render_asset::RenderAssetUsages,
         texture::Image,
     },
     scene::Scene,
 };
-use ragnarok_rebuild_common::assets::gnd;
+use ragnarok_rebuild_assets::gnd;
 
 use crate::assets::paths;
 
@@ -77,10 +78,13 @@ impl AssetLoader {
             .map(|(i, (vertex, uvs))| {
                 load_context.add_labeled_asset(
                     format!("Primitive{i}"),
-                    Mesh::new(PrimitiveTopology::TriangleList)
-                        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertex)
-                        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-                        .with_computed_flat_normals(),
+                    Mesh::new(
+                        PrimitiveTopology::TriangleList,
+                        RenderAssetUsages::RENDER_WORLD,
+                    )
+                    .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertex)
+                    .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+                    .with_computed_flat_normals(),
                 )
             })
             .collect::<Vec<_>>();
@@ -278,7 +282,7 @@ impl BevyAssetLoader for AssetLoader {
         reader: &'a mut Reader,
         _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
-    ) -> bevy::utils::BoxedFuture<'a, Result<Self::Asset, Self::Error>> {
+    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
         Box::pin(async {
             bevy::log::trace!("Loading GND {:?}.", load_context.path());
             let mut data: Vec<u8> = vec![];

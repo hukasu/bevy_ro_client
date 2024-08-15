@@ -1,17 +1,17 @@
 use bevy::{
     asset::{io::Reader, AssetLoader as BevyAssetLoader, AsyncReadExt, Handle, LoadContext},
     audio::AudioSource,
+    color::Color,
     core::Name,
     ecs::world::World,
     hierarchy::BuildWorldChildren,
     math::{EulerRot, Quat, Vec3},
     pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight, PointLightBundle},
-    prelude::SpatialBundle,
-    render::color::Color,
+    prelude::{SpatialBundle, TransformBundle},
     scene::{Scene, SceneBundle},
-    transform::{components::Transform, TransformBundle},
+    transform::components::Transform,
 };
-use ragnarok_rebuild_common::assets::rsw;
+use ragnarok_rebuild_assets::rsw;
 
 use crate::assets::paths;
 
@@ -37,12 +37,11 @@ impl AssetLoader {
     fn set_ambient_light(rsw: &rsw::RSW, world: &mut World, load_context: &mut LoadContext) {
         bevy::log::trace!("Setting ambient light of {:?}.", load_context.path());
         world.insert_resource(AmbientLight {
-            color: Color::RgbaLinear {
-                red: rsw.lighting_parameters.ambient_color[0],
-                green: rsw.lighting_parameters.ambient_color[1],
-                blue: rsw.lighting_parameters.ambient_color[2],
-                alpha: 1.0,
-            },
+            color: Color::linear_rgb(
+                rsw.lighting_parameters.ambient_color[0],
+                rsw.lighting_parameters.ambient_color[1],
+                rsw.lighting_parameters.ambient_color[2],
+            ),
             brightness: 1.0,
         });
     }
@@ -61,12 +60,12 @@ impl AssetLoader {
             Name::new("DirectionalLight"),
             DirectionalLightBundle {
                 directional_light: DirectionalLight {
-                    color: Color::RgbaLinear {
-                        red: rsw.lighting_parameters.diffuse_color[0],
-                        green: rsw.lighting_parameters.diffuse_color[1],
-                        blue: rsw.lighting_parameters.diffuse_color[2],
-                        alpha: rsw.lighting_parameters.shadow_map_alpha,
-                    },
+                    color: Color::linear_rgba(
+                        rsw.lighting_parameters.diffuse_color[0],
+                        rsw.lighting_parameters.diffuse_color[1],
+                        rsw.lighting_parameters.diffuse_color[2],
+                        rsw.lighting_parameters.shadow_map_alpha,
+                    ),
                     illuminance: 10000.,
                     shadows_enabled: true,
                     ..Default::default()
@@ -154,12 +153,11 @@ impl AssetLoader {
                                 light.position,
                             )),
                             point_light: PointLight {
-                                color: Color::RgbaLinear {
-                                    red: light.color[0],
-                                    green: light.color[1],
-                                    blue: light.color[2],
-                                    alpha: 1.,
-                                },
+                                color: Color::linear_rgb(
+                                    light.color[0],
+                                    light.color[1],
+                                    light.color[2],
+                                ),
                                 intensity: 32000.,
                                 range: light.range,
                                 shadows_enabled: true,

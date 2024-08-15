@@ -3,3 +3,9 @@
 
 # Rust
 /target
+
+# Environment
+.env
+
+# Others
+C#/

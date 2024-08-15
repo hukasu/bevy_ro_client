@@ -1,7 +1,6 @@
 use bevy::{
     app::{App, PluginGroup, PostStartup, Startup},
     asset::{AssetServer, Handle},
-    audio::{AudioPlugin, SpatialScale},
     core::Name,
     ecs::system::{Commands, Res},
     log::LogPlugin,
@@ -20,6 +19,8 @@ use bevy::{
 use bevy::{core_pipeline::core_3d::Camera3dBundle, math::Vec3};
 #[cfg(feature = "with-inspector")]
 use bevy_flycam::FlyCam;
+#[cfg(feature = "with-inspector")]
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use ragnarok_rebuild_bevy::{assets::rsw, RagnarokPlugin};
 
@@ -37,6 +38,7 @@ fn main() {
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
                     filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_common={log_level}"),
+                    custom_layer: |_| None
                 }),
         )
         .add_systems(Startup, load_map);
@@ -47,7 +49,7 @@ fn main() {
     }
     #[cfg(feature = "with-inspector")]
     {
-        app.add_plugins(bevy_inspector_egui::quick::WorldInspectorPlugin::default())
+        app.add_plugins(WorldInspectorPlugin::default())
             .add_plugins(bevy_flycam::prelude::PlayerPlugin)
             .insert_resource(bevy_flycam::prelude::MovementSettings {
                 sensitivity: 0.00015, // default: 0.00012
@@ -80,7 +82,7 @@ fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<F
 
 fn load_map(mut commands: Commands, asset_server: Res<AssetServer>) {
     bevy::log::trace!("Loading map");
-    let rsw_handle: Handle<Scene> = asset_server.load("data/prontera.rsw");
+    let rsw_handle: Handle<Scene> = asset_server.load("data/anthell01.rsw");
 
     commands.spawn((
         Name::new("World"),

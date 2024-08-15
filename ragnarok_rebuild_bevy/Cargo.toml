@@ -10,15 +10,16 @@ publish = false
 workspace = true
 
 [dependencies]
-ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common"}
+ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
+ragnarok_rebuild_assets = { path = "../ragnarok_rebuild_assets" }
 
 bevy = { workspace = true }
-wgpu = { workspace = true }
 futures = { workspace = true }
 
 tungstenite = { workspace = true }
 url = { workspace = true }
 
+uuid = { workspace = true }
 serde = { workspace = true }
 toml = { workspace = true }
 

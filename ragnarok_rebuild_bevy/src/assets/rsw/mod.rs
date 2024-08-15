@@ -1,14 +1,18 @@
 mod components;
 mod loader;
-mod systems;
 
 use bevy::{
     app::{Plugin as BevyPlugin, Update},
-    asset::AssetApp,
+    asset::{AssetApp, Handle},
+    core::Name,
+    prelude::{Added, AnimationPlayer, Children, OnAdd, Query, Trigger, With},
+    scene::Scene,
 };
 
 pub use self::{components::World, loader::AssetLoader};
-pub use ragnarok_rebuild_common::assets::rsw::Error;
+pub use ragnarok_rebuild_assets::rsw::Error;
+
+use super::rsm;
 
 pub struct Plugin;
 
@@ -23,8 +27,6 @@ impl BevyPlugin for Plugin {
             .register_type::<components::EnvironmentalSounds>()
             .register_type::<components::EnvironmentalSound>()
             // Loader
-            .register_asset_loader(AssetLoader)
-            // Systems
-            .add_systems(Update, systems::start_animations);
+            .register_asset_loader(AssetLoader);
     }
 }

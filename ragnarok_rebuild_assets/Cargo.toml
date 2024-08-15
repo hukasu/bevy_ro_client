@@ -1,0 +1,17 @@
+[package]
+name = "ragnarok_rebuild_assets"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lints]
+workspace = true
+
+[dependencies]
+ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
+
+log = { workspace = true }
+
+flate2 = { workspace = true }
+encoding_rs = { workspace = true }

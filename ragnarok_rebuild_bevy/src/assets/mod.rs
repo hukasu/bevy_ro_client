@@ -3,6 +3,7 @@ pub mod grf;
 mod paths;
 pub mod rsm;
 pub mod rsw;
+pub mod water_plane;
 
 use bevy::{
     app::{Plugin, PluginGroup as BevyPluginGroup, PluginGroupBuilder},
@@ -22,6 +23,7 @@ impl BevyPluginGroup for PluginGroup {
             .add_after::<AssetPlugin, gnd::Plugin>(gnd::Plugin)
             .add_after::<AssetPlugin, rsm::Plugin>(rsm::Plugin)
             .add_after::<AssetPlugin, rsw::Plugin>(rsw::Plugin)
+            .add_after::<AssetPlugin, water_plane::Plugin>(water_plane::Plugin)
     }
 }
 

@@ -4,7 +4,7 @@ use bevy::{
 };
 use futures::AsyncReadExt;
 
-use ragnarok_rebuild_common::spr::{Sprite, SpriteError};
+use ragnarok_rebuild_common::assets::spr::{Sprite, SpriteError};
 
 #[derive(Debug, Asset, TypePath)]
 pub struct SpriteAsset {

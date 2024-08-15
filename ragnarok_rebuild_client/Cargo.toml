@@ -12,14 +12,14 @@ workspace = true
 with-inspector = ["bevy-inspector-egui", "bevy_flycam"]
 
 [dependencies]
-ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common"}
-ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy"}
+ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
+ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
 
 bevy = { workspace = true }
-bevy-inspector-egui = { version = "0.22", optional = true}
-bevy_flycam = { version = "0.12", optional = true}
+bevy-inspector-egui = { version = "0.25.2", optional = true }
+bevy_flycam = { version = "0.14.1", optional = true }
 
-tungstenite ={ workspace = true }
+tungstenite = { workspace = true }
 url = { workspace = true }
 
 serde = { workspace = true }

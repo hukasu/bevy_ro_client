@@ -3,9 +3,8 @@ use std::{
     path::Path,
 };
 
-use bevy::{
-    asset::io::{AssetReader as BevyAsserReader, AssetReaderError, PathStream, Reader, VecReader},
-    utils::BoxedFuture,
+use bevy::asset::io::{
+    AssetReader as BevyAsserReader, AssetReaderError, PathStream, Reader, VecReader,
 };
 
 pub struct AssetReader {
@@ -24,7 +23,8 @@ impl BevyAsserReader for AssetReader {
     fn read<'a>(
         &'a self,
         path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<Reader<'a>>, AssetReaderError>> {
+    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Box<Reader<'a>>, AssetReaderError>>
+    {
         Box::pin(async {
             match self.grf.read_file(path) {
                 Ok(data) => {
@@ -32,10 +32,13 @@ impl BevyAsserReader for AssetReader {
                     Ok(reader)
                 }
                 Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
-                Err(err) => Err(AssetReaderError::Io(Error::new(
-                    ErrorKind::Other,
-                    format!("An error occurred while checking if path is directory. '{err}'"),
-                ))),
+                Err(err) => Err(AssetReaderError::Io(
+                    Error::new(
+                        ErrorKind::Other,
+                        format!("An error occurred while checking if path is directory. '{err}'"),
+                    )
+                    .into(),
+                )),
             }
         })
     }
@@ -43,22 +46,26 @@ impl BevyAsserReader for AssetReader {
     fn read_meta<'a>(
         &'a self,
         path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<Reader<'a>>, AssetReaderError>> {
+    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Box<Reader<'a>>, AssetReaderError>>
+    {
         Box::pin(async { Err(AssetReaderError::NotFound(path.to_path_buf())) })
     }
 
     fn is_directory<'a>(
         &'a self,
         path: &'a Path,
-    ) -> BoxedFuture<'a, Result<bool, AssetReaderError>> {
+    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<bool, AssetReaderError>> {
         Box::pin(async move {
             match self.grf.is_directory(path) {
                 Ok(is_dir) => Ok(is_dir),
                 Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
-                Err(err) => Err(AssetReaderError::Io(Error::new(
-                    ErrorKind::Other,
-                    format!("An error occurred while checking if path is directory. '{err}'"),
-                ))),
+                Err(err) => Err(AssetReaderError::Io(
+                    Error::new(
+                        ErrorKind::Other,
+                        format!("An error occurred while checking if path is directory. '{err}'"),
+                    )
+                    .into(),
+                )),
             }
         })
     }
@@ -66,7 +73,8 @@ impl BevyAsserReader for AssetReader {
     fn read_directory<'a>(
         &'a self,
         path: &'a Path,
-    ) -> BoxedFuture<'a, Result<Box<PathStream>, AssetReaderError>> {
+    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Box<PathStream>, AssetReaderError>>
+    {
         Box::pin(async {
             match self.grf.read_directory(path) {
                 Ok(paths) => {
@@ -74,10 +82,13 @@ impl BevyAsserReader for AssetReader {
                     Ok(stream)
                 }
                 Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
-                Err(err) => Err(AssetReaderError::Io(Error::new(
-                    ErrorKind::Other,
-                    format!("An error occurred while checking if path is directory. '{err}'"),
-                ))),
+                Err(err) => Err(AssetReaderError::Io(
+                    Error::new(
+                        ErrorKind::Other,
+                        format!("An error occurred while checking if path is directory. '{err}'"),
+                    )
+                    .into(),
+                )),
             }
         })
     }

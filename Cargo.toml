@@ -1,22 +1,35 @@
 [workspace]
-members = ["ragnarok_rebuild_bevy", "ragnarok_rebuild_common", "ragnarok_rebuild_client", "ragnarok_rebuild_server"]
+members = [
+    "ragnarok_rebuild_common",
+    "ragnarok_rebuild_assets",
+    "ragnarok_rebuild_bevy",
+    "ragnarok_rebuild_client",
+    "ragnarok_rebuild_server",
+]
 resolver = "2"
 
 [workspace.dependencies]
-bevy = {version = "0.12", features = ["bmp", "jpeg", "wav"]}
+bevy = { version = "0.14.1", features = ["bmp", "jpeg", "wav"] }
+
+log = "0.4.22"
 
 futures = "0.3.29"
 
-tungstenite = "0.21.0"
+tungstenite = "0.23.0"
 url = "2.4.1"
 
+uuid = "1.10.0"
 serde = "1.0.193"
 toml = "0.8.8"
 
 flate2 = "1.0"
 encoding_rs = "0.8.33"
 
-sqlx = { version = "0.7.3", features = ["runtime-async-std", "postgres", "uuid"]}
+sqlx = { version = "0.8.0", features = [
+    "runtime-async-std",
+    "postgres",
+    "uuid",
+] }
 
 [workspace.lints.clippy]
 todo = "warn"
