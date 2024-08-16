@@ -158,7 +158,6 @@ impl AssetLoader {
                                     light.color[1],
                                     light.color[2],
                                 ),
-                                intensity: 32000.,
                                 range: light.range,
                                 shadows_enabled: true,
                                 ..Default::default()
