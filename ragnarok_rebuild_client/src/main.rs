@@ -5,6 +5,7 @@ use bevy::{
     ecs::system::{Commands, Res},
     log::LogPlugin,
     math::{Quat, Vec3},
+    pbr::{DirectionalLightShadowMap, PointLightShadowMap},
     prelude::SpatialBundle,
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
     scene::Scene,
@@ -30,11 +31,15 @@ fn main() {
 
     let mut app = App::new();
     app
-    // Plugins
-    .add_plugins(RagnarokPlugin)
+        // Resources
+        .insert_resource(DirectionalLightShadowMap {size: 2048})
+        .insert_resource(PointLightShadowMap { size: 32})
+        // Plugins
+        .add_plugins(RagnarokPlugin)
         .add_plugins(
             DefaultPlugins
                 .build()
+                // AssetPlugin is initialized by RagnarokPlugin
                 .disable::<bevy::asset::AssetPlugin>()
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
@@ -44,6 +49,7 @@ fn main() {
                     default_sampler: ImageSamplerDescriptor::nearest()
                 }),
         )
+        // Systems
         .add_systems(Startup, load_map);
 
     #[cfg(not(feature = "with-inspector"))]
