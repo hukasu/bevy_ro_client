@@ -42,7 +42,7 @@ impl AssetLoader {
                 rsw.lighting_parameters.ambient_color[1],
                 rsw.lighting_parameters.ambient_color[2],
             ),
-            brightness: 1.0,
+            ..Default::default()
         });
     }
 
