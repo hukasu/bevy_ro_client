@@ -6,8 +6,9 @@ use bevy::{
     input::ButtonInput,
     log::LogPlugin,
     pbr::{DirectionalLightShadowMap, PointLightShadowMap},
-    prelude::{KeyCode, Res},
+    prelude::{not, IntoSystemConfigs, KeyCode, Res},
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
+    window::{PrimaryWindow, Window},
     DefaultPlugins,
 };
 #[cfg(feature = "with-inspector")]
@@ -68,7 +69,7 @@ fn main() {
 
     app
         // Systems
-        .add_systems(Update, load_map);
+        .add_systems(Update, load_map.run_if(not(is_input_captured)));
 
     app.run();
 }
@@ -90,6 +91,21 @@ fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<F
     };
 
     commands.entity(flycam).insert(SpatialListener::default());
+}
+
+fn is_input_captured(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
+    if cfg!(feature = "with-inspector") {
+        if let Ok(primary_window) = windows.get_single() {
+            matches!(
+                primary_window.cursor.grab_mode,
+                bevy::window::CursorGrabMode::Confined
+            )
+        } else {
+            false
+        }
+    } else {
+        false
+    }
 }
 
 fn load_map(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
