@@ -13,7 +13,7 @@ use bevy::{
 
 use crate::assets::rsm;
 
-const NORMAL_GIZMOS_LENGHT: f32 = 5.;
+const NORMAL_GIZMOS_LENGHT: f32 = 0.5;
 
 pub struct ShowRsmVertexNormalsPlugin;
 
@@ -70,10 +70,10 @@ fn show_rsm_vertex_normal(
                 let vertex = Vec3::from_array(*v);
                 let normal = Vec3::from_array(*n);
                 let start = global_transform.transform_point(vertex);
-                let end =
-                    global_transform.transform_point(vertex + (normal * NORMAL_GIZMOS_LENGHT));
-                let color = Color::srgb_from_array((start - end).normalize().to_array());
-                gizmos.line(start, end, color);
+                let direction =
+                    (global_transform.transform_point(vertex + normal) - start).normalize();
+                let color = Color::srgb_from_array(direction.to_array());
+                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
             }
         }
     }
