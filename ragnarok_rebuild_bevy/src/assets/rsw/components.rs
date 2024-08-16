@@ -21,7 +21,7 @@ pub struct Models;
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// Component marker for a entity that holds all the models of a [World]
+/// An animated prop that is part of the [World]
 pub struct WorldModel {
     pub animation_type: i32,
     pub animation_speed: f32,

@@ -1,19 +1,11 @@
 mod components;
 mod loader;
 
-use bevy::{
-    app::{Plugin as BevyPlugin, Update},
-    asset::{AssetApp, Handle},
-    core::Name,
-    prelude::{Added, AnimationPlayer, Children, OnAdd, Query, Trigger, With},
-    scene::Scene,
-};
+use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
 
-pub use self::{components::World, loader::AssetLoader};
 pub use ragnarok_rebuild_assets::rsw::Error;
 
-use super::rsm;
-
+pub use self::{components::World, loader::AssetLoader};
 pub struct Plugin;
 
 impl BevyPlugin for Plugin {
