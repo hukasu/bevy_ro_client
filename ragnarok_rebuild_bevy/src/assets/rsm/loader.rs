@@ -212,6 +212,7 @@ impl AssetLoader {
             .rsm
             .meshes
             .iter()
+            .filter(|child_mesh| !std::ptr::addr_eq(*child_mesh, rsm_mesh))
             .filter(|child_mesh| (*child_mesh.parent_name).eq(&*rsm_mesh.name))
             .filter_map(|child_mesh| {
                 Self::build_rsm_mesh(
