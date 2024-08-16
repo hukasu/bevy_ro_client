@@ -1,15 +1,13 @@
+mod world;
+
 use bevy::{
-    app::{App, PluginGroup, PostStartup, Startup},
-    asset::{AssetServer, Handle},
-    core::Name,
-    ecs::system::{Commands, Res},
+    app::{App, PluginGroup, PostStartup, Update},
+    ecs::system::Commands,
+    input::ButtonInput,
     log::LogPlugin,
-    math::{Quat, Vec3},
     pbr::{DirectionalLightShadowMap, PointLightShadowMap},
-    prelude::SpatialBundle,
+    prelude::{KeyCode, Res},
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
-    scene::Scene,
-    transform::components::Transform,
     DefaultPlugins,
 };
 #[cfg(feature = "with-inspector")]
@@ -24,7 +22,9 @@ use bevy_flycam::FlyCam;
 #[cfg(feature = "with-inspector")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use ragnarok_rebuild_bevy::{assets::rsw, RagnarokPlugin};
+use ragnarok_rebuild_bevy::RagnarokPlugin;
+
+use world::{ChangeWorld, WorldPlugin};
 
 fn main() {
     let log_level = "debug";
@@ -49,8 +49,7 @@ fn main() {
                     default_sampler: ImageSamplerDescriptor::nearest()
                 }),
         )
-        // Systems
-        .add_systems(Startup, load_map);
+        .add_plugins(WorldPlugin);
 
     #[cfg(not(feature = "with-inspector"))]
     {
@@ -66,6 +65,10 @@ fn main() {
             })
             .add_systems(PostStartup, add_listener_to_fly_cam);
     }
+
+    app
+        // Systems
+        .add_systems(Update, load_map);
 
     app.run();
 }
@@ -89,18 +92,30 @@ fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<F
     commands.entity(flycam).insert(SpatialListener::default());
 }
 
-fn load_map(mut commands: Commands, asset_server: Res<AssetServer>) {
-    bevy::log::trace!("Loading map");
-    let rsw_handle: Handle<Scene> = asset_server.load("data/prontera.rsw");
-
-    commands.spawn((
-        Name::new("World"),
-        rsw::World,
-        rsw_handle,
-        SpatialBundle {
-            transform: Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI))
-                .with_scale(Vec3::splat(0.2)),
-            ..Default::default()
-        },
-    ));
+fn load_map(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
+    if keyboard_input.just_pressed(KeyCode::KeyQ) {
+        commands.trigger(ChangeWorld {
+            next_world: "data/prontera.rsw".into(),
+        });
+    } else if keyboard_input.just_pressed(KeyCode::KeyW) {
+        commands.trigger(ChangeWorld {
+            next_world: "data/morocc.rsw".into(),
+        });
+    } else if keyboard_input.just_pressed(KeyCode::KeyE) {
+        commands.trigger(ChangeWorld {
+            next_world: "data/payon.rsw".into(),
+        });
+    } else if keyboard_input.just_pressed(KeyCode::KeyR) {
+        commands.trigger(ChangeWorld {
+            next_world: "data/yuno.rsw".into(),
+        });
+    } else if keyboard_input.just_pressed(KeyCode::KeyA) {
+        commands.trigger(ChangeWorld {
+            next_world: "data/pay_dun01.rsw".into(),
+        });
+    } else if keyboard_input.just_pressed(KeyCode::KeyS) {
+        commands.trigger(ChangeWorld {
+            next_world: "data/moc_pryd03.rsw".into(),
+        });
+    }
 }
