@@ -565,14 +565,17 @@ impl AssetLoader {
             vertex_colors.append(&mut face_colors);
         }
 
-        Mesh::new(
-            PrimitiveTopology::TriangleList,
-            RenderAssetUsages::RENDER_WORLD,
-        )
-        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertexes)
-        // .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vertex_colors)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-        .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+        let asset_usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
+        Mesh::new(PrimitiveTopology::TriangleList, asset_usage)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertexes)
+            // .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vertex_colors)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
     }
 
     #[must_use]
