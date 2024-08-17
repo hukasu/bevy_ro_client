@@ -1,5 +1,3 @@
-mod world;
-
 use bevy::{
     app::{App, PluginGroup, PostStartup, Update},
     ecs::system::Commands,
@@ -23,12 +21,13 @@ use bevy_flycam::FlyCam;
 #[cfg(feature = "with-inspector")]
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
-use ragnarok_rebuild_bevy::RagnarokPlugin;
-
-use world::{ChangeWorld, WorldPlugin};
+use ragnarok_rebuild_bevy::{
+    world::{LoadWorld, UnloadWorld},
+    RagnarokPlugin,
+};
 
 fn main() {
-    let log_level = "debug";
+    let log_level = "trace";
 
     let mut app = App::new();
     app
@@ -44,13 +43,12 @@ fn main() {
                 .disable::<bevy::asset::AssetPlugin>()
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
-                    filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_common={log_level}"),
+                    filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_assets={log_level},ragnarok_rebuild_common={log_level}"),
                     custom_layer: |_| None
                 }).set(ImagePlugin {
                     default_sampler: ImageSamplerDescriptor::nearest()
                 }),
-        )
-        .add_plugins(WorldPlugin);
+        );
 
     #[cfg(not(feature = "with-inspector"))]
     {
@@ -110,28 +108,34 @@ fn is_input_captured(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
 
 fn load_map(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
     if keyboard_input.just_pressed(KeyCode::KeyQ) {
-        commands.trigger(ChangeWorld {
-            next_world: "data/prontera.rsw".into(),
+        commands.trigger(UnloadWorld);
+        commands.trigger(LoadWorld {
+            world: "data/prontera.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyW) {
-        commands.trigger(ChangeWorld {
-            next_world: "data/morocc.rsw".into(),
+        commands.trigger(UnloadWorld);
+        commands.trigger(LoadWorld {
+            world: "data/morocc.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyE) {
-        commands.trigger(ChangeWorld {
-            next_world: "data/payon.rsw".into(),
+        commands.trigger(UnloadWorld);
+        commands.trigger(LoadWorld {
+            world: "data/payon.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyR) {
-        commands.trigger(ChangeWorld {
-            next_world: "data/yuno.rsw".into(),
+        commands.trigger(UnloadWorld);
+        commands.trigger(LoadWorld {
+            world: "data/yuno.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyA) {
-        commands.trigger(ChangeWorld {
-            next_world: "data/pay_dun01.rsw".into(),
+        commands.trigger(UnloadWorld);
+        commands.trigger(LoadWorld {
+            world: "data/pay_dun01.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyS) {
-        commands.trigger(ChangeWorld {
-            next_world: "data/moc_pryd03.rsw".into(),
+        commands.trigger(UnloadWorld);
+        commands.trigger(LoadWorld {
+            world: "data/moc_pryd03.rsw".into(),
         });
     }
 }

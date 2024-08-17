@@ -5,13 +5,9 @@ use bevy::{
     reflect::Reflect,
 };
 
-#[derive(Debug, Component)]
-/// Represents a map
-pub struct World;
-
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// Component marker for the ground of a [World]
+/// Component marker for the ground of a [`crate::world::World`]
 pub struct Ground;
 
 #[derive(Debug, Default, Component, Reflect)]
