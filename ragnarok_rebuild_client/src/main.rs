@@ -1,6 +1,6 @@
 use bevy::{
     app::{App, PluginGroup, PostStartup, Update},
-    asset::{io::AssetSourceBuilder, AssetApp},
+    asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
     ecs::system::Commands,
     input::ButtonInput,
     log::LogPlugin,
@@ -23,6 +23,7 @@ use bevy_flycam::FlyCam;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use ragnarok_rebuild_bevy::{
+    assets::{grf, paths::BASE_DATA_FOLDER},
     world::{LoadWorld, UnloadWorld},
     RagnarokPlugin,
 };
@@ -37,21 +38,31 @@ fn main() {
         .insert_resource(PointLightShadowMap { size: 32})
         // Asset Sources
         .register_asset_source("bgm", AssetSourceBuilder::platform_default("BGM/", None))
+        .register_asset_source(
+            bevy::asset::io::AssetSourceId::Default,
+            bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
+                let grf = grf::AssetReader::new(std::path::Path::new("data.grf")).unwrap();
+                Box::new(grf)
+            }),
+        )
         // Plugins
-        .add_plugins(RagnarokPlugin)
         .add_plugins(
             DefaultPlugins
                 .build()
-                // AssetPlugin is initialized by RagnarokPlugin
-                .disable::<bevy::asset::AssetPlugin>()
+                .set(AssetPlugin {
+                    file_path: BASE_DATA_FOLDER.to_owned(),
+                    ..Default::default()
+                })
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
                     filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_assets={log_level},ragnarok_rebuild_common={log_level}"),
                     custom_layer: |_| None
-                }).set(ImagePlugin {
+                })
+                .set(ImagePlugin {
                     default_sampler: ImageSamplerDescriptor::nearest()
                 }),
-        );
+        )
+        .add_plugins(RagnarokPlugin);
 
     #[cfg(not(feature = "with-inspector"))]
     {
