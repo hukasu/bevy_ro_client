@@ -9,7 +9,7 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-bevy = { version = "0.14.1", features = ["bmp", "jpeg", "wav"] }
+bevy = { version = "0.14.1", features = ["bmp", "jpeg", "wav", "mp3"] }
 
 log = "0.4.22"
 

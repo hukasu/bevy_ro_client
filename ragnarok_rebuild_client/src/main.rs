@@ -1,5 +1,6 @@
 use bevy::{
     app::{App, PluginGroup, PostStartup, Update},
+    asset::{io::AssetSourceBuilder, AssetApp},
     ecs::system::Commands,
     input::ButtonInput,
     log::LogPlugin,
@@ -34,6 +35,8 @@ fn main() {
         // Resources
         .insert_resource(DirectionalLightShadowMap {size: 2048})
         .insert_resource(PointLightShadowMap { size: 32})
+        // Asset Sources
+        .register_asset_source("bgm", AssetSourceBuilder::platform_default("BGM/", None))
         // Plugins
         .add_plugins(RagnarokPlugin)
         .add_plugins(
