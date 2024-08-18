@@ -11,14 +11,17 @@ use bevy::{
     pbr::{PbrBundle, StandardMaterial},
     prelude::{AnimationGraph, AnimationTransitions, Entity, Interpolation, SpatialBundle},
     render::{
-        mesh::Mesh, primitives::Aabb, render_asset::RenderAssetUsages,
-        render_resource::PrimitiveTopology, texture::Image,
+        mesh::{Indices, Mesh},
+        primitives::Aabb,
+        render_asset::RenderAssetUsages,
+        render_resource::PrimitiveTopology,
+        texture::Image,
     },
     scene::Scene,
     transform::components::Transform,
     utils::hashbrown::{hash_map::Entry, HashMap},
 };
-use ragnarok_rebuild_assets::rsm;
+use ragnarok_rebuild_assets::rsm::{self, mesh::Face};
 use uuid::Uuid;
 
 use crate::assets::paths;
@@ -306,7 +309,7 @@ impl AssetLoader {
                             &mesh_vertex_colors,
                             &mesh_uvs,
                         ),
-                        rsm::ShadeType::Smooth => Self::flat_mesh(
+                        rsm::ShadeType::Smooth => Self::smooth_mesh(
                             primitive_faces,
                             &mesh_vertexes,
                             &mesh_vertex_colors,
@@ -453,9 +456,7 @@ impl AssetLoader {
 
     #[must_use]
     #[allow(clippy::type_complexity)]
-    fn split_mesh_into_primitives(
-        mesh: &rsm::mesh::Mesh,
-    ) -> HashMap<(u16, u8), Vec<&rsm::mesh::Face>> {
+    fn split_mesh_into_primitives(mesh: &rsm::mesh::Mesh) -> HashMap<(u16, u8), Vec<&Face>> {
         mesh.faces.iter().fold(HashMap::new(), |mut hm, face| {
             match hm.entry((face.texture_id, face.two_side)) {
                 Entry::Vacant(entry) => {
@@ -527,7 +528,7 @@ impl AssetLoader {
 
     #[must_use]
     fn flat_mesh(
-        primitive_faces: &[&rsm::mesh::Face],
+        primitive_faces: &[&Face],
         mesh_vertexes: &[Vec3],
         mesh_vertex_colors: &[Vec4],
         mesh_uvs: &[Vec2],
@@ -535,9 +536,8 @@ impl AssetLoader {
         let mut vertexes = vec![];
         let mut uvs = vec![];
         let mut vertex_colors = vec![];
-        let mut normals = vec![];
 
-        for rsm::mesh::Face {
+        for Face {
             vertices: face_vertex_ids,
             uv: face_uvs_ids,
             texture_id: _,
@@ -553,14 +553,6 @@ impl AssetLoader {
                 .map(|id| mesh_vertex_colors[id as usize])
                 .to_vec();
 
-            normals.append(&mut vec![
-                Self::face_normal(
-                    face_vertexes[0],
-                    face_vertexes[1],
-                    face_vertexes[2]
-                );
-                3
-            ]);
             vertexes.append(&mut face_vertexes);
             uvs.append(&mut face_uvs);
             vertex_colors.append(&mut face_colors);
@@ -576,19 +568,57 @@ impl AssetLoader {
             .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertexes)
             // .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vertex_colors)
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
+            .with_computed_flat_normals()
     }
 
     #[must_use]
     fn smooth_mesh(
-        face_tris: &[(&[u16; 3], &[u16; 3], &[i32])],
+        primitive_faces: &[&Face],
         mesh_vertexes: &[Vec3],
         mesh_vertex_colors: &[Vec4],
         mesh_uvs: &[Vec2],
-        shade_type: rsm::ShadeType,
-        normal: Vec3,
     ) -> Mesh {
-        todo!()
+        let mut cache = HashMap::new();
+
+        let mut vertices = vec![];
+        let mut uvs = vec![];
+        let mut vertex_colors = vec![];
+        let mut indices = vec![];
+
+        for face in primitive_faces {
+            for vertex_uv_pair in face.vertices.into_iter().zip(face.uv) {
+                let cache_len = cache.len();
+                match cache.entry(vertex_uv_pair) {
+                    Entry::Occupied(occupied) => {
+                        indices.push(*occupied.get());
+                    }
+                    Entry::Vacant(vacant) => {
+                        #[allow(clippy::expect_used)]
+                        let new_index = u16::try_from(cache_len)
+                            .expect("there shouldn't be more that u16::MAX vertices.");
+                        vertices.push(mesh_vertexes[usize::from(vertex_uv_pair.0)]);
+                        uvs.push(mesh_uvs[usize::from(vertex_uv_pair.1)]);
+                        vertex_colors.push(mesh_vertex_colors[usize::from(vertex_uv_pair.1)]);
+                        indices.push(new_index);
+
+                        vacant.insert(new_index);
+                    }
+                }
+            }
+        }
+
+        let asset_usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
+        Mesh::new(PrimitiveTopology::TriangleList, asset_usage)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices)
+            // .with_inserted_attribute(Mesh::ATTRIBUTE_COLOR, vertex_colors)
+            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+            .with_inserted_indices(Indices::U16(indices))
+            .with_computed_smooth_normals()
     }
 
     #[must_use]
@@ -601,43 +631,6 @@ impl AssetLoader {
             reflectance: 0.2,
             ..Default::default()
         }
-    }
-
-    #[must_use]
-    fn smoothing_groups_normals(
-        mesh: &rsm::mesh::Mesh,
-        mesh_vertexes: &[Vec3],
-    ) -> HashMap<i32, Vec3> {
-        let mut normals = mesh.faces.iter().fold(HashMap::new(), |mut hm, face| {
-            let face_normal = Self::face_normal(
-                mesh_vertexes[face.vertices[0] as usize],
-                mesh_vertexes[face.vertices[1] as usize],
-                mesh_vertexes[face.vertices[2] as usize],
-            );
-
-            for smoothing_group in face.smoothing_group.iter() {
-                match hm.entry(*smoothing_group) {
-                    Entry::Vacant(entry) => {
-                        entry.insert(face_normal);
-                    }
-                    Entry::Occupied(mut entry) => {
-                        *entry.get_mut() += face_normal;
-                    }
-                }
-            }
-            hm
-        });
-        normals.iter_mut().for_each(|(_, normal)| {
-            *normal = normal.normalize();
-        });
-        normals
-    }
-
-    #[must_use]
-    fn face_normal(v1: Vec3, v2: Vec3, v3: Vec3) -> Vec3 {
-        let u = v2 - v1;
-        let v = v3 - v1;
-        u.cross(v).normalize()
     }
 
     #[must_use]
