@@ -1,22 +1,23 @@
 use bevy::{
-    app::{App, PluginGroup, PostStartup, Update},
+    app::{App, PluginGroup, Update},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
     ecs::system::Commands,
     input::ButtonInput,
     log::LogPlugin,
     pbr::{DirectionalLightShadowMap, PointLightShadowMap},
-    prelude::{not, IntoSystemConfigs, KeyCode, Res},
+    prelude::{not, IntoSystemConfigs, KeyCode, Query, Res, With},
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
     window::{PrimaryWindow, Window},
     DefaultPlugins,
 };
-#[cfg(feature = "with-inspector")]
-use bevy::{
-    audio::SpatialListener,
-    ecs::{entity::Entity, query::With, system::Query},
-};
+
 #[cfg(not(feature = "with-inspector"))]
-use bevy::{core_pipeline::core_3d::Camera3dBundle, math::Vec3};
+use bevy::{
+    core_pipeline::core_3d::Camera3dBundle, math::Vec3, prelude::Startup, prelude::Transform,
+};
+
+#[cfg(feature = "with-inspector")]
+use bevy::{app::PostStartup, audio::SpatialListener, ecs::entity::Entity};
 #[cfg(feature = "with-inspector")]
 use bevy_flycam::FlyCam;
 #[cfg(feature = "with-inspector")]
