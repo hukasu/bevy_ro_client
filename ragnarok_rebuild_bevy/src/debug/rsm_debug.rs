@@ -8,7 +8,7 @@ use bevy::{
         Query, ReflectResource, Res, Resource, With,
     },
     reflect::Reflect,
-    render::mesh::VertexAttributeValues,
+    render::mesh::{Indices, VertexAttributeValues},
 };
 
 use crate::assets::rsm;
@@ -51,7 +51,7 @@ fn show_rsm_vertex_normal(
 ) {
     for entity in models.iter() {
         for child in children.iter_descendants(entity) {
-            let Ok(child_global_transform) = global_transforms.get(child) else {
+            let Ok(global_transform) = global_transforms.get(child) else {
                 continue;
             };
             let Ok(mesh_handle) = model_primitives.get(child) else {
@@ -71,15 +71,28 @@ fn show_rsm_vertex_normal(
                 continue;
             };
 
-            let global_transform = child_global_transform;
-            for (v, n) in vertex.iter().zip(normals) {
-                let vertex = Vec3::from_array(*v);
-                let normal = Vec3::from_array(*n);
-                let start = global_transform.transform_point(vertex);
-                let direction =
-                    (global_transform.transform_point(vertex + normal) - start).normalize();
-                let color = Color::srgb_from_array(direction.to_array());
-                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
+            if let Some(Indices::U16(indices)) = mesh.indices() {
+                for i in indices {
+                    let v = vertex[usize::from(*i)];
+                    let n = normals[usize::from(*i)];
+                    let vertex = Vec3::from_array(v);
+                    let normal = Vec3::from_array(n);
+                    let start = global_transform.transform_point(vertex);
+                    let direction =
+                        (global_transform.transform_point(vertex + normal) - start).normalize();
+                    let color = Color::srgb_from_array(direction.to_array());
+                    gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
+                }
+            } else {
+                for (v, n) in vertex.iter().zip(normals) {
+                    let vertex = Vec3::from_array(*v);
+                    let normal = Vec3::from_array(*n);
+                    let start = global_transform.transform_point(vertex);
+                    let direction =
+                        (global_transform.transform_point(vertex + normal) - start).normalize();
+                    let color = Color::srgb_from_array(direction.to_array());
+                    gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
+                }
             }
         }
     }
@@ -99,7 +112,7 @@ fn show_rsm_edges(
 ) {
     for entity in models.iter() {
         for child in children.iter_descendants(entity) {
-            let Ok(child_global_transform) = global_transforms.get(child) else {
+            let Ok(global_transform) = global_transforms.get(child) else {
                 continue;
             };
             let Ok(mesh_handle) = model_primitives.get(child) else {
@@ -113,29 +126,47 @@ fn show_rsm_edges(
             else {
                 continue;
             };
+            let vertex = vertex
+                .iter()
+                .map(|triangle| Vec3::from_array(*triangle))
+                .collect::<Vec<_>>();
 
-            let global_transform = child_global_transform;
-            for v in vertex.chunks(3).map(|triad| {
-                triad
-                    .iter()
-                    .map(|vertex| Vec3::from_array(*vertex))
-                    .collect::<Vec<_>>()
-            }) {
-                gizmos.line(
-                    global_transform.transform_point(v[0]),
-                    global_transform.transform_point(v[1]),
-                    color::palettes::css::ORANGE,
-                );
-                gizmos.line(
-                    global_transform.transform_point(v[0]),
-                    global_transform.transform_point(v[2]),
-                    color::palettes::css::ORANGE,
-                );
-                gizmos.line(
-                    global_transform.transform_point(v[1]),
-                    global_transform.transform_point(v[2]),
-                    color::palettes::css::ORANGE,
-                );
+            if let Some(Indices::U16(indices)) = mesh.indices() {
+                for i in indices.chunks(3) {
+                    gizmos.line(
+                        global_transform.transform_point(vertex[usize::from(i[0])]),
+                        global_transform.transform_point(vertex[usize::from(i[1])]),
+                        color::palettes::css::ORANGE,
+                    );
+                    gizmos.line(
+                        global_transform.transform_point(vertex[usize::from(i[0])]),
+                        global_transform.transform_point(vertex[usize::from(i[2])]),
+                        color::palettes::css::ORANGE,
+                    );
+                    gizmos.line(
+                        global_transform.transform_point(vertex[usize::from(i[1])]),
+                        global_transform.transform_point(vertex[usize::from(i[2])]),
+                        color::palettes::css::ORANGE,
+                    );
+                }
+            } else {
+                for v in vertex.chunks(3) {
+                    gizmos.line(
+                        global_transform.transform_point(v[0]),
+                        global_transform.transform_point(v[1]),
+                        color::palettes::css::ORANGE,
+                    );
+                    gizmos.line(
+                        global_transform.transform_point(v[0]),
+                        global_transform.transform_point(v[2]),
+                        color::palettes::css::ORANGE,
+                    );
+                    gizmos.line(
+                        global_transform.transform_point(v[1]),
+                        global_transform.transform_point(v[2]),
+                        color::palettes::css::ORANGE,
+                    );
+                }
             }
         }
     }
