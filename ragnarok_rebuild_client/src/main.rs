@@ -1,3 +1,5 @@
+mod client;
+
 use bevy::{
     app::{App, PluginGroup, Update},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
@@ -28,6 +30,8 @@ use ragnarok_rebuild_bevy::{
     world::{LoadWorld, UnloadWorld},
     RagnarokPlugin,
 };
+
+use self::client::ClientPlugin;
 
 fn main() {
     let log_level = "trace";
@@ -81,6 +85,8 @@ fn main() {
     }
 
     app
+        // Plugins
+        .add_plugins(ClientPlugin)
         // Systems
         .add_systems(Update, load_map.run_if(not(is_input_captured)));
 

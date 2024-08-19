@@ -13,8 +13,10 @@ use bevy::{
     scene::Scene,
 };
 
-use self::components::World;
-pub use self::events::{LoadWorld, UnloadWorld};
+pub use self::{
+    components::World,
+    events::{LoadWorld, UnloadWorld},
+};
 
 pub struct WorldPlugin;
 
