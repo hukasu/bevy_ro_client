@@ -6,10 +6,7 @@ use bevy::{
     asset::{AssetServer, Handle},
     core::Name,
     ecs::query::QuerySingleError,
-    math::{Quat, Vec3},
-    prelude::{
-        Commands, DespawnRecursiveExt, Entity, Query, Res, SpatialBundle, Transform, Trigger, With,
-    },
+    prelude::{Commands, DespawnRecursiveExt, Entity, Query, Res, SpatialBundle, Trigger, With},
     scene::Scene,
 };
 
@@ -36,11 +33,7 @@ fn load_world(trigger: Trigger<LoadWorld>, mut commands: Commands, asset_loader:
         Name::new(trigger.event().world.clone()),
         World,
         next_world_handle,
-        SpatialBundle {
-            transform: Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI))
-                .with_scale(Vec3::splat(0.2)),
-            ..Default::default()
-        },
+        SpatialBundle::default(),
     ));
 }
 

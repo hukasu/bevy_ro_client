@@ -3,7 +3,10 @@ mod components;
 use bevy::{
     app::{Plugin, Startup},
     core::Name,
-    prelude::{BuildChildren, Commands, Entity, OnAdd, Query, SpatialBundle, Trigger, With},
+    math::{Quat, Vec3},
+    prelude::{
+        BuildChildren, Commands, Entity, OnAdd, Query, SpatialBundle, Transform, Trigger, With,
+    },
 };
 
 use ragnarok_rebuild_bevy::{audio::Bgm, world::World};
@@ -28,7 +31,11 @@ fn start_up(mut commands: Commands) {
         .spawn((
             Name::new("RagnarokOnline"),
             components::Game,
-            SpatialBundle::default(),
+            SpatialBundle {
+                transform: Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI))
+                    .with_scale(Vec3::splat(0.2)),
+                ..Default::default()
+            },
         ))
         .with_children(|builder| {
             builder.spawn((Name::new("Playing sounds"), SpatialBundle::default()));
