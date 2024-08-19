@@ -6,7 +6,7 @@ use bevy::{
     prelude::{BuildChildren, Commands, Entity, OnAdd, Query, SpatialBundle, Trigger, With},
 };
 
-use ragnarok_rebuild_bevy::world::World;
+use ragnarok_rebuild_bevy::{audio::Bgm, world::World};
 
 use self::components::Game;
 
@@ -18,7 +18,8 @@ impl Plugin for ClientPlugin {
             // Startup system
             .add_systems(Startup, start_up)
             // Observers
-            .observe(attach_world_to_game);
+            .observe(attach_world_to_game)
+            .observe(attach_bgm_to_game);
     }
 }
 
@@ -37,6 +38,21 @@ fn start_up(mut commands: Commands) {
 
 fn attach_world_to_game(
     trigger: Trigger<OnAdd, World>,
+    mut commands: Commands,
+    games: Query<Entity, With<Game>>,
+) {
+    let Ok(game) = games
+        .get_single()
+        .inspect_err(|err| bevy::log::error!("{err}"))
+    else {
+        return;
+    };
+
+    commands.entity(game).add_child(trigger.entity());
+}
+
+fn attach_bgm_to_game(
+    trigger: Trigger<OnAdd, Bgm>,
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
