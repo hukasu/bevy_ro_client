@@ -45,6 +45,16 @@ fn debug_rsm(rsm: &RSM) -> Option<String> {
     let header = || format!("\t{:?}\n", rsm.version);
     let mut debug = None;
 
+    if rsm.root_meshes.is_empty() {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\thas no root meshes.").unwrap();
+    }
+
+    if rsm.volume_boxes.len() != 0 {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\thas volume boxes. ({:?})", rsm.volume_boxes).unwrap();
+    }
+
     for mesh in rsm.meshes.iter() {
         if let Some(mesh_debug) = debug_mesh(mesh) {
             let debug_ref = debug.get_or_insert_with(header);
@@ -56,8 +66,18 @@ fn debug_rsm(rsm: &RSM) -> Option<String> {
 }
 
 fn debug_mesh(mesh: &Mesh) -> Option<String> {
-    let header = || format!("\tMesh {}\n", mesh.name);
+    let header = || format!("\tMesh \"{}\"\n", mesh.name);
     let mut debug = None;
+
+    if mesh.name == mesh.parent_name {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(
+            debug_ref,
+            "\t\thas name equal to parent_name. (\"{}\")",
+            mesh.name
+        )
+        .unwrap();
+    }
 
     for (i, face) in mesh.faces.iter().enumerate() {
         if let Some(face_debug) = debug_face(face, i) {
