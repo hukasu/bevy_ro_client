@@ -1,14 +1,17 @@
 use bevy::{
-    app::{Plugin, Update},
+    app::{Plugin, PostUpdate},
     asset::{Assets, Handle},
     color::{self, Color},
     math::Vec3,
     prelude::{
         Children, Entity, Gizmos, GlobalTransform, HierarchyQueryExt, IntoSystemConfigs, Mesh,
-        Query, ReflectResource, Res, Resource, With,
+        Query, ReflectResource, Res, Resource, ViewVisibility, With,
     },
     reflect::Reflect,
-    render::mesh::{Indices, VertexAttributeValues},
+    render::{
+        mesh::{Indices, VertexAttributeValues},
+        view::VisibilitySystems,
+    },
 };
 
 use crate::assets::rsm;
@@ -25,11 +28,12 @@ impl Plugin for RsmDebugPlugin {
             .init_resource::<RsmDebug>()
             // Systems
             .add_systems(
-                Update,
+                PostUpdate,
                 (
                     show_rsm_vertex_normal.run_if(show_rsm_vertex_normal_condition),
                     show_rsm_edges.run_if(show_rsm_edges_condition),
-                ),
+                )
+                    .after(VisibilitySystems::CheckVisibility),
             );
     }
 }
@@ -46,15 +50,18 @@ fn show_rsm_vertex_normal(
     models: Query<Entity, With<rsm::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
-    model_primitives: Query<&Handle<Mesh>>,
+    model_primitives: Query<(&Handle<Mesh>, &ViewVisibility)>,
     meshes: Res<Assets<Mesh>>,
 ) {
     for entity in models.iter() {
         for child in children.iter_descendants(entity) {
-            let Ok(global_transform) = global_transforms.get(child) else {
+            let Ok((mesh_handle, view_visibility)) = model_primitives.get(child) else {
                 continue;
             };
-            let Ok(mesh_handle) = model_primitives.get(child) else {
+            if !**view_visibility {
+                continue;
+            }
+            let Ok(global_transform) = global_transforms.get(child) else {
                 continue;
             };
             let Some(mesh) = meshes.get(mesh_handle) else {
@@ -107,15 +114,18 @@ fn show_rsm_edges(
     models: Query<Entity, With<rsm::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
-    model_primitives: Query<&Handle<Mesh>>,
+    model_primitives: Query<(&Handle<Mesh>, &ViewVisibility)>,
     meshes: Res<Assets<Mesh>>,
 ) {
     for entity in models.iter() {
         for child in children.iter_descendants(entity) {
-            let Ok(global_transform) = global_transforms.get(child) else {
+            let Ok((mesh_handle, view_visibility)) = model_primitives.get(child) else {
                 continue;
             };
-            let Ok(mesh_handle) = model_primitives.get(child) else {
+            if !**view_visibility {
+                continue;
+            }
+            let Ok(global_transform) = global_transforms.get(child) else {
                 continue;
             };
             let Some(mesh) = meshes.get(mesh_handle) else {
