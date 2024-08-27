@@ -69,6 +69,11 @@ fn debug_mesh(mesh: &Mesh) -> Option<String> {
     let header = || format!("\tMesh \"{}\"\n", mesh.name);
     let mut debug = None;
 
+    if mesh.name.is_empty() {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\thas empty name.",).unwrap();
+    }
+
     if mesh.name == mesh.parent_name {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(
