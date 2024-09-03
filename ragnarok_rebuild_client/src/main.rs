@@ -77,11 +77,16 @@ fn main() {
     {
         app.add_plugins(WorldInspectorPlugin::default())
             .add_plugins(bevy_flycam::prelude::PlayerPlugin)
+            .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
+            .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
+            .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
+            .add_plugins(iyes_perf_ui::PerfUiPlugin)
             .insert_resource(bevy_flycam::prelude::MovementSettings {
                 sensitivity: 0.00015, // default: 0.00012
                 speed: 24.0,          // default: 12.0
             })
-            .add_systems(PostStartup, add_listener_to_fly_cam);
+            .add_systems(PostStartup, add_listener_to_fly_cam)
+            .add_systems(bevy::app::Startup, spawn_perf_ui);
     }
 
     app
@@ -110,6 +115,11 @@ fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<F
     };
 
     commands.entity(flycam).insert(SpatialListener::default());
+}
+
+#[cfg(feature = "with-inspector")]
+fn spawn_perf_ui(mut commands: Commands) {
+    commands.spawn(iyes_perf_ui::entries::PerfUiBundle::default());
 }
 
 fn is_input_captured(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
