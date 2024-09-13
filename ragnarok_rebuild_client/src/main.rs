@@ -141,32 +141,32 @@ fn load_map(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
     if keyboard_input.just_pressed(KeyCode::KeyQ) {
         commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
-            world: "data/prontera.rsw".into(),
+            world: "prontera.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyW) {
         commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
-            world: "data/morocc.rsw".into(),
+            world: "morocc.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyE) {
         commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
-            world: "data/payon.rsw".into(),
+            world: "payon.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyR) {
         commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
-            world: "data/yuno.rsw".into(),
+            world: "yuno.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyA) {
         commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
-            world: "data/pay_dun01.rsw".into(),
+            world: "pay_dun00.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyS) {
         commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
-            world: "data/moc_pryd03.rsw".into(),
+            world: "moc_pryd03.rsw".into(),
         });
     }
 }

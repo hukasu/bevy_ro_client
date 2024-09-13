@@ -120,14 +120,8 @@ impl AssetLoader {
             })
             .collect::<Vec<_>>();
 
-        let name: String = if let Some(filename) = load_context.path().file_name() {
-            format!("{:?}", filename).trim_matches('"').to_owned()
-        } else {
-            "Unammed gnd".into()
-        };
-
         world
-            .spawn((Name::new(name), SpatialBundle::default(), Ground))
+            .spawn((Name::new("Primitives"), SpatialBundle::default(), Ground))
             .with_children(|parent| {
                 for (i, mesh) in meshs.iter().enumerate() {
                     parent.spawn((

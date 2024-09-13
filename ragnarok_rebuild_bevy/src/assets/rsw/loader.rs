@@ -83,7 +83,7 @@ impl AssetLoader {
             load_context.load(format!("{}{}", paths::GROUND_FILES_FOLDER, rsw.gnd_file));
 
         world.spawn((
-            Name::new("Ground"),
+            Name::new(rsw.gnd_file.to_string()),
             SceneBundle {
                 scene: world_ground,
                 ..Default::default()

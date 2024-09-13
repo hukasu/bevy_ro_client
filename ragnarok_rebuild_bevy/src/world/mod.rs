@@ -10,6 +10,8 @@ use bevy::{
     scene::Scene,
 };
 
+use crate::assets::paths;
+
 pub use self::{
     components::World,
     events::{LoadWorld, UnloadWorld},
@@ -28,7 +30,11 @@ impl Plugin for WorldPlugin {
 
 fn load_world(trigger: Trigger<LoadWorld>, mut commands: Commands, asset_loader: Res<AssetServer>) {
     // Spawn new world
-    let next_world_handle: Handle<Scene> = asset_loader.load(trigger.event().world.to_string());
+    let next_world_handle: Handle<Scene> = asset_loader.load(format!(
+        "{}{}",
+        paths::WORLD_FILES_FOLDER,
+        trigger.event().world
+    ));
     commands.spawn((
         Name::new(trigger.event().world.clone()),
         World,
