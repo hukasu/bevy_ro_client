@@ -100,19 +100,22 @@ impl AssetLoader {
             };
         }
 
+        let asset_usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
         let meshs = groups
             .into_iter()
             .enumerate()
             .map(|(i, (vertex, uvs))| {
                 load_context.add_labeled_asset(
                     format!("Primitive{i}"),
-                    Mesh::new(
-                        PrimitiveTopology::TriangleList,
-                        RenderAssetUsages::RENDER_WORLD,
-                    )
-                    .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertex)
-                    .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-                    .with_computed_flat_normals(),
+                    Mesh::new(PrimitiveTopology::TriangleList, asset_usage)
+                        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertex)
+                        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+                        .with_computed_flat_normals(),
                 )
             })
             .collect::<Vec<_>>();

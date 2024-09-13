@@ -3,7 +3,7 @@ mod loader;
 
 use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
 
-pub use self::loader::AssetLoader;
+pub use self::{components::Ground, loader::AssetLoader};
 
 pub struct Plugin;
 
