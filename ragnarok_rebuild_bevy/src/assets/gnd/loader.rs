@@ -19,6 +19,32 @@ use crate::assets::paths;
 
 pub struct AssetLoader;
 
+impl BevyAssetLoader for AssetLoader {
+    type Asset = Scene;
+    type Settings = ();
+    type Error = gnd::Error;
+
+    fn load<'a>(
+        &'a self,
+        reader: &'a mut Reader,
+        _settings: &'a Self::Settings,
+        load_context: &'a mut LoadContext,
+    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
+        Box::pin(async {
+            bevy::log::trace!("Loading GND {:?}.", load_context.path());
+            let mut data: Vec<u8> = vec![];
+            reader.read_to_end(&mut data).await?;
+            let gnd = gnd::GND::from_reader(&mut data.as_slice())?;
+
+            Ok(Self::generate_ground(&gnd, load_context))
+        })
+    }
+
+    fn extensions(&self) -> &[&str] {
+        &["gnd"]
+    }
+}
+
 impl AssetLoader {
     fn generate_ground(gnd: &gnd::GND, load_context: &mut LoadContext) -> Scene {
         let textures: Vec<Handle<Image>> = gnd
@@ -269,31 +295,5 @@ impl AssetLoader {
             reflectance: 0.2,
             ..Default::default()
         }
-    }
-}
-
-impl BevyAssetLoader for AssetLoader {
-    type Asset = Scene;
-    type Settings = ();
-    type Error = gnd::Error;
-
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async {
-            bevy::log::trace!("Loading GND {:?}.", load_context.path());
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let gnd = gnd::GND::from_reader(&mut data.as_slice())?;
-
-            Ok(Self::generate_ground(&gnd, load_context))
-        })
-    }
-
-    fn extensions(&self) -> &[&str] {
-        &["gnd"]
     }
 }
