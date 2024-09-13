@@ -6,13 +6,13 @@ use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
 pub use ragnarok_rebuild_assets::rsw::Error;
 
 pub use self::loader::AssetLoader;
+
 pub struct Plugin;
 
 impl BevyPlugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             // Types
-            .register_type::<components::Ground>()
             .register_type::<components::Models>()
             .register_type::<components::WorldModel>()
             .register_type::<components::EnvironmentalLights>()

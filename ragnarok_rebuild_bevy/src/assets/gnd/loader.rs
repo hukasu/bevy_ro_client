@@ -17,6 +17,8 @@ use ragnarok_rebuild_assets::gnd;
 
 use crate::assets::paths;
 
+use super::components::Ground;
+
 pub struct AssetLoader;
 
 impl BevyAssetLoader for AssetLoader {
@@ -31,7 +33,7 @@ impl BevyAssetLoader for AssetLoader {
         load_context: &'a mut LoadContext,
     ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
         Box::pin(async {
-            bevy::log::trace!("Loading GND {:?}.", load_context.path());
+            bevy::log::trace!("Loading Gnd {:?}.", load_context.path());
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
             let gnd = gnd::GND::from_reader(&mut data.as_slice())?;
@@ -115,8 +117,14 @@ impl AssetLoader {
             })
             .collect::<Vec<_>>();
 
+        let name: String = if let Some(filename) = load_context.path().file_name() {
+            format!("{:?}", filename).trim_matches('"').to_owned()
+        } else {
+            "Unammed gnd".into()
+        };
+
         world
-            .spawn((Name::new("Primitives".to_owned()), SpatialBundle::default()))
+            .spawn((Name::new(name), SpatialBundle::default(), Ground))
             .with_children(|parent| {
                 for (i, mesh) in meshs.iter().enumerate() {
                     parent.spawn((

@@ -84,7 +84,6 @@ impl AssetLoader {
 
         world.spawn((
             Name::new("Ground"),
-            super::components::Ground,
             SceneBundle {
                 scene: world_ground,
                 ..Default::default()

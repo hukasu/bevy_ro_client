@@ -7,11 +7,6 @@ use bevy::{
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// Component marker for the ground of a [`crate::world::World`]
-pub struct Ground;
-
-#[derive(Debug, Default, Component, Reflect)]
-#[reflect(Component)]
 /// Component marker for a entity that holds all the models of a [World]
 pub struct Models;
 
