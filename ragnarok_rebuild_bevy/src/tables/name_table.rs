@@ -2,6 +2,7 @@ use std::{error::Error, fmt::Display};
 
 use bevy::{
     asset::{Asset, AssetApp, AsyncReadExt},
+    prelude::Deref,
     reflect::Reflect,
     utils::HashSet,
 };
@@ -18,7 +19,7 @@ impl bevy::app::Plugin for Plugin {
     }
 }
 
-#[derive(Debug, Asset, Reflect)]
+#[derive(Debug, Asset, Reflect, Deref)]
 pub struct NameTable {
     names: HashSet<String>,
 }
