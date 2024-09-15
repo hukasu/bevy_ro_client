@@ -1,6 +1,6 @@
 use bevy::{
     asset::{io::Reader, AsyncReadExt, Handle, LoadContext},
-    audio::{AudioBundle, AudioSource},
+    audio::AudioSource,
     color::Color,
     core::Name,
     hierarchy::BuildWorldChildren,
@@ -128,11 +128,10 @@ impl AssetLoader {
                 Name::new("DirectionalLight"),
                 DirectionalLightBundle {
                     directional_light: DirectionalLight {
-                        color: Color::linear_rgba(
+                        color: Color::linear_rgb(
                             rsw.lighting_parameters.diffuse_color[0],
                             rsw.lighting_parameters.diffuse_color[1],
                             rsw.lighting_parameters.diffuse_color[2],
-                            rsw.lighting_parameters.shadow_map_alpha,
                         ),
                         illuminance: if settings.is_indoor { 100. } else { 10000. },
                         shadows_enabled: true,
@@ -230,7 +229,7 @@ impl AssetLoader {
                                     light.color[1],
                                     light.color[2],
                                 ),
-                                range: light.range,
+                                range: light.range / 5.,
                                 shadows_enabled: true,
                                 ..Default::default()
                             },
