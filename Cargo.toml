@@ -9,7 +9,10 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
-bevy = { version = "0.14.1", features = ["bmp", "jpeg", "wav", "mp3"] }
+bevy = { version = "0.14.2", features = ["bmp", "jpeg", "wav", "mp3"] }
+bevy-inspector-egui = { version = "0.25.2" }
+bevy_flycam = { version = "0.14.1" }
+iyes_perf_ui = { version = "0.3" }
 
 log = "0.4.22"
 
