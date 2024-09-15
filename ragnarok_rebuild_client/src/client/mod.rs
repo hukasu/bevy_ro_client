@@ -9,7 +9,7 @@ use bevy::{
     },
 };
 
-use ragnarok_rebuild_bevy::{audio::Bgm, world::World};
+use ragnarok_rebuild_bevy::{assets::rsw::World, audio::Bgm};
 
 use self::components::Game;
 

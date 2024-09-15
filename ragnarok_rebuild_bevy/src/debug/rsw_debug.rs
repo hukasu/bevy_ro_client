@@ -2,15 +2,13 @@ use bevy::{
     app::{Plugin, Update},
     pbr::DirectionalLight,
     prelude::{
-        resource_changed, resource_exists, Children, Commands, Entity, Event, IntoSystemConfigs,
-        LightGizmoColor, Local, OnAdd, Query, ReflectResource, Res, Resource, ShowLightGizmo,
-        Trigger, With,
+        resource_changed, Children, Commands, Entity, Event, IntoSystemConfigs, LightGizmoColor,
+        Local, OnAdd, Query, ReflectResource, Res, Resource, ShowLightGizmo, Trigger, With,
     },
     reflect::Reflect,
-    scene::{SceneInstance, SceneSpawner},
 };
 
-use crate::{assets::rsw, world};
+use crate::assets::rsw;
 
 pub struct RswDebugPlugin;
 
@@ -26,7 +24,7 @@ impl Plugin for RswDebugPlugin {
                 (
                     point_light_debug_changed.run_if(resource_changed::<RswDebug>),
                     directional_light_debug_changed.run_if(resource_changed::<RswDebug>),
-                    wait_for_world_to_load.run_if(resource_exists::<WorldInLoading>),
+                    // wait_for_world_to_load.run_if(resource_exists::<WorldInLoading>),
                 ),
             )
             // Observers
@@ -92,7 +90,7 @@ fn toggle_directional_light(
     _trigger: Trigger<ToggleDirectionalLightDebug>,
     mut commands: Commands,
     rsw_debug: Res<RswDebug>,
-    rsws: Query<&Children, With<world::World>>,
+    rsws: Query<&Children, With<rsw::World>>,
     directional_lights: Query<Entity, With<DirectionalLight>>,
 ) {
     let Ok(world) = rsws.get_single() else {
@@ -119,29 +117,9 @@ fn toggle_directional_light(
     }
 }
 
-fn world_load(trigger: Trigger<OnAdd, world::World>, mut commands: Commands) {
-    let entity = trigger.entity();
-
-    commands.insert_resource(WorldInLoading { entity });
-}
-
-fn wait_for_world_to_load(
-    mut commands: Commands,
-    scene_spawner: Res<SceneSpawner>,
-    world_in_loading: Res<WorldInLoading>,
-    scenes: Query<&SceneInstance>,
-) {
-    let Ok(scene) = scenes.get(world_in_loading.entity) else {
-        bevy::log::error!("World in loading does not have SceneInstance.");
-        commands.remove_resource::<WorldInLoading>();
-        return;
-    };
-
-    if scene_spawner.instance_is_ready(**scene) {
-        commands.remove_resource::<WorldInLoading>();
-        commands.trigger(TogglePointLightsDebug);
-        commands.trigger(ToggleDirectionalLightDebug);
-    }
+fn world_load(_trigger: Trigger<OnAdd, rsw::World>, mut commands: Commands) {
+    commands.trigger(TogglePointLightsDebug);
+    commands.trigger(ToggleDirectionalLightDebug);
 }
 
 #[derive(Debug, Clone, Default, Resource, Reflect)]
@@ -149,11 +127,6 @@ fn wait_for_world_to_load(
 pub struct RswDebug {
     show_point_lights: bool,
     show_directional_light: bool,
-}
-
-#[derive(Debug, Resource)]
-struct WorldInLoading {
-    entity: Entity,
 }
 
 #[derive(Debug, Event)]

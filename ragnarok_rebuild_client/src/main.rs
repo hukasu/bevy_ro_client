@@ -9,7 +9,7 @@ use bevy::{
     pbr::{DirectionalLightShadowMap, PointLightShadowMap},
     prelude::{not, IntoSystemConfigs, KeyCode, Query, Res, With},
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
-    window::{PrimaryWindow, Window},
+    window::{PrimaryWindow, Window, WindowPlugin},
     DefaultPlugins,
 };
 
@@ -26,8 +26,11 @@ use bevy_flycam::FlyCam;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use ragnarok_rebuild_bevy::{
-    assets::{grf, paths::BASE_DATA_FOLDER},
-    world::{LoadWorld, UnloadWorld},
+    assets::{
+        grf,
+        paths::BASE_DATA_FOLDER,
+        rsw::{LoadWorld, UnloadWorld},
+    },
     RagnarokPlugin,
 };
 
@@ -65,6 +68,13 @@ fn main() {
                 })
                 .set(ImagePlugin {
                     default_sampler: ImageSamplerDescriptor::nearest()
+                }).set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Ragnarok Rebuild".into(),
+                        present_mode: bevy::window::PresentMode::AutoNoVsync,
+                        ..Default::default()
+                    }),
+                    ..Default::default()
                 }),
         )
         .add_plugins(RagnarokPlugin);
@@ -167,6 +177,11 @@ fn load_map(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
         commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "moc_pryd03.rsw".into(),
+        });
+    } else if keyboard_input.just_pressed(KeyCode::KeyD) {
+        commands.trigger(UnloadWorld);
+        commands.trigger(LoadWorld {
+            world: "prt_in.rsw".into(),
         });
     }
 }
