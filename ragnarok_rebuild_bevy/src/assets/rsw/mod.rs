@@ -16,7 +16,7 @@ use crate::tables::{name_table::NameTable, IndoorRsw};
 
 use self::loader::AssetLoader;
 pub use self::{
-    components::{EnvironmentalLights, World},
+    components::{EnvironmentalLight, World},
     events::{LoadWorld, UnloadWorld},
     loader::RswSettings,
 };
@@ -30,10 +30,9 @@ impl bevy::app::Plugin for Plugin {
         app
             // Register Types
             .register_type::<components::World>()
-            .register_type::<components::Models>()
-            .register_type::<components::WorldModel>()
-            .register_type::<components::EnvironmentalLights>()
-            .register_type::<components::EnvironmentalSounds>()
+            .register_type::<components::DiffuseLight>()
+            .register_type::<components::AnimatedProp>()
+            .register_type::<components::EnvironmentalLight>()
             .register_type::<components::EnvironmentalSound>()
             // Register AssetLoader
             .register_asset_loader(AssetLoader)

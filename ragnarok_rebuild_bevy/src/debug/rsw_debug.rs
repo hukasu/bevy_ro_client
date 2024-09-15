@@ -49,27 +49,14 @@ fn toggle_point_lights(
     _trigger: Trigger<TogglePointLightsDebug>,
     mut commands: Commands,
     rsw_debug: Res<RswDebug>,
-    environmental_lights: Query<Entity, With<rsw::EnvironmentalLights>>,
-    children: Query<&Children>,
+    environmental_lights: Query<Entity, With<rsw::EnvironmentalLight>>,
 ) {
-    let Ok(environmental_lights) = environmental_lights.get_single() else {
-        bevy::log::error!(
-            "There were an error getting a single Environmental lights container from the world."
-        );
-        return;
-    };
-
-    let Ok(children) = children.get(environmental_lights) else {
-        bevy::log::trace!("Environmental Lights container existed but had no children.");
-        return;
-    };
-
     if rsw_debug.show_point_lights {
-        for light in children.iter().copied() {
+        for light in environmental_lights.iter() {
             commands.entity(light).insert(ShowLightGizmo::default());
         }
     } else {
-        for light in children.iter().copied() {
+        for light in environmental_lights.iter() {
             commands.entity(light).remove::<ShowLightGizmo>();
         }
     }

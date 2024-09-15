@@ -1,9 +1,8 @@
 use bevy::{
     asset::{io::Reader, AsyncReadExt, Handle, LoadContext},
-    audio::AudioSource,
+    audio::{AudioBundle, AudioSource},
     color::Color,
     core::Name,
-    ecs::world::World,
     hierarchy::BuildWorldChildren,
     math::{EulerRot, Quat, Vec3},
     pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight, PointLightBundle},
@@ -14,7 +13,10 @@ use bevy::{
 use ragnarok_rebuild_assets::rsw;
 use serde::{Deserialize, Serialize};
 
-use crate::assets::paths;
+use crate::assets::{
+    paths,
+    rsw::components::{AnimatedProp, DiffuseLight, EnvironmentalLight, EnvironmentalSound, World},
+};
 
 #[derive(Debug, Default, Serialize, Deserialize)]
 pub struct RswSettings {
@@ -58,7 +60,7 @@ impl AssetLoader {
     ) -> Scene {
         bevy::log::trace!("Generating {:?} world.", load_context.path());
 
-        let mut world = World::new();
+        let mut world = bevy::ecs::world::World::new();
 
         Self::set_ambient_light(rsw, &mut world, load_context);
         let directional_light =
@@ -77,7 +79,7 @@ impl AssetLoader {
             .spawn((
                 Name::new(filename.to_string()),
                 SpatialBundle::default(),
-                super::World,
+                World,
             ))
             .push_children(&[
                 directional_light,
@@ -90,7 +92,11 @@ impl AssetLoader {
         Scene::new(world)
     }
 
-    fn set_ambient_light(rsw: &rsw::RSW, world: &mut World, load_context: &mut LoadContext) {
+    fn set_ambient_light(
+        rsw: &rsw::RSW,
+        world: &mut bevy::prelude::World,
+        load_context: &mut LoadContext,
+    ) {
         bevy::log::trace!("Setting ambient light of {:?}.", load_context.path());
         world.insert_resource(AmbientLight {
             color: Color::linear_rgb(
@@ -104,7 +110,7 @@ impl AssetLoader {
 
     fn spawn_directional_light(
         rsw: &rsw::RSW,
-        world: &mut World,
+        world: &mut bevy::ecs::world::World,
         settings: &RswSettings,
         load_context: &mut LoadContext,
     ) -> Entity {
@@ -135,11 +141,16 @@ impl AssetLoader {
                     transform: light_transform.looking_at(Vec3::ZERO, Vec3::Y),
                     ..Default::default()
                 },
+                DiffuseLight,
             ))
             .id()
     }
 
-    fn spawn_ground(rsw: &rsw::RSW, world: &mut World, load_context: &mut LoadContext) -> Entity {
+    fn spawn_ground(
+        rsw: &rsw::RSW,
+        world: &mut bevy::ecs::world::World,
+        load_context: &mut LoadContext,
+    ) -> Entity {
         bevy::log::trace!("Spawning ground of {:?}", load_context.path());
 
         let world_ground =
@@ -158,16 +169,12 @@ impl AssetLoader {
 
     fn spawn_animated_props(
         rsw: &rsw::RSW,
-        world: &mut World,
+        world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
         bevy::log::trace!("Spawning animated props of {:?}", load_context.path());
         world
-            .spawn((
-                Name::new("Models"),
-                super::components::Models,
-                SpatialBundle::default(),
-            ))
+            .spawn((Name::new("Models"), SpatialBundle::default()))
             .with_children(|parent| {
                 for prop in rsw.objects.0.iter() {
                     let prop_handle = load_context.load(format!(
@@ -177,7 +184,7 @@ impl AssetLoader {
                     ));
                     parent.spawn((
                         Name::new(prop.name.to_string()),
-                        super::components::WorldModel {
+                        AnimatedProp {
                             animation_type: prop.animation_type,
                             animation_speed: prop.animation_speed,
                         },
@@ -203,16 +210,12 @@ impl AssetLoader {
 
     fn spawn_environmental_lights(
         rsw: &rsw::RSW,
-        world: &mut World,
+        world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
         bevy::log::trace!("Spawning environmental lights of {:?}", load_context.path());
         world
-            .spawn((
-                Name::new("Lights"),
-                super::components::EnvironmentalLights,
-                SpatialBundle::default(),
-            ))
+            .spawn((Name::new("Lights"), SpatialBundle::default()))
             .with_children(|parent| {
                 for light in rsw.objects.1.iter() {
                     parent.spawn((
@@ -233,6 +236,7 @@ impl AssetLoader {
                             },
                             ..Default::default()
                         },
+                        EnvironmentalLight { range: light.range },
                     ));
                 }
             })
@@ -241,16 +245,12 @@ impl AssetLoader {
 
     fn spawn_environmental_sounds(
         rsw: &rsw::RSW,
-        world: &mut World,
+        world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
         bevy::log::trace!("Spawning environmental sounds of {:?}", load_context.path());
         world
-            .spawn((
-                Name::new("Sounds"),
-                super::components::EnvironmentalSounds,
-                SpatialBundle::default(),
-            ))
+            .spawn((Name::new("Sounds"), SpatialBundle::default()))
             .with_children(|parent| {
                 for sound in rsw.objects.2.iter() {
                     let audio_handle: Handle<AudioSource> =
@@ -262,7 +262,7 @@ impl AssetLoader {
                             local: Transform::from_translation(Vec3::from_array(sound.position)),
                             ..Default::default()
                         },
-                        super::components::EnvironmentalSound {
+                        EnvironmentalSound {
                             source: audio_handle,
                             volume: sound.volume,
                         },

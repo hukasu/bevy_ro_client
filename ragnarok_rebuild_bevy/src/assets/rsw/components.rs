@@ -13,30 +13,27 @@ pub struct World;
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// Component marker for a entity that holds all the models of a [World]
-pub struct Models;
+/// A diffuse light that illuminated the [`World`]
+pub struct DiffuseLight;
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// An animated prop that is part of the [World]
-pub struct WorldModel {
+/// An animated prop that is part of the [`World`]
+pub struct AnimatedProp {
     pub animation_type: i32,
     pub animation_speed: f32,
 }
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// Component marker for a entity that holds all the environment lights of a [World]
-pub struct EnvironmentalLights;
+/// Component marker for a entity that holds all the environment lights of a [`World`]
+pub struct EnvironmentalLight {
+    pub range: f32,
+}
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
-/// Component marker for a entity that holds all the sounds of a [World]
-pub struct EnvironmentalSounds;
-
-#[derive(Debug, Default, Component, Reflect)]
-#[reflect(Component)]
-/// Environmental sound that plays in the [World]
+/// Environmental sound that plays in the [`World`]
 pub struct EnvironmentalSound {
     pub source: Handle<AudioSource>,
     pub volume: f32,
