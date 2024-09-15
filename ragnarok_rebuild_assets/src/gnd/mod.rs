@@ -117,9 +117,11 @@ impl GND {
             let base_water_level = base_water_plane.water_level;
             Ok([base_water_plane]
                 .into_iter()
-                .chain(extras.into_iter().filter(|plane| {
-                    (plane.water_level - base_water_level).abs() > std::f32::EPSILON
-                }))
+                .chain(
+                    extras.into_iter().filter(|plane| {
+                        (plane.water_level - base_water_level).abs() > f32::EPSILON
+                    }),
+                )
                 .collect())
         } else {
             let base_water_plane = WaterPlane::from_reader(reader)?;
@@ -131,9 +133,11 @@ impl GND {
             let base_water_level = base_water_plane.water_level;
             Ok([base_water_plane]
                 .into_iter()
-                .chain(extras.into_iter().filter(|plane| {
-                    (plane.water_level - base_water_level).abs() > std::f32::EPSILON
-                }))
+                .chain(
+                    extras.into_iter().filter(|plane| {
+                        (plane.water_level - base_water_level).abs() > f32::EPSILON
+                    }),
+                )
                 .collect())
         }
     }
