@@ -5,7 +5,7 @@ use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
 
 pub use ragnarok_rebuild_assets::rsw::Error;
 
-pub use self::loader::AssetLoader;
+pub use self::{components::EnvironmentalLights, loader::AssetLoader};
 
 pub struct Plugin;
 
