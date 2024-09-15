@@ -48,7 +48,7 @@ impl AssetLoader {
 
     fn spawn_directional_light(rsw: &rsw::RSW, world: &mut World, load_context: &mut LoadContext) {
         bevy::log::trace!("Spawning directional light of {:?}", load_context.path());
-        let base_distance = -2500.;
+        let base_distance = -500.;
         let latitude_radians = (rsw.lighting_parameters.latitude as f32).to_radians();
         let longitude_radians = (rsw.lighting_parameters.longitude as f32).to_radians();
 
