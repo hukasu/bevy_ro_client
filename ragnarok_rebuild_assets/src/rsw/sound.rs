@@ -39,7 +39,7 @@ impl Sound {
         let cycle = if version >= &Version(2, 1, 0) {
             reader.read_le_f32()?
         } else {
-            0.
+            4.
         };
 
         Ok(Self {
