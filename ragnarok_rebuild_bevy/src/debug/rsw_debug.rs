@@ -29,6 +29,7 @@ impl Plugin for RswDebugPlugin {
                 (
                     point_light_debug_changed.run_if(resource_changed::<RswDebug>),
                     directional_light_debug_changed.run_if(resource_changed::<RswDebug>),
+                    sound_debug.run_if(sound_debug_condition),
                     effect_debug.run_if(effect_debug_condition),
                 ),
             )
@@ -116,6 +117,84 @@ fn toggle_directional_light(
                     .remove::<ShowLightGizmo>();
             }
         }
+    }
+}
+
+fn sound_debug_condition(rsw_debug: Res<RswDebug>) -> bool {
+    rsw_debug.show_sounds
+}
+
+fn sound_debug(
+    mut gizmos: Gizmos,
+    worlds: Query<Entity, With<rsw::World>>,
+    children: Query<&Children>,
+    sounds: Query<&GlobalTransform, With<rsw::EnvironmentalSound>>,
+) {
+    const SOUND_GIZMO_RADIUS: f32 = 5.;
+
+    let Ok(world) = worlds.get_single() else {
+        return;
+    };
+
+    let Ok(world_children) = children.get(world) else {
+        bevy::log::error!("Can't show effect gizmos because World has no children.");
+        return;
+    };
+
+    let Some(sounds_container) = world_children.iter().find_map(|child| {
+        let Ok(child_children) = children.get(*child) else {
+            return None;
+        };
+        if sounds.contains(child_children[0]) {
+            Some(child_children)
+        } else {
+            None
+        }
+    }) else {
+        return;
+    };
+
+    let color = palettes::css::SEA_GREEN;
+    for effect in sounds.iter_many(sounds_container) {
+        let translation = effect.translation();
+        let sounds_translation = translation + Vec3::new(-SOUND_GIZMO_RADIUS / 2., 0., 0.);
+        gizmos.arc_3d(
+            f32::consts::FRAC_PI_2,
+            SOUND_GIZMO_RADIUS / 3.,
+            sounds_translation,
+            Quat::from_euler(
+                bevy::math::EulerRot::XYZ,
+                f32::consts::FRAC_PI_2,
+                -f32::consts::FRAC_PI_4,
+                0.,
+            ),
+            color,
+        );
+        gizmos.arc_3d(
+            f32::consts::FRAC_PI_2,
+            SOUND_GIZMO_RADIUS * 2. / 3.,
+            sounds_translation,
+            Quat::from_euler(
+                bevy::math::EulerRot::XYZ,
+                f32::consts::FRAC_PI_2,
+                -f32::consts::FRAC_PI_4,
+                0.,
+            ),
+            color,
+        );
+        gizmos.arc_3d(
+            f32::consts::FRAC_PI_2,
+            SOUND_GIZMO_RADIUS,
+            sounds_translation,
+            Quat::from_euler(
+                bevy::math::EulerRot::XYZ,
+                f32::consts::FRAC_PI_2,
+                -f32::consts::FRAC_PI_4,
+                0.,
+            ),
+            color,
+        );
+        gizmos.circle(translation, Dir3::NEG_Z, SOUND_GIZMO_RADIUS, color);
     }
 }
 
@@ -213,6 +292,7 @@ fn world_load(trigger: Trigger<rsw::WorldLoaded>, mut commands: Commands) {
 pub struct RswDebug {
     show_point_lights: bool,
     show_directional_light: bool,
+    show_sounds: bool,
     show_effects: bool,
 }
 

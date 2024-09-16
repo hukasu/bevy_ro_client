@@ -19,7 +19,9 @@ pub use ragnarok_rebuild_assets::rsw::Error;
 use crate::tables::{name_table::NameTable, IndoorRsw};
 
 pub use self::{
-    components::{AnimatedProp, EnvironmentalEffect, EnvironmentalLight, World},
+    components::{
+        AnimatedProp, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
+    },
     events::{LoadWorld, WorldLoaded},
     loader::RswSettings,
 };
