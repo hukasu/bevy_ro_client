@@ -16,7 +16,10 @@ use bevy::{
 
 pub use ragnarok_rebuild_assets::rsw::Error;
 
-use crate::tables::{name_table::NameTable, IndoorRsw};
+use crate::{
+    assets::{paths, rsm},
+    tables::{name_table::NameTable, IndoorRsw},
+};
 
 pub use self::{
     components::{
@@ -26,8 +29,6 @@ pub use self::{
     loader::RswSettings,
 };
 use self::{events::UnloadWorld, loader::AssetLoader, resources::LoadingWorld};
-
-use super::{paths, rsm};
 
 const UNNAMED_WORLD: &str = "Unnamed World";
 
