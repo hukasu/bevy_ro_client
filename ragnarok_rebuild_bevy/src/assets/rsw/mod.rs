@@ -19,7 +19,7 @@ pub use ragnarok_rebuild_assets::rsw::Error;
 use crate::tables::{name_table::NameTable, IndoorRsw};
 
 pub use self::{
-    components::{AnimatedProp, EnvironmentalLight, World},
+    components::{AnimatedProp, EnvironmentalEffect, EnvironmentalLight, World},
     events::{LoadWorld, WorldLoaded},
     loader::RswSettings,
 };
@@ -40,6 +40,7 @@ impl bevy::app::Plugin for Plugin {
             .register_type::<components::AnimatedProp>()
             .register_type::<components::EnvironmentalLight>()
             .register_type::<components::EnvironmentalSound>()
+            .register_type::<components::EnvironmentalEffect>()
             // Register AssetLoader
             .register_asset_loader(AssetLoader)
             // Systems

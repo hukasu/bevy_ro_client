@@ -38,3 +38,8 @@ pub struct EnvironmentalSound {
     pub source: Handle<AudioSource>,
     pub volume: f32,
 }
+
+#[derive(Debug, Default, Component, Reflect)]
+#[reflect(Component)]
+/// Environmental effect that create particles in the [`World`]
+pub struct EnvironmentalEffect;

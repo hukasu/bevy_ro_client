@@ -15,7 +15,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::assets::{
     paths,
-    rsw::components::{AnimatedProp, DiffuseLight, EnvironmentalLight, EnvironmentalSound, World},
+    rsw::{
+        components::{AnimatedProp, DiffuseLight, EnvironmentalLight, EnvironmentalSound, World},
+        EnvironmentalEffect,
+    },
 };
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -69,6 +72,8 @@ impl AssetLoader {
         let animated_props = Self::spawn_animated_props(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
         let environmental_sounds = Self::spawn_environmental_sounds(rsw, &mut world, load_context);
+        let environmental_effects =
+            Self::spawn_environmental_effects(rsw, &mut world, load_context);
 
         let filename = match load_context.path().file_name() {
             Some(filename) => filename.to_str().unwrap_or(Self::UNNAMED_RSW),
@@ -87,6 +92,7 @@ impl AssetLoader {
                 animated_props,
                 environmental_lights,
                 environmental_sounds,
+                environmental_effects,
             ]);
 
         Scene::new(world)
@@ -265,6 +271,32 @@ impl AssetLoader {
                             source: audio_handle,
                             volume: sound.volume,
                         },
+                    ));
+                }
+            })
+            .id()
+    }
+
+    fn spawn_environmental_effects(
+        rsw: &rsw::RSW,
+        world: &mut bevy::ecs::world::World,
+        load_context: &mut LoadContext,
+    ) -> Entity {
+        bevy::log::trace!(
+            "Spawning environmental effects of {:?}",
+            load_context.path()
+        );
+        world
+            .spawn((Name::new("Effects"), SpatialBundle::default()))
+            .with_children(|parent| {
+                for effect in rsw.objects.3.iter() {
+                    parent.spawn((
+                        Name::new(effect.name.to_string()),
+                        TransformBundle {
+                            local: Transform::from_translation(Vec3::from_array(effect.position)),
+                            ..Default::default()
+                        },
+                        EnvironmentalEffect,
                     ));
                 }
             })
