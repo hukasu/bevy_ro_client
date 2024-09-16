@@ -8,8 +8,8 @@ use bevy::{
     asset::{AssetApp, AssetServer, Assets, Handle},
     core::Name,
     prelude::{
-        resource_exists, Children, Commands, DespawnRecursiveExt, Entity, HierarchyQueryExt,
-        IntoSystemConfigs, OnAdd, Query, Res, ResMut, Trigger, With,
+        resource_exists, Children, Commands, DespawnRecursiveExt, Entity, IntoSystemConfigs, OnAdd,
+        Query, Res, ResMut, Trigger, With,
     },
     scene::{Scene, SceneInstance, SceneSpawner},
 };
@@ -100,7 +100,9 @@ fn world_added(trigger: Trigger<OnAdd, World>, mut commands: Commands) {
 fn world_loaded(
     trigger: Trigger<WorldLoaded>,
     mut commands: Commands,
+    children: Query<&Children>,
     worlds: Query<Entity, With<components::World>>,
+    animated_props: Query<(&Children, &components::AnimatedProp)>,
 ) {
     let other_worlds = worlds
         .iter()
@@ -108,6 +110,34 @@ fn world_loaded(
         .collect::<Vec<_>>();
     if !other_worlds.is_empty() {
         commands.trigger_targets(UnloadWorld, other_worlds);
+    }
+
+    let Ok(world_children) = children.get(trigger.entity()) else {
+        bevy::log::error!("Just loaded world had no children.");
+        return;
+    };
+    let Some(models_container) = world_children.iter().find_map(|child| {
+        children
+            .get(*child)
+            .ok()
+            .filter(|container| animated_props.contains(container[0]))
+    }) else {
+        bevy::log::error!("World does not have a container with AnimatedProps.");
+        return;
+    };
+
+    for (animated_prop_children, animation_properties) in animated_props.iter_many(models_container)
+    {
+        if animated_prop_children.is_empty() {
+            continue;
+        }
+        commands.trigger_targets(
+            rsm::StartPropAnimation {
+                speed: animation_properties.animation_speed,
+                mode: animation_properties.animation_type,
+            },
+            animated_prop_children.to_vec(),
+        )
     }
 }
 
@@ -118,9 +148,21 @@ fn wait_models(
     children: Query<&Children>,
     animated_props: Query<&SceneInstance, With<AnimatedProp>>,
 ) {
-    if children
-        .iter_descendants(loading_world.world)
-        .filter_map(|child| animated_props.get(child).ok())
+    let Some(world_children) = children.get(loading_world.world).ok() else {
+        bevy::log::error!("World had no children or children was empty");
+        return;
+    };
+    let Some(models_container) = world_children.iter().find_map(|child| {
+        children
+            .get(*child)
+            .ok()
+            .filter(|container| animated_props.contains(container[0]))
+    }) else {
+        bevy::log::error!("World does not have a container with AnimatedProps.");
+        return;
+    };
+    if animated_props
+        .iter_many(models_container)
         .all(|prop| scene_spawner.instance_is_ready(**prop))
     {
         commands.remove_resource::<LoadingWorld>();

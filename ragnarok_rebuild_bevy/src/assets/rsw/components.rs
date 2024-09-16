@@ -7,8 +7,8 @@ use bevy::{
 
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
-/// A World, contains a Ground, a Directional Light, multiple animated props,
-/// multiple [`PointLight`](bevy::pbr::PointLight)
+/// A World contains a Ground, a [`DirectionalLight`](bevy::pbr::DirectionalLight), multiple [`AnimatedProp`],
+/// multiple [`PointLight`](bevy::pbr::PointLight), and multiple [`EnvironmentalSound`]s
 pub struct World;
 
 #[derive(Debug, Default, Component, Reflect)]
