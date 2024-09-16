@@ -38,10 +38,16 @@ fn point_light_debug_changed(
     mut commands: Commands,
     mut prev: Local<bool>,
     rsw_debug: Res<RswDebug>,
+    rsws: Query<Entity, With<rsw::World>>,
 ) {
     if *prev != rsw_debug.show_point_lights {
         *prev = rsw_debug.show_point_lights;
-        commands.trigger(TogglePointLightsDebug)
+
+        let Ok(world) = rsws.get_single() else {
+            bevy::log::error!("There were an error getting a single World.");
+            return;
+        };
+        commands.trigger_targets(TogglePointLightsDebug, world);
     }
 }
 
