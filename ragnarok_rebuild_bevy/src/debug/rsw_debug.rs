@@ -1,10 +1,14 @@
+use core::f32;
+
 use bevy::{
     app::{Plugin, Update},
+    color::palettes,
+    math::{Dir3, Quat, Vec3},
     pbr::DirectionalLight,
     prelude::{
-        resource_changed, Children, Commands, Entity, Event, HierarchyQueryExt, IntoSystemConfigs,
-        LightGizmoColor, Local, Query, ReflectResource, Res, Resource, ShowLightGizmo, Trigger,
-        With,
+        resource_changed, Children, Commands, Entity, Event, Gizmos, GlobalTransform,
+        HierarchyQueryExt, IntoSystemConfigs, LightGizmoColor, Local, Query, ReflectResource, Res,
+        Resource, ShowLightGizmo, Trigger, With,
     },
     reflect::Reflect,
 };
@@ -25,6 +29,7 @@ impl Plugin for RswDebugPlugin {
                 (
                     point_light_debug_changed.run_if(resource_changed::<RswDebug>),
                     directional_light_debug_changed.run_if(resource_changed::<RswDebug>),
+                    effect_debug.run_if(effect_debug_condition),
                 ),
             )
             // Observers
@@ -114,6 +119,90 @@ fn toggle_directional_light(
     }
 }
 
+fn effect_debug_condition(rsw_debug: Res<RswDebug>) -> bool {
+    rsw_debug.show_effects
+}
+
+fn effect_debug(
+    mut gizmos: Gizmos,
+    worlds: Query<Entity, With<rsw::World>>,
+    children: Query<&Children>,
+    effects: Query<&GlobalTransform, With<rsw::EnvironmentalEffect>>,
+) {
+    const EFFECT_GIZMO_RADIUS: f32 = 5.;
+
+    let Ok(world) = worlds.get_single() else {
+        return;
+    };
+
+    let Ok(world_children) = children.get(world) else {
+        bevy::log::error!("Can't show effect gizmos because World has no children.");
+        return;
+    };
+
+    let Some(effects_container) = world_children.iter().find_map(|child| {
+        let Ok(child_children) = children.get(*child) else {
+            return None;
+        };
+        if effects.contains(child_children[0]) {
+            Some(child_children)
+        } else {
+            None
+        }
+    }) else {
+        return;
+    };
+
+    let color = palettes::css::SKY_BLUE;
+    for effect in effects.iter_many(effects_container) {
+        let translation = effect.translation();
+        gizmos.arc_3d(
+            f32::consts::FRAC_PI_2,
+            EFFECT_GIZMO_RADIUS,
+            translation + Vec3::new(-EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
+            Quat::from_euler(bevy::math::EulerRot::XYZ, f32::consts::FRAC_PI_2, 0., 0.),
+            color,
+        );
+        gizmos.arc_3d(
+            f32::consts::FRAC_PI_2,
+            EFFECT_GIZMO_RADIUS,
+            translation + Vec3::new(EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
+            Quat::from_euler(
+                bevy::math::EulerRot::XYZ,
+                f32::consts::FRAC_PI_2,
+                f32::consts::PI,
+                0.,
+            ),
+            color,
+        );
+        gizmos.arc_3d(
+            f32::consts::FRAC_PI_2,
+            EFFECT_GIZMO_RADIUS,
+            translation + Vec3::new(-EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
+            Quat::from_euler(
+                bevy::math::EulerRot::XYZ,
+                f32::consts::FRAC_PI_2,
+                f32::consts::FRAC_PI_2 * 3.,
+                0.,
+            ),
+            color,
+        );
+        gizmos.arc_3d(
+            f32::consts::FRAC_PI_2,
+            EFFECT_GIZMO_RADIUS,
+            translation + Vec3::new(EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
+            Quat::from_euler(
+                bevy::math::EulerRot::XYZ,
+                f32::consts::FRAC_PI_2,
+                f32::consts::FRAC_PI_2,
+                0.,
+            ),
+            color,
+        );
+        gizmos.circle(translation, Dir3::NEG_Z, EFFECT_GIZMO_RADIUS, color);
+    }
+}
+
 fn world_load(trigger: Trigger<rsw::WorldLoaded>, mut commands: Commands) {
     commands.trigger_targets(TogglePointLightsDebug, trigger.entity());
     commands.trigger_targets(ToggleDirectionalLightDebug, trigger.entity());
@@ -124,6 +213,7 @@ fn world_load(trigger: Trigger<rsw::WorldLoaded>, mut commands: Commands) {
 pub struct RswDebug {
     show_point_lights: bool,
     show_directional_light: bool,
+    show_effects: bool,
 }
 
 #[derive(Debug, Event)]
