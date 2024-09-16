@@ -54,6 +54,10 @@ fn start_rsm_animation(
 
     let animation_properties = trigger.event();
 
+    if matches!(animation_properties.mode, 0) {
+        return;
+    }
+
     let animation = animation_trasition
         .play(
             &mut animation_player,
