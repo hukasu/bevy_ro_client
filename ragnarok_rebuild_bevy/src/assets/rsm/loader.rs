@@ -24,7 +24,7 @@ use bevy::{
 use ragnarok_rebuild_assets::rsm::{self, mesh::Face};
 use uuid::Uuid;
 
-use crate::assets::paths;
+use crate::assets::{paths, rsm::components::ModelAnimation};
 
 pub struct AssetLoader;
 
@@ -114,27 +114,33 @@ impl AssetLoader {
                 .insert(animation_target);
         }
 
-        // Finalizing animations
-        let animation_clip_handle = asset_loader_context
-            .load_context
-            .add_labeled_asset("Animation0".to_owned(), animation_clip);
-        let (animation_graph, animation_node_index) =
-            AnimationGraph::from_clip(animation_clip_handle.clone());
-        let animation_graph_handle = asset_loader_context
-            .load_context
-            .add_labeled_asset("AnimationGraph0".into(), animation_graph);
-
         let mut rsm_root_mut = asset_loader_context.world.entity_mut(rsm_root);
-        // Insert Animation components
-        rsm_root_mut.insert((
-            AnimationTransitions::default(),
-            AnimationPlayer::default(),
-            animation_graph_handle,
-            super::Model {
-                animation: animation_clip_handle,
-                animation_node_index,
-            },
-        ));
+        if !animation_clip.curves().is_empty() {
+            // Finalizing animations
+            let animation_clip_handle = asset_loader_context
+                .load_context
+                .add_labeled_asset("Animation0".to_owned(), animation_clip);
+            let (animation_graph, animation_node_index) =
+                AnimationGraph::from_clip(animation_clip_handle.clone());
+            let animation_graph_handle = asset_loader_context
+                .load_context
+                .add_labeled_asset("AnimationGraph0".into(), animation_graph);
+
+            // Insert Animation components
+            rsm_root_mut.insert((
+                AnimationTransitions::default(),
+                AnimationPlayer::default(),
+                animation_graph_handle,
+                super::Model {
+                    animation: Some(ModelAnimation {
+                        animation: animation_clip_handle,
+                        animation_node_index,
+                    }),
+                },
+            ));
+        } else {
+            rsm_root_mut.insert(super::Model { animation: None });
+        }
         // Pushing children meshes
         rsm_root_mut.push_children(&root_meshes);
 

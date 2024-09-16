@@ -8,7 +8,7 @@ use bevy::{
     app::Plugin as BevyPlugin,
     asset::AssetApp,
     core::Name,
-    prelude::{AnimationPlayer, AnimationTransitions, Parent, Query, Trigger},
+    prelude::{AnimationPlayer, AnimationTransitions, Entity, Parent, Query, Trigger},
 };
 
 pub use self::{components::Model, events::StartPropAnimation, loader::AssetLoader};
@@ -29,23 +29,23 @@ impl BevyPlugin for Plugin {
 
 fn start_rsm_animation(
     trigger: Trigger<StartPropAnimation>,
-    mut animation_graphs: Query<(
-        &Parent,
-        &Model,
-        &mut AnimationPlayer,
-        &mut AnimationTransitions,
-    )>,
+    models: Query<(Entity, &Parent, &Model)>,
+    mut animation_graphs: Query<(&mut AnimationPlayer, &mut AnimationTransitions)>,
     names: Query<&Name>,
 ) {
-    let Ok((parent, model, mut animation_player, mut animation_trasition)) =
-        animation_graphs.get_mut(trigger.entity())
-    else {
+    let Ok((entity, parent, model)) = models.get(trigger.entity()) else {
         bevy::log::trace!(
             "Prop {} is missing one or more of the required animation components.",
             trigger.entity()
         );
         return;
     };
+
+    let Ok((mut animation_player, mut animation_trasition)) = animation_graphs.get_mut(entity)
+    else {
+        return;
+    };
+
     let name = names
         .get(parent.get())
         .map(|name| name.as_str())
@@ -54,14 +54,18 @@ fn start_rsm_animation(
 
     let animation_properties = trigger.event();
 
-    if matches!(animation_properties.mode, 0) {
+    if matches!(animation_properties.mode, 0) || model.animation.is_none() {
         return;
     }
+
+    let Some(model_animation) = &model.animation else {
+        unreachable!()
+    };
 
     let animation = animation_trasition
         .play(
             &mut animation_player,
-            model.animation_node_index,
+            model_animation.animation_node_index,
             Duration::default(),
         )
         .set_speed(animation_properties.speed);
