@@ -26,11 +26,7 @@ use bevy_flycam::FlyCam;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use ragnarok_rebuild_bevy::{
-    assets::{
-        grf,
-        paths::BASE_DATA_FOLDER,
-        rsw::{LoadWorld, UnloadWorld},
-    },
+    assets::{grf, paths::BASE_DATA_FOLDER, rsw::LoadWorld},
     RagnarokPlugin,
 };
 
@@ -149,37 +145,30 @@ fn is_input_captured(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
 
 fn load_map(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
     if keyboard_input.just_pressed(KeyCode::KeyQ) {
-        commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "prontera.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyW) {
-        commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "morocc.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyE) {
-        commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "payon.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyR) {
-        commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "yuno.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyA) {
-        commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "pay_dun00.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyS) {
-        commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "moc_pryd03.rsw".into(),
         });
     } else if keyboard_input.just_pressed(KeyCode::KeyD) {
-        commands.trigger(UnloadWorld);
         commands.trigger(LoadWorld {
             world: "prt_in.rsw".into(),
         });

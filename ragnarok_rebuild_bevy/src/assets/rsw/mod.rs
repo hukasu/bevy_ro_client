@@ -1,27 +1,33 @@
 mod components;
 mod events;
 mod loader;
+mod resources;
 
 use bevy::{
+    app::Update,
     asset::{AssetApp, AssetServer, Assets, Handle},
     core::Name,
-    ecs::query::QuerySingleError,
-    prelude::{Commands, DespawnRecursiveExt, Entity, Query, Res, ResMut, Trigger, With},
-    scene::{Scene, SceneSpawner},
+    prelude::{
+        resource_exists, Children, Commands, DespawnRecursiveExt, Entity, HierarchyQueryExt,
+        IntoSystemConfigs, OnAdd, Query, Res, ResMut, Trigger, With,
+    },
+    scene::{Scene, SceneInstance, SceneSpawner},
 };
 
 pub use ragnarok_rebuild_assets::rsw::Error;
 
 use crate::tables::{name_table::NameTable, IndoorRsw};
 
-use self::loader::AssetLoader;
 pub use self::{
-    components::{EnvironmentalLight, World},
-    events::{LoadWorld, UnloadWorld},
+    components::{AnimatedProp, EnvironmentalLight, World},
+    events::{LoadWorld, WorldLoaded},
     loader::RswSettings,
 };
+use self::{events::UnloadWorld, loader::AssetLoader, resources::LoadingWorld};
 
-use super::paths;
+use super::{paths, rsm};
+
+const UNNAMED_WORLD: &str = "Unnamed World";
 
 pub struct Plugin;
 
@@ -36,9 +42,13 @@ impl bevy::app::Plugin for Plugin {
             .register_type::<components::EnvironmentalSound>()
             // Register AssetLoader
             .register_asset_loader(AssetLoader)
+            // Systems
+            .add_systems(Update, wait_models.run_if(resource_exists::<LoadingWorld>))
             // Observers
             .observe(load_world)
-            .observe(unload_world);
+            .observe(unload_world)
+            .observe(world_added)
+            .observe(world_loaded);
     }
 }
 
@@ -70,20 +80,50 @@ fn load_world(
 }
 
 fn unload_world(
-    _trigger: Trigger<UnloadWorld>,
+    trigger: Trigger<UnloadWorld>,
     mut commands: Commands,
-    worlds: Query<(Entity, &Name), With<components::World>>,
+    world_names: Query<&Name, With<components::World>>,
 ) {
-    match worlds.get_single() {
-        Ok((world, name)) => {
-            bevy::log::trace!("Unloading world {:?}", name);
-            commands.entity(world).despawn_recursive();
-        }
-        Err(QuerySingleError::NoEntities(_)) => {
-            bevy::log::trace!("Triggered `unload_world` but there were no Worlds loaded.");
-        }
-        Err(QuerySingleError::MultipleEntities(_)) => {
-            bevy::log::error!("Triggered `unload_world` but there were multiple worlds loaded.");
-        }
+    let name = world_names
+        .get(trigger.entity())
+        .map_or(UNNAMED_WORLD, |name| name.as_str());
+    bevy::log::trace!("Unloading world {}", name);
+    commands.entity(trigger.entity()).despawn_recursive();
+}
+
+fn world_added(trigger: Trigger<OnAdd, World>, mut commands: Commands) {
+    commands.insert_resource(LoadingWorld {
+        world: trigger.entity(),
+    });
+}
+
+fn world_loaded(
+    trigger: Trigger<WorldLoaded>,
+    mut commands: Commands,
+    worlds: Query<Entity, With<components::World>>,
+) {
+    let other_worlds = worlds
+        .iter()
+        .filter(|world| world.ne(&trigger.entity()))
+        .collect::<Vec<_>>();
+    if !other_worlds.is_empty() {
+        commands.trigger_targets(UnloadWorld, other_worlds);
+    }
+}
+
+fn wait_models(
+    mut commands: Commands,
+    scene_spawner: ResMut<SceneSpawner>,
+    loading_world: Res<LoadingWorld>,
+    children: Query<&Children>,
+    animated_props: Query<&SceneInstance, With<AnimatedProp>>,
+) {
+    if children
+        .iter_descendants(loading_world.world)
+        .filter_map(|child| animated_props.get(child).ok())
+        .all(|prop| scene_spawner.instance_is_ready(**prop))
+    {
+        commands.remove_resource::<LoadingWorld>();
+        commands.trigger_targets(WorldLoaded, loading_world.world);
     }
 }

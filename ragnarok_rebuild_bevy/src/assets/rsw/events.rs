@@ -9,3 +9,6 @@ pub struct LoadWorld {
 
 #[derive(Debug, Event)]
 pub struct UnloadWorld;
+
+#[derive(Debug, Event)]
+pub struct WorldLoaded;
