@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use bevy::{
     asset::{io::Reader, AsyncReadExt, Handle, LoadContext},
     audio::AudioSource,
@@ -8,6 +10,7 @@ use bevy::{
     pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight, PointLightBundle},
     prelude::{Entity, SpatialBundle, TransformBundle},
     scene::{Scene, SceneBundle},
+    time::Timer,
     transform::components::Transform,
 };
 use ragnarok_rebuild_assets::rsw;
@@ -268,8 +271,17 @@ impl AssetLoader {
                             ..Default::default()
                         },
                         EnvironmentalSound {
+                            name: sound.name.to_string(),
                             source: audio_handle,
+                            position: Transform::from_translation(Vec3::from_slice(
+                                &sound.position,
+                            )),
                             volume: sound.volume,
+                            range: sound.range,
+                            cycle: Timer::new(
+                                Duration::from_secs_f32(sound.cycle),
+                                bevy::time::TimerMode::Repeating,
+                            ),
                         },
                     ));
                 }

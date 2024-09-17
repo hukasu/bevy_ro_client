@@ -5,12 +5,21 @@ mod resources;
 use bevy::{
     app::{Plugin, Update},
     asset::AssetServer,
-    audio::{AudioBundle, AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings, Volume},
+    audio::{
+        AudioBundle, AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings, SpatialScale,
+        Volume,
+    },
     core::Name,
-    prelude::{resource_changed, Commands, IntoSystemConfigs, Query, Res, Trigger, With},
+    prelude::{
+        resource_changed, Commands, IntoSystemConfigs, Query, Res, SpatialBundle, Trigger, With,
+    },
 };
 
-pub use self::{components::Bgm, events::PlayBgm, resources::AudioSettings};
+pub use self::{
+    components::{Bgm, Sound},
+    events::{PlayBgm, PlaySound},
+    resources::AudioSettings,
+};
 
 pub struct AudioPlugin;
 
@@ -28,7 +37,8 @@ impl Plugin for AudioPlugin {
                 volume_changed.run_if(resource_changed::<AudioSettings>),
             )
             // Observers
-            .observe(play_bgm);
+            .observe(play_bgm)
+            .observe(play_sound);
     }
 }
 
@@ -50,7 +60,7 @@ fn play_bgm(
     let bgm = asset_server.load(format!("bgm://{}", track));
 
     commands.spawn((
-        Name::new("Bgm"),
+        Name::new(track.to_string()),
         Bgm,
         AudioBundle {
             source: bgm,
@@ -61,6 +71,40 @@ fn play_bgm(
                 paused: false,
                 spatial: false,
                 spatial_scale: None,
+            },
+        },
+    ));
+}
+
+fn play_sound(
+    trigger: Trigger<PlaySound>,
+    mut commands: Commands,
+    audio_settings: Res<AudioSettings>,
+) {
+    let PlaySound {
+        name,
+        track,
+        position,
+        volume,
+        range,
+    } = trigger.event();
+
+    commands.spawn((
+        Name::new(name.clone()),
+        Sound,
+        SpatialBundle {
+            transform: *position,
+            ..Default::default()
+        },
+        AudioBundle {
+            source: track.clone(),
+            settings: PlaybackSettings {
+                mode: PlaybackMode::Despawn,
+                volume: Volume::new(volume * audio_settings.effects_volume),
+                speed: 1.,
+                paused: false,
+                spatial: true,
+                spatial_scale: Some(SpatialScale::new(5. / *range)),
             },
         },
     ));

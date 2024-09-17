@@ -53,6 +53,9 @@ impl bevy::app::Plugin for Plugin {
             .observe(unload_world)
             .observe(world_added)
             .observe(world_loaded);
+
+        #[cfg(feature = "audio")]
+        app.add_systems(Update, play_environmental_audio);
     }
 }
 
@@ -171,5 +174,51 @@ fn wait_models(
     {
         commands.remove_resource::<LoadingWorld>();
         commands.trigger_targets(WorldLoaded, loading_world.world);
+    }
+}
+
+#[cfg(feature = "audio")]
+fn play_environmental_audio(
+    mut commands: Commands,
+    worlds: Query<Entity, With<components::World>>,
+    children: Query<&Children>,
+    mut environmental_sounds: Query<&mut EnvironmentalSound>,
+    time: Res<bevy::time::Time>,
+) {
+    let Ok(world) = worlds.get_single() else {
+        return;
+    };
+    let Some(world_children) = children.get(world).ok() else {
+        bevy::log::error!("World had no children or children was empty");
+        return;
+    };
+    let Some(sounds_container) = world_children.iter().find_map(|child| {
+        children
+            .get(*child)
+            .ok()
+            .filter(|container| environmental_sounds.contains(container[0]))
+    }) else {
+        bevy::log::error!("World does not have a container with AnimatedProps.");
+        return;
+    };
+
+    let tick = time.delta();
+
+    for sound_ref in sounds_container {
+        let Ok(mut sound) = environmental_sounds.get_mut(*sound_ref) else {
+            continue;
+        };
+
+        sound.cycle.tick(tick);
+
+        if sound.cycle.just_finished() {
+            commands.trigger(crate::audio::PlaySound {
+                name: sound.name.clone(),
+                track: sound.source.clone(),
+                position: sound.position,
+                volume: sound.volume,
+                range: sound.range,
+            });
+        }
     }
 }

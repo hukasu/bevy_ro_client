@@ -2,7 +2,9 @@ use bevy::{
     asset::Handle,
     audio::AudioSource,
     ecs::{component::Component, reflect::ReflectComponent},
+    prelude::Transform,
     reflect::Reflect,
+    time::Timer,
 };
 
 #[derive(Debug, Component, Reflect)]
@@ -35,8 +37,12 @@ pub struct EnvironmentalLight {
 #[reflect(Component)]
 /// Environmental sound that plays in the [`World`]
 pub struct EnvironmentalSound {
+    pub name: String,
     pub source: Handle<AudioSource>,
+    pub position: Transform,
     pub volume: f32,
+    pub range: f32,
+    pub cycle: Timer,
 }
 
 #[derive(Debug, Default, Component, Reflect)]
