@@ -1,4 +1,6 @@
 mod client;
+#[cfg(feature = "with-inspector")]
+mod inspector_egui;
 
 use bevy::{
     app::{App, PluginGroup, Update},
@@ -6,7 +8,6 @@ use bevy::{
     ecs::system::Commands,
     input::ButtonInput,
     log::LogPlugin,
-    pbr::{DirectionalLightShadowMap, PointLightShadowMap},
     prelude::{not, IntoSystemConfigs, KeyCode, Query, Res, With},
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
     window::{PrimaryWindow, Window, WindowPlugin},
@@ -17,13 +18,6 @@ use bevy::{
 use bevy::{
     core_pipeline::core_3d::Camera3dBundle, math::Vec3, prelude::Startup, prelude::Transform,
 };
-
-#[cfg(feature = "with-inspector")]
-use bevy::{app::PostStartup, audio::SpatialListener, ecs::entity::Entity};
-#[cfg(feature = "with-inspector")]
-use bevy_flycam::FlyCam;
-#[cfg(feature = "with-inspector")]
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 use ragnarok_rebuild_bevy::{
     assets::{grf, paths::BASE_DATA_FOLDER, rsw::LoadWorld},
@@ -37,11 +31,9 @@ fn main() {
 
     let mut app = App::new();
     app
-        // Resources
-        .insert_resource(DirectionalLightShadowMap {size: 2048})
-        .insert_resource(PointLightShadowMap { size: 32})
         // Asset Sources
         .register_asset_source("bgm", AssetSourceBuilder::platform_default("BGM/", None))
+        .register_asset_source("system", AssetSourceBuilder::platform_default("System/", None))
         .register_asset_source(
             bevy::asset::io::AssetSourceId::Default,
             bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
@@ -81,18 +73,7 @@ fn main() {
     }
     #[cfg(feature = "with-inspector")]
     {
-        app.add_plugins(WorldInspectorPlugin::default())
-            .add_plugins(bevy_flycam::prelude::PlayerPlugin)
-            .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
-            .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
-            .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin)
-            .add_plugins(iyes_perf_ui::PerfUiPlugin)
-            .insert_resource(bevy_flycam::prelude::MovementSettings {
-                sensitivity: 0.00015, // default: 0.00012
-                speed: 24.0,          // default: 12.0
-            })
-            .add_systems(PostStartup, add_listener_to_fly_cam)
-            .add_systems(bevy::app::Startup, spawn_perf_ui);
+        app.add_plugins(inspector_egui::Plugin);
     }
 
     app
@@ -107,25 +88,10 @@ fn main() {
 #[cfg(not(feature = "with-inspector"))]
 fn spawn_camera(mut commands: Commands) {
     commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0., 2500., 30.)
+        transform: Transform::from_xyz(0., 500., 30.)
             .looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
         ..Default::default()
     });
-}
-
-#[cfg(feature = "with-inspector")]
-fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
-    let Ok(flycam) = flycams.get_single() else {
-        bevy::log::error!("Zero or more than one FlyCam present.");
-        return;
-    };
-
-    commands.entity(flycam).insert(SpatialListener::default());
-}
-
-#[cfg(feature = "with-inspector")]
-fn spawn_perf_ui(mut commands: Commands) {
-    commands.spawn(iyes_perf_ui::entries::PerfUiBundle::default());
 }
 
 fn is_input_captured(windows: Query<&Window, With<PrimaryWindow>>) -> bool {

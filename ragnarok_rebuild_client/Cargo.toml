@@ -14,6 +14,7 @@ with-inspector = [
     "bevy_flycam",
     "iyes_perf_ui",
     "ragnarok_rebuild_bevy/debug",
+    "ab_glyph",
 ]
 
 [dependencies]
@@ -24,6 +25,8 @@ bevy = { workspace = true }
 bevy-inspector-egui = { workspace = true, optional = true }
 bevy_flycam = { workspace = true, optional = true }
 iyes_perf_ui = { workspace = true, optional = true }
+
+ab_glyph = { workspace = true, optional = true }
 
 tungstenite = { workspace = true }
 url = { workspace = true }
