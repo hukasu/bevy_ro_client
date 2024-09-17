@@ -128,7 +128,7 @@ fn sound_debug(
     mut gizmos: Gizmos,
     worlds: Query<Entity, With<rsw::World>>,
     children: Query<&Children>,
-    sounds: Query<&GlobalTransform, With<rsw::EnvironmentalSound>>,
+    sounds: Query<(&GlobalTransform, &rsw::EnvironmentalSound)>,
 ) {
     const SOUND_GIZMO_RADIUS: f32 = 5.;
 
@@ -155,9 +155,15 @@ fn sound_debug(
     };
 
     let color = palettes::css::SEA_GREEN;
-    for effect in sounds.iter_many(sounds_container) {
-        let translation = effect.translation();
+    for (effect_transform, effect_properties) in sounds.iter_many(sounds_container) {
+        let translation = effect_transform.translation();
         let sounds_translation = translation + Vec3::new(-SOUND_GIZMO_RADIUS / 2., 0., 0.);
+        gizmos.sphere(
+            translation,
+            Quat::default(),
+            effect_properties.range / 5.,
+            color,
+        );
         gizmos.arc_3d(
             f32::consts::FRAC_PI_2,
             SOUND_GIZMO_RADIUS / 3.,
