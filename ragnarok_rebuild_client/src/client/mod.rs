@@ -9,7 +9,10 @@ use bevy::{
     },
 };
 
-use ragnarok_rebuild_bevy::{assets::rsw::World, audio::Bgm};
+use ragnarok_rebuild_bevy::{
+    assets::rsw::World,
+    audio::{Bgm, Sound},
+};
 
 use self::components::Game;
 
@@ -22,7 +25,10 @@ impl Plugin for ClientPlugin {
             .add_systems(Startup, start_up)
             // Observers
             .observe(attach_world_to_game)
-            .observe(attach_bgm_to_game);
+            // TODO Change to observe on the the container entity
+            // in 0.15
+            .observe(attach_bgm_to_game)
+            .observe(attach_sound_to_game);
     }
 }
 
@@ -60,6 +66,21 @@ fn attach_world_to_game(
 
 fn attach_bgm_to_game(
     trigger: Trigger<OnAdd, Bgm>,
+    mut commands: Commands,
+    games: Query<Entity, With<Game>>,
+) {
+    let Ok(game) = games
+        .get_single()
+        .inspect_err(|err| bevy::log::error!("{err}"))
+    else {
+        return;
+    };
+
+    commands.entity(game).add_child(trigger.entity());
+}
+
+fn attach_sound_to_game(
+    trigger: Trigger<OnAdd, Sound>,
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
