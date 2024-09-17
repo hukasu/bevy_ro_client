@@ -9,6 +9,7 @@ use bevy::{
     math::{EulerRot, Quat, Vec3},
     pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight, PointLightBundle},
     prelude::{Entity, SpatialBundle, TransformBundle},
+    render::primitives::Aabb,
     scene::{Scene, SceneBundle},
     time::Timer,
     transform::components::Transform,
@@ -248,6 +249,10 @@ impl AssetLoader {
                             },
                             ..Default::default()
                         },
+                        Aabb::from_min_max(
+                            -Vec3::splat(light.range / 2.),
+                            Vec3::splat(light.range / 2.),
+                        ),
                         EnvironmentalLight { range: light.range },
                     ));
                 }
