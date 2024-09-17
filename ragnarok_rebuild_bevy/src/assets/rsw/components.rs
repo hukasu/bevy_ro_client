@@ -11,7 +11,11 @@ use bevy::{
 #[reflect(Component)]
 /// A World contains a Ground, a [`DirectionalLight`](bevy::pbr::DirectionalLight), multiple [`AnimatedProp`],
 /// multiple [`PointLight`](bevy::pbr::PointLight), and multiple [`EnvironmentalSound`]s
-pub struct World;
+pub struct World {
+    pub has_lights: bool,
+    pub has_sounds: bool,
+    pub has_effects: bool,
+}
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]

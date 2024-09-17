@@ -180,14 +180,17 @@ fn wait_models(
 #[cfg(feature = "audio")]
 fn play_environmental_audio(
     mut commands: Commands,
-    worlds: Query<Entity, With<components::World>>,
+    worlds: Query<(Entity, &components::World)>,
     children: Query<&Children>,
     mut environmental_sounds: Query<&mut EnvironmentalSound>,
     time: Res<bevy::time::Time>,
 ) {
-    let Ok(world) = worlds.get_single() else {
+    let Ok((world, world_info)) = worlds.get_single() else {
         return;
     };
+    if !world_info.has_sounds {
+        return;
+    }
     let Some(world_children) = children.get(world).ok() else {
         bevy::log::error!("World had no children or children was empty");
         return;
@@ -198,7 +201,7 @@ fn play_environmental_audio(
             .ok()
             .filter(|container| environmental_sounds.contains(container[0]))
     }) else {
-        bevy::log::error!("World does not have a container with AnimatedProps.");
+        bevy::log::error!("World does not have a container with Sounds.");
         return;
     };
 

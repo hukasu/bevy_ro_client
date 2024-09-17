@@ -44,15 +44,18 @@ fn point_light_debug_changed(
     mut commands: Commands,
     mut prev: Local<bool>,
     rsw_debug: Res<RswDebug>,
-    rsws: Query<Entity, With<rsw::World>>,
+    rsws: Query<(Entity, &rsw::World)>,
 ) {
     if *prev != rsw_debug.show_point_lights {
         *prev = rsw_debug.show_point_lights;
 
-        let Ok(world) = rsws.get_single() else {
+        let Ok((world, world_info)) = rsws.get_single() else {
             bevy::log::error!("There were an error getting a single World.");
             return;
         };
+        if !world_info.has_lights {
+            return;
+        }
         commands.trigger_targets(TogglePointLightsDebug, world);
     }
 }
@@ -126,15 +129,18 @@ fn sound_debug_condition(rsw_debug: Res<RswDebug>) -> bool {
 
 fn sound_debug(
     mut gizmos: Gizmos,
-    worlds: Query<Entity, With<rsw::World>>,
+    worlds: Query<(Entity, &rsw::World)>,
     children: Query<&Children>,
     sounds: Query<(&GlobalTransform, &rsw::EnvironmentalSound)>,
 ) {
     const SOUND_GIZMO_RADIUS: f32 = 5.;
 
-    let Ok(world) = worlds.get_single() else {
+    let Ok((world, world_info)) = worlds.get_single() else {
         return;
     };
+    if !world_info.has_sounds {
+        return;
+    }
 
     let Ok(world_children) = children.get(world) else {
         bevy::log::error!("Can't show effect gizmos because World has no children.");
@@ -210,15 +216,18 @@ fn effect_debug_condition(rsw_debug: Res<RswDebug>) -> bool {
 
 fn effect_debug(
     mut gizmos: Gizmos,
-    worlds: Query<Entity, With<rsw::World>>,
+    worlds: Query<(Entity, &rsw::World)>,
     children: Query<&Children>,
     effects: Query<&GlobalTransform, With<rsw::EnvironmentalEffect>>,
 ) {
     const EFFECT_GIZMO_RADIUS: f32 = 5.;
 
-    let Ok(world) = worlds.get_single() else {
+    let Ok((world, world_info)) = worlds.get_single() else {
         return;
     };
+    if !world_info.has_effects {
+        return;
+    }
 
     let Ok(world_children) = children.get(world) else {
         bevy::log::error!("Can't show effect gizmos because World has no children.");
@@ -288,8 +297,19 @@ fn effect_debug(
     }
 }
 
-fn world_load(trigger: Trigger<rsw::WorldLoaded>, mut commands: Commands) {
-    commands.trigger_targets(TogglePointLightsDebug, trigger.entity());
+fn world_load(
+    trigger: Trigger<rsw::WorldLoaded>,
+    mut commands: Commands,
+    worlds: Query<&rsw::World>,
+) {
+    if worlds
+        .get(trigger.entity())
+        .ok()
+        .filter(|world| world.has_lights)
+        .is_some()
+    {
+        commands.trigger_targets(TogglePointLightsDebug, trigger.entity());
+    }
     commands.trigger_targets(ToggleDirectionalLightDebug, trigger.entity());
 }
 

@@ -87,7 +87,11 @@ impl AssetLoader {
             .spawn((
                 Name::new(filename.to_string()),
                 SpatialBundle::default(),
-                World,
+                World {
+                    has_lights: !rsw.objects.1.is_empty(),
+                    has_sounds: !rsw.objects.2.is_empty(),
+                    has_effects: !rsw.objects.3.is_empty(),
+                },
             ))
             .push_children(&[
                 directional_light,
