@@ -1,19 +1,25 @@
-use core::f32;
-
 use bevy::{
     app::{Plugin, Update},
     color::palettes,
-    math::{Dir3, Quat, Vec3},
-    pbr::DirectionalLight,
+    math::{Dir3, EulerRot, Quat, Vec2, Vec3},
+    pbr::{DirectionalLight, PointLight},
     prelude::{
-        resource_changed, Children, Commands, Entity, Event, Gizmos, GlobalTransform,
-        HierarchyQueryExt, IntoSystemConfigs, LightGizmoColor, Local, Query, ReflectResource, Res,
-        Resource, ShowLightGizmo, Trigger, With,
+        Children, Entity, Gizmos, GlobalTransform, IntoSystemConfigs, Query, ReflectResource, Res,
+        Resource, Transform, With,
     },
     reflect::Reflect,
 };
 
 use crate::assets::rsw;
+
+#[derive(Debug, Clone, Default, Resource, Reflect)]
+#[reflect(Resource)]
+pub struct RswDebug {
+    show_directional_light: bool,
+    show_point_lights: bool,
+    show_sounds: bool,
+    show_effects: bool,
+}
 
 pub struct RswDebugPlugin;
 
@@ -27,97 +33,155 @@ impl Plugin for RswDebugPlugin {
             .add_systems(
                 Update,
                 (
-                    point_light_debug_changed.run_if(resource_changed::<RswDebug>),
-                    directional_light_debug_changed.run_if(resource_changed::<RswDebug>),
+                    directional_light_debug.run_if(directional_light_debug_condition),
+                    point_light_debug.run_if(point_light_debug_condition),
                     sound_debug.run_if(sound_debug_condition),
                     effect_debug.run_if(effect_debug_condition),
                 ),
-            )
-            // Observers
-            .observe(toggle_point_lights)
-            .observe(toggle_directional_light)
-            .observe(world_load);
+            );
     }
 }
 
-fn point_light_debug_changed(
-    mut commands: Commands,
-    mut prev: Local<bool>,
-    rsw_debug: Res<RswDebug>,
-    rsws: Query<(Entity, &rsw::World)>,
-) {
-    if *prev != rsw_debug.show_point_lights {
-        *prev = rsw_debug.show_point_lights;
-
-        let Ok((world, world_info)) = rsws.get_single() else {
-            bevy::log::error!("There were an error getting a single World.");
-            return;
-        };
-        if !world_info.has_lights {
-            return;
-        }
-        commands.trigger_targets(TogglePointLightsDebug, world);
-    }
+fn directional_light_debug_condition(rsw_debug: Res<RswDebug>) -> bool {
+    rsw_debug.show_directional_light
 }
 
-fn toggle_point_lights(
-    trigger: Trigger<TogglePointLightsDebug>,
-    mut commands: Commands,
-    rsw_debug: Res<RswDebug>,
+fn directional_light_debug(
+    mut gizmos: Gizmos,
+    worlds: Query<Entity, With<rsw::World>>,
     children: Query<&Children>,
-    environmental_lights: Query<Entity, With<rsw::EnvironmentalLight>>,
+    directional_lights: Query<(&GlobalTransform, &DirectionalLight)>,
 ) {
-    for light in children
-        .iter_descendants(trigger.entity())
-        .filter(|child| environmental_lights.contains(*child))
-    {
-        if rsw_debug.show_point_lights {
-            commands.entity(light).insert(ShowLightGizmo::default());
-        } else {
-            commands.entity(light).remove::<ShowLightGizmo>();
-        }
-    }
-}
+    const DIRECTIONAL_LIGHT_GIZMO_LENGHT: f32 = 5.;
 
-fn directional_light_debug_changed(
-    mut commands: Commands,
-    mut prev: Local<bool>,
-    rsws: Query<Entity, With<rsw::World>>,
-    rsw_debug: Res<RswDebug>,
-) {
-    if *prev != rsw_debug.show_directional_light {
-        *prev = rsw_debug.show_directional_light;
-
-        let Ok(world) = rsws.get_single() else {
-            bevy::log::error!("There were an error getting a single World.");
-            return;
-        };
-        commands.trigger_targets(ToggleDirectionalLightDebug, world);
-    }
-}
-
-fn toggle_directional_light(
-    trigger: Trigger<ToggleDirectionalLightDebug>,
-    mut commands: Commands,
-    rsw_debug: Res<RswDebug>,
-    rsws: Query<&Children, With<rsw::World>>,
-    directional_lights: Query<Entity, With<DirectionalLight>>,
-) {
-    let Ok(world) = rsws.get(trigger.entity()) else {
-        bevy::log::error!("World does not have children directional lights to toggle.");
+    let Ok(world) = worlds.get_single() else {
         return;
     };
 
-    for light in world.iter().copied() {
-        if let Ok(directional_light) = directional_lights.get(light) {
-            if rsw_debug.show_directional_light {
-                commands.entity(directional_light).insert(ShowLightGizmo {
-                    color: Some(LightGizmoColor::MatchLightColor),
-                });
-            } else {
-                commands
-                    .entity(directional_light)
-                    .remove::<ShowLightGizmo>();
+    let Ok(world_children) = children.get(world) else {
+        bevy::log::error!("Can't show directional light gizmos because World has no children.");
+        return;
+    };
+
+    let Some((directional_light_pos, directional_light)) = world_children
+        .iter()
+        .find_map(|child| directional_lights.get(*child).ok())
+    else {
+        return;
+    };
+
+    let color = directional_light.color;
+    let (_, rotation, translation) = directional_light_pos.to_scale_rotation_translation();
+    gizmos.rect(
+        translation,
+        rotation,
+        Vec2::splat(DIRECTIONAL_LIGHT_GIZMO_LENGHT / 2.),
+        color,
+    );
+    for x in [
+        -DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+        0.,
+        DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+    ] {
+        for y in [
+            -DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+            0.,
+            DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+        ] {
+            gizmos.arrow(
+                directional_light_pos.transform_point(Vec3::new(x, y, 0.)),
+                directional_light_pos.transform_point(Vec3::new(
+                    x,
+                    y,
+                    -DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+                )),
+                color,
+            );
+        }
+    }
+}
+
+fn point_light_debug_condition(rsw_debug: Res<RswDebug>) -> bool {
+    rsw_debug.show_point_lights
+}
+
+fn point_light_debug(
+    mut gizmos: Gizmos,
+    worlds: Query<(Entity, &rsw::World)>,
+    children: Query<&Children>,
+    lights: Query<(&GlobalTransform, &PointLight)>,
+) {
+    const POINT_LIGHT_GIZMO_LENGHT: f32 = 1.;
+    const POINT_LIGHT_RANGE_THRESHOLD: f32 = 5.;
+
+    let Ok((world, world_info)) = worlds.get_single() else {
+        return;
+    };
+    if !world_info.has_lights {
+        return;
+    }
+
+    let Ok(world_children) = children.get(world) else {
+        bevy::log::error!("Can't show point light gizmos because World has no children.");
+        return;
+    };
+
+    let Some(lights_container) = world_children.iter().find_map(|child| {
+        let Ok(child_children) = children.get(*child) else {
+            return None;
+        };
+        if lights.contains(child_children[0]) {
+            Some(child_children)
+        } else {
+            None
+        }
+    }) else {
+        return;
+    };
+
+    for (light_pos, light_properties) in lights.iter_many(lights_container) {
+        let color = light_properties.color;
+        let translation = light_pos.translation();
+
+        gizmos.sphere(translation, Quat::default(), light_properties.range, color);
+        let scale_factor = if light_properties.range < POINT_LIGHT_RANGE_THRESHOLD {
+            light_properties.range / POINT_LIGHT_RANGE_THRESHOLD
+        } else {
+            1.
+        };
+        gizmos.sphere(
+            translation,
+            Quat::default(),
+            POINT_LIGHT_GIZMO_LENGHT * scale_factor,
+            color,
+        );
+        // Poles
+        let pole_offset = Vec3::new(0., POINT_LIGHT_GIZMO_LENGHT, 0.);
+        gizmos.line(
+            translation + pole_offset * scale_factor,
+            translation + (pole_offset * 2.) * scale_factor,
+            color,
+        );
+        gizmos.line(
+            translation + -pole_offset * scale_factor,
+            translation + (-pole_offset * 2.) * scale_factor,
+            color,
+        );
+
+        let equator_offset = Vec3::new(POINT_LIGHT_GIZMO_LENGHT, 0., 0.);
+        for y in [0., 1., 2., 3., 4., 5., 6., 7., 8.] {
+            for z in [-1., 0., 1.] {
+                let transform = Transform::from_rotation(Quat::from_euler(
+                    EulerRot::YZX,
+                    std::f32::consts::FRAC_PI_4 * y,
+                    std::f32::consts::FRAC_PI_4 * z,
+                    0.,
+                ));
+                gizmos.line(
+                    translation + transform.transform_point(equator_offset) * scale_factor,
+                    translation + transform.transform_point(equator_offset * 2.) * scale_factor,
+                    color,
+                );
             }
         }
     }
@@ -171,37 +235,37 @@ fn sound_debug(
             color,
         );
         gizmos.arc_3d(
-            f32::consts::FRAC_PI_2,
+            std::f32::consts::FRAC_PI_2,
             SOUND_GIZMO_RADIUS / 3.,
             sounds_translation,
             Quat::from_euler(
-                bevy::math::EulerRot::XYZ,
-                f32::consts::FRAC_PI_2,
-                -f32::consts::FRAC_PI_4,
+                EulerRot::XYZ,
+                std::f32::consts::FRAC_PI_2,
+                -std::f32::consts::FRAC_PI_4,
                 0.,
             ),
             color,
         );
         gizmos.arc_3d(
-            f32::consts::FRAC_PI_2,
+            std::f32::consts::FRAC_PI_2,
             SOUND_GIZMO_RADIUS * 2. / 3.,
             sounds_translation,
             Quat::from_euler(
-                bevy::math::EulerRot::XYZ,
-                f32::consts::FRAC_PI_2,
-                -f32::consts::FRAC_PI_4,
+                EulerRot::XYZ,
+                std::f32::consts::FRAC_PI_2,
+                -std::f32::consts::FRAC_PI_4,
                 0.,
             ),
             color,
         );
         gizmos.arc_3d(
-            f32::consts::FRAC_PI_2,
+            std::f32::consts::FRAC_PI_2,
             SOUND_GIZMO_RADIUS,
             sounds_translation,
             Quat::from_euler(
-                bevy::math::EulerRot::XYZ,
-                f32::consts::FRAC_PI_2,
-                -f32::consts::FRAC_PI_4,
+                EulerRot::XYZ,
+                std::f32::consts::FRAC_PI_2,
+                -std::f32::consts::FRAC_PI_4,
                 0.,
             ),
             color,
@@ -251,44 +315,44 @@ fn effect_debug(
     for effect in effects.iter_many(effects_container) {
         let translation = effect.translation();
         gizmos.arc_3d(
-            f32::consts::FRAC_PI_2,
+            std::f32::consts::FRAC_PI_2,
             EFFECT_GIZMO_RADIUS,
             translation + Vec3::new(-EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
-            Quat::from_euler(bevy::math::EulerRot::XYZ, f32::consts::FRAC_PI_2, 0., 0.),
+            Quat::from_euler(EulerRot::XYZ, std::f32::consts::FRAC_PI_2, 0., 0.),
             color,
         );
         gizmos.arc_3d(
-            f32::consts::FRAC_PI_2,
+            std::f32::consts::FRAC_PI_2,
             EFFECT_GIZMO_RADIUS,
             translation + Vec3::new(EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
             Quat::from_euler(
-                bevy::math::EulerRot::XYZ,
-                f32::consts::FRAC_PI_2,
-                f32::consts::PI,
+                EulerRot::XYZ,
+                std::f32::consts::FRAC_PI_2,
+                std::f32::consts::PI,
                 0.,
             ),
             color,
         );
         gizmos.arc_3d(
-            f32::consts::FRAC_PI_2,
+            std::f32::consts::FRAC_PI_2,
             EFFECT_GIZMO_RADIUS,
             translation + Vec3::new(-EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
             Quat::from_euler(
-                bevy::math::EulerRot::XYZ,
-                f32::consts::FRAC_PI_2,
-                f32::consts::FRAC_PI_2 * 3.,
+                EulerRot::XYZ,
+                std::f32::consts::FRAC_PI_2,
+                std::f32::consts::FRAC_PI_2 * 3.,
                 0.,
             ),
             color,
         );
         gizmos.arc_3d(
-            f32::consts::FRAC_PI_2,
+            std::f32::consts::FRAC_PI_2,
             EFFECT_GIZMO_RADIUS,
             translation + Vec3::new(EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
             Quat::from_euler(
-                bevy::math::EulerRot::XYZ,
-                f32::consts::FRAC_PI_2,
-                f32::consts::FRAC_PI_2,
+                EulerRot::XYZ,
+                std::f32::consts::FRAC_PI_2,
+                std::f32::consts::FRAC_PI_2,
                 0.,
             ),
             color,
@@ -296,34 +360,3 @@ fn effect_debug(
         gizmos.circle(translation, Dir3::NEG_Z, EFFECT_GIZMO_RADIUS, color);
     }
 }
-
-fn world_load(
-    trigger: Trigger<rsw::WorldLoaded>,
-    mut commands: Commands,
-    worlds: Query<&rsw::World>,
-) {
-    if worlds
-        .get(trigger.entity())
-        .ok()
-        .filter(|world| world.has_lights)
-        .is_some()
-    {
-        commands.trigger_targets(TogglePointLightsDebug, trigger.entity());
-    }
-    commands.trigger_targets(ToggleDirectionalLightDebug, trigger.entity());
-}
-
-#[derive(Debug, Clone, Default, Resource, Reflect)]
-#[reflect(Resource)]
-pub struct RswDebug {
-    show_point_lights: bool,
-    show_directional_light: bool,
-    show_sounds: bool,
-    show_effects: bool,
-}
-
-#[derive(Debug, Event)]
-struct TogglePointLightsDebug;
-
-#[derive(Debug, Event)]
-struct ToggleDirectionalLightDebug;
