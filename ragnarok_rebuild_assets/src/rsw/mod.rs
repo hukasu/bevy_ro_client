@@ -23,7 +23,7 @@ pub use self::{
     sound::Sound,
 };
 
-type Objects = (Vec<Model>, Vec<Light>, Vec<Sound>, Vec<Effect>);
+type Objects = (Box<[Model]>, Box<[Light]>, Box<[Sound]>, Box<[Effect]>);
 
 #[derive(Debug)]
 pub struct RSW {
@@ -37,7 +37,10 @@ pub struct RSW {
     pub water_configuration: Option<WaterPlane>,
     pub lighting_parameters: LightingParams,
     pub map_boundaries: BoundingBox,
-    pub objects: Objects,
+    pub models: Box<[Model]>,
+    pub lights: Box<[Light]>,
+    pub sounds: Box<[Sound]>,
+    pub effects: Box<[Effect]>,
     pub quad_tree: QuadTree,
 }
 
@@ -65,7 +68,7 @@ impl RSW {
 
         let map_boundaries = BoundingBox::from_reader(reader)?;
 
-        let objects = Self::read_objects(reader, &version)?;
+        let (models, lights, sounds, effects) = Self::read_objects(reader, &version)?;
 
         let quad_tree = if version >= Version(2, 0, 0) {
             QuadTree::from_reader(reader)?
@@ -93,7 +96,10 @@ impl RSW {
             water_configuration,
             lighting_parameters,
             map_boundaries,
-            objects,
+            models,
+            lights,
+            sounds,
+            effects,
             quad_tree,
         })
     }
@@ -138,6 +144,11 @@ impl RSW {
                 _ => Err(Error::UnknownObjectType(obj_type))?,
             }
         }
-        Ok((models, lights, sounds, effects))
+        Ok((
+            models.into_boxed_slice(),
+            lights.into_boxed_slice(),
+            sounds.into_boxed_slice(),
+            effects.into_boxed_slice(),
+        ))
     }
 }

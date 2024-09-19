@@ -89,9 +89,9 @@ impl AssetLoader {
                 Name::new(filename.to_string()),
                 SpatialBundle::default(),
                 World {
-                    has_lights: !rsw.objects.1.is_empty(),
-                    has_sounds: !rsw.objects.2.is_empty(),
-                    has_effects: !rsw.objects.3.is_empty(),
+                    has_lights: !rsw.lights.is_empty(),
+                    has_sounds: !rsw.sounds.is_empty(),
+                    has_effects: !rsw.effects.is_empty(),
                 },
             ))
             .push_children(&[
@@ -189,7 +189,7 @@ impl AssetLoader {
         world
             .spawn((Name::new("Models"), SpatialBundle::default()))
             .with_children(|parent| {
-                for prop in rsw.objects.0.iter() {
+                for prop in rsw.models.iter() {
                     let prop_handle = load_context.load(format!(
                         "{}{}",
                         paths::MODEL_FILES_FOLDER,
@@ -230,7 +230,7 @@ impl AssetLoader {
         world
             .spawn((Name::new("Lights"), SpatialBundle::default()))
             .with_children(|parent| {
-                for light in rsw.objects.1.iter() {
+                for light in rsw.lights.iter() {
                     parent.spawn((
                         Name::new(light.name.to_string()),
                         PointLightBundle {
@@ -269,7 +269,7 @@ impl AssetLoader {
         world
             .spawn((Name::new("Sounds"), SpatialBundle::default()))
             .with_children(|parent| {
-                for sound in rsw.objects.2.iter() {
+                for sound in rsw.sounds.iter() {
                     let audio_handle: Handle<AudioSource> =
                         load_context.load(format!("{}{}", paths::WAV_FILES_FOLDER, sound.filename));
 
@@ -310,7 +310,7 @@ impl AssetLoader {
         world
             .spawn((Name::new("Effects"), SpatialBundle::default()))
             .with_children(|parent| {
-                for effect in rsw.objects.3.iter() {
+                for effect in rsw.effects.iter() {
                     parent.spawn((
                         Name::new(effect.name.to_string()),
                         TransformBundle {
