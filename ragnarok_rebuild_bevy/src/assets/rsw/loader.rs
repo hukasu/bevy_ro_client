@@ -288,7 +288,12 @@ impl AssetLoader {
                             volume: sound.volume,
                             range: sound.range,
                             cycle: Timer::new(
-                                Duration::from_secs_f32(sound.cycle),
+                                Duration::from_secs_f32(if sound.cycle < f32::EPSILON {
+                                    bevy::log::warn!("{} had cycle set to 0. seconds. Changing to default 4. seconds.", sound.name);
+                                    4.
+                                } else {
+                                    sound.cycle
+                                }),
                                 bevy::time::TimerMode::Repeating,
                             ),
                         },
