@@ -207,7 +207,7 @@ fn sound_debug(
     }
 
     let Ok(world_children) = children.get(world) else {
-        bevy::log::error!("Can't show effect gizmos because World has no children.");
+        bevy::log::error!("Can't show sound gizmos because World has no children.");
         return;
     };
 
