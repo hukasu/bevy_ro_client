@@ -3,14 +3,11 @@ mod client;
 mod inspector_egui;
 
 use bevy::{
-    app::{App, PluginGroup, Update},
+    app::{App, PluginGroup},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
-    ecs::system::Commands,
-    input::ButtonInput,
     log::LogPlugin,
-    prelude::{not, IntoSystemConfigs, KeyCode, Query, Res, With},
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
-    window::{PrimaryWindow, Window, WindowPlugin},
+    window::{Window, WindowPlugin},
     DefaultPlugins,
 };
 
@@ -20,7 +17,7 @@ use bevy::{
 };
 
 use ragnarok_rebuild_bevy::{
-    assets::{grf, paths::BASE_DATA_FOLDER, rsw::LoadWorld},
+    assets::{grf, paths::BASE_DATA_FOLDER},
     RagnarokPlugin,
 };
 
@@ -78,9 +75,7 @@ fn main() {
 
     app
         // Plugins
-        .add_plugins(ClientPlugin)
-        // Systems
-        .add_systems(Update, load_map.run_if(not(is_input_captured)));
+        .add_plugins(ClientPlugin);
 
     app.run();
 }
@@ -92,51 +87,4 @@ fn spawn_camera(mut commands: Commands) {
             .looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
         ..Default::default()
     });
-}
-
-fn is_input_captured(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
-    if cfg!(feature = "with-inspector") {
-        if let Ok(primary_window) = windows.get_single() {
-            matches!(
-                primary_window.cursor.grab_mode,
-                bevy::window::CursorGrabMode::Confined
-            )
-        } else {
-            false
-        }
-    } else {
-        false
-    }
-}
-
-fn load_map(mut commands: Commands, keyboard_input: Res<ButtonInput<KeyCode>>) {
-    if keyboard_input.just_pressed(KeyCode::KeyQ) {
-        commands.trigger(LoadWorld {
-            world: "prontera.rsw".into(),
-        });
-    } else if keyboard_input.just_pressed(KeyCode::KeyW) {
-        commands.trigger(LoadWorld {
-            world: "morocc.rsw".into(),
-        });
-    } else if keyboard_input.just_pressed(KeyCode::KeyE) {
-        commands.trigger(LoadWorld {
-            world: "payon.rsw".into(),
-        });
-    } else if keyboard_input.just_pressed(KeyCode::KeyR) {
-        commands.trigger(LoadWorld {
-            world: "yuno.rsw".into(),
-        });
-    } else if keyboard_input.just_pressed(KeyCode::KeyA) {
-        commands.trigger(LoadWorld {
-            world: "pay_dun00.rsw".into(),
-        });
-    } else if keyboard_input.just_pressed(KeyCode::KeyS) {
-        commands.trigger(LoadWorld {
-            world: "moc_pryd03.rsw".into(),
-        });
-    } else if keyboard_input.just_pressed(KeyCode::KeyD) {
-        commands.trigger(LoadWorld {
-            world: "prt_in.rsw".into(),
-        });
-    }
 }

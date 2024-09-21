@@ -2,12 +2,16 @@ use bevy::{
     app::{PostStartup, Startup, Update},
     asset::{AssetServer, Assets, Handle},
     audio::SpatialListener,
-    prelude::{resource_exists, Commands, Entity, IntoSystemConfigs, Query, Res, Resource, With},
+    prelude::{
+        resource_exists, Commands, Deref, DerefMut, Entity, IntoSystemConfigs, Query, Res, ResMut,
+        Resource, With,
+    },
     text::Font,
 };
 
 use bevy_flycam::FlyCam;
 use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use ragnarok_rebuild_bevy::assets::rsw::LoadWorld;
 
 const FONT_NAME: &str = "SCDream4";
 
@@ -25,13 +29,33 @@ impl bevy::app::Plugin for Plugin {
                 sensitivity: 0.00015, // default: 0.00012
                 speed: 24.0,          // default: 12.0
             })
+            .insert_resource(TeleportTextBox(String::new()))
             .add_systems(PostStartup, add_listener_to_fly_cam)
             .add_systems(Startup, (spawn_perf_ui, init_font_loading))
             .add_systems(
                 Update,
                 check_loading_font.run_if(resource_exists::<LoadingFont>),
-            );
+            )
+            .add_systems(Update, teleport_windows);
     }
+}
+
+#[derive(Debug, Resource, Deref, DerefMut)]
+struct TeleportTextBox(pub String);
+
+fn teleport_windows(
+    mut contexts: bevy_inspector_egui::bevy_egui::EguiContexts,
+    mut commands: Commands,
+    mut text_box: ResMut<TeleportTextBox>,
+) {
+    bevy_inspector_egui::bevy_egui::egui::Window::new("Teleport").show(contexts.ctx_mut(), |ui| {
+        ui.label("Destination");
+        let text = (**text_box).clone();
+        if ui.text_edit_singleline(&mut **text_box).lost_focus() && !text.is_empty() {
+            commands.trigger(LoadWorld { world: text.into() });
+            text_box.clear();
+        }
+    });
 }
 
 fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
