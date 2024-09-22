@@ -3,6 +3,7 @@ pub mod assets;
 pub mod audio;
 #[cfg(feature = "debug")]
 pub mod debug;
+pub mod materials;
 pub mod tables;
 
 use bevy::app::Plugin;
@@ -12,7 +13,8 @@ pub struct RagnarokPlugin;
 impl Plugin for RagnarokPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_plugins(assets::PluginGroup)
-            .add_plugins(tables::TablePlugins);
+            .add_plugins(tables::TablePlugins)
+            .add_plugins(materials::PluginGroup);
 
         #[cfg(feature = "audio")]
         app.add_plugins(audio::AudioPlugin);

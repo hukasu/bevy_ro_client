@@ -8,7 +8,7 @@ use bevy::{
     ecs::world::World,
     hierarchy::BuildWorldChildren,
     math::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4},
-    pbr::{PbrBundle, StandardMaterial},
+    pbr::{ExtendedMaterial, MaterialMeshBundle, StandardMaterial},
     prelude::{AnimationGraph, AnimationTransitions, Entity, Interpolation, SpatialBundle},
     render::{
         mesh::{Indices, Mesh},
@@ -21,10 +21,13 @@ use bevy::{
     transform::components::Transform,
     utils::hashbrown::{hash_map::Entry, HashMap},
 };
-use ragnarok_rebuild_assets::rsm::{self, mesh::Face};
+use ragnarok_rebuild_assets::rsm;
 use uuid::Uuid;
 
-use crate::assets::{paths, rsm::components::ModelAnimation};
+use crate::{
+    assets::{paths, rsm::components::ModelAnimation},
+    materials::RsmMaterial,
+};
 
 pub struct AssetLoader;
 
@@ -32,6 +35,18 @@ struct AssetLoaderContext<'a, 'b, 'c> {
     world: World,
     load_context: &'a mut LoadContext<'b>,
     rsm: &'c rsm::RSM,
+}
+
+#[derive(Debug, Clone)]
+enum LoadedTextureFormat {
+    Bmp,
+    Tga,
+}
+
+#[derive(Debug, Clone)]
+struct LoadedTexture {
+    texture: Handle<Image>,
+    format: LoadedTextureFormat,
 }
 
 impl BevyAssetLoader for AssetLoader {
@@ -152,7 +167,7 @@ impl AssetLoader {
     fn load_textures(
         texture_paths: &[Box<str>],
         load_context: &mut LoadContext,
-    ) -> Vec<Handle<Image>> {
+    ) -> Vec<LoadedTexture> {
         bevy::log::trace!(
             "Loading textures for animated prop {:?}.",
             load_context.path()
@@ -160,7 +175,22 @@ impl AssetLoader {
         texture_paths
             .iter()
             .map(|texture_path| {
-                load_context.load(format!("{}{texture_path}", paths::TEXTURE_FILES_FOLDER))
+                let texture_format = if texture_path.ends_with(".bmp") {
+                    LoadedTextureFormat::Bmp
+                } else if texture_path.ends_with(".tga") {
+                    LoadedTextureFormat::Tga
+                } else {
+                    bevy::log::error!(
+                        "Texture {} does not have .bmp or .tga extension.",
+                        texture_path
+                    );
+                    LoadedTextureFormat::Bmp
+                };
+                LoadedTexture {
+                    texture: load_context
+                        .load(format!("{}{texture_path}", paths::TEXTURE_FILES_FOLDER)),
+                    format: texture_format,
+                }
             })
             .collect::<Vec<_>>()
     }
@@ -168,7 +198,7 @@ impl AssetLoader {
     fn build_root_meshes(
         asset_loader_context: &mut AssetLoaderContext,
         rsm_root: Entity,
-        textures: &[Handle<Image>],
+        textures: &[LoadedTexture],
         animation_clip: &mut AnimationClip,
     ) -> Vec<Entity> {
         asset_loader_context
@@ -192,7 +222,7 @@ impl AssetLoader {
         asset_loader_context: &mut AssetLoaderContext,
         rsm_root: Entity,
         rsm_mesh: &rsm::mesh::Mesh,
-        rsm_textures: &[Handle<Image>],
+        rsm_textures: &[LoadedTexture],
         animation_clip: &mut AnimationClip,
     ) -> Option<Entity> {
         bevy::log::trace!(
@@ -269,7 +299,7 @@ impl AssetLoader {
     fn build_rsm_mesh_primitives(
         asset_loader_context: &mut AssetLoaderContext,
         rsm_mesh: &rsm::mesh::Mesh,
-        rsm_textures: &[Handle<Image>],
+        rsm_textures: &[LoadedTexture],
     ) -> Vec<Entity> {
         let mesh_textures = if rsm_mesh.textures.is_empty() {
             rsm_mesh
@@ -325,18 +355,21 @@ impl AssetLoader {
                 );
                 let material = asset_loader_context.load_context.add_labeled_asset(
                     format!("{}Material{}", rsm_mesh.name, i),
-                    Self::mesh_material(
-                        mesh_textures[*texture_id as usize].clone(),
-                        shade_type == rsm::ShadeType::Unlit,
-                        two_sided == &1,
-                    ),
+                    ExtendedMaterial {
+                        base: Self::mesh_material(
+                            &mesh_textures[*texture_id as usize],
+                            shade_type == rsm::ShadeType::Unlit,
+                            two_sided == &1,
+                        ),
+                        extension: RsmMaterial {},
+                    },
                 );
 
                 asset_loader_context
                     .world
                     .spawn((
                         Name::new(format!("Primitive{i}")),
-                        PbrBundle {
+                        MaterialMeshBundle {
                             mesh,
                             material,
                             ..Default::default()
@@ -462,7 +495,9 @@ impl AssetLoader {
 
     #[must_use]
     #[allow(clippy::type_complexity)]
-    fn split_mesh_into_primitives(mesh: &rsm::mesh::Mesh) -> HashMap<(u16, u8), Vec<&Face>> {
+    fn split_mesh_into_primitives(
+        mesh: &rsm::mesh::Mesh,
+    ) -> HashMap<(u16, u8), Vec<&rsm::mesh::Face>> {
         mesh.faces.iter().fold(HashMap::new(), |mut hm, face| {
             match hm.entry((face.texture_id, face.two_side)) {
                 Entry::Vacant(entry) => {
@@ -534,7 +569,7 @@ impl AssetLoader {
 
     #[must_use]
     fn flat_mesh(
-        primitive_faces: &[&Face],
+        primitive_faces: &[&rsm::mesh::Face],
         mesh_vertexes: &[Vec3],
         mesh_vertex_colors: &[Vec4],
         mesh_uvs: &[Vec2],
@@ -543,7 +578,7 @@ impl AssetLoader {
         let mut uvs = vec![];
         let mut vertex_colors = vec![];
 
-        for Face {
+        for rsm::mesh::Face {
             vertices: face_vertex_ids,
             uv: face_uvs_ids,
             texture_id: _,
@@ -579,7 +614,7 @@ impl AssetLoader {
 
     #[must_use]
     fn smooth_mesh(
-        primitive_faces: &[&Face],
+        primitive_faces: &[&rsm::mesh::Face],
         mesh_vertexes: &[Vec3],
         mesh_vertex_colors: &[Vec4],
         mesh_uvs: &[Vec2],
@@ -628,13 +663,21 @@ impl AssetLoader {
     }
 
     #[must_use]
-    fn mesh_material(texture: Handle<Image>, unlit: bool, double_sided: bool) -> StandardMaterial {
+    fn mesh_material(
+        loaded_texture: &LoadedTexture,
+        unlit: bool,
+        double_sided: bool,
+    ) -> StandardMaterial {
         StandardMaterial {
-            base_color_texture: Some(texture),
+            base_color_texture: Some(loaded_texture.texture.clone()),
             double_sided,
             cull_mode: None,
             unlit,
             reflectance: 0.2,
+            alpha_mode: match loaded_texture.format {
+                LoadedTextureFormat::Bmp => bevy::render::alpha::AlphaMode::Mask(0.5),
+                LoadedTextureFormat::Tga => bevy::render::alpha::AlphaMode::Blend,
+            },
             ..Default::default()
         }
     }
