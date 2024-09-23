@@ -1,6 +1,43 @@
 mod client;
 #[cfg(feature = "with-inspector")]
 mod inspector_egui;
+#[cfg(not(feature = "with-inspector"))]
+mod other {
+    use bevy::{
+        core_pipeline::core_3d::Camera3dBundle,
+        ecs::system::Commands,
+        math::Vec3,
+        prelude::{App, IntoSystemConfigs, Startup, Transform},
+        render::view::GpuCulling,
+    };
+    use ragnarok_rebuild_bevy::{assets::rsw::LoadWorld, tables};
+
+    pub struct Plugin;
+
+    impl bevy::app::Plugin for Plugin {
+        fn build(&self, app: &mut App) {
+            app.add_systems(
+                Startup,
+                spawn_camera.after(tables::system_sets::TableSystems::TableStartup),
+            );
+        }
+    }
+
+    fn spawn_camera(mut commands: Commands) {
+        commands.spawn((
+            Camera3dBundle {
+                transform: Transform::from_xyz(0., 500., 30.)
+                    .looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
+                ..Default::default()
+            },
+            GpuCulling,
+        ));
+
+        commands.trigger(LoadWorld {
+            world: "prontera.rsw".into(),
+        });
+    }
+}
 
 use bevy::{
     app::{App, PluginGroup},
@@ -9,11 +46,6 @@ use bevy::{
     render::texture::{ImagePlugin, ImageSamplerDescriptor},
     window::{Window, WindowPlugin},
     DefaultPlugins,
-};
-
-#[cfg(not(feature = "with-inspector"))]
-use bevy::{
-    core_pipeline::core_3d::Camera3dBundle, math::Vec3, prelude::Startup, prelude::Transform,
 };
 
 use ragnarok_rebuild_bevy::{
@@ -66,7 +98,7 @@ fn main() {
 
     #[cfg(not(feature = "with-inspector"))]
     {
-        app.add_systems(Startup, spawn_camera);
+        app.add_plugins(other::Plugin);
     }
     #[cfg(feature = "with-inspector")]
     {
@@ -78,13 +110,4 @@ fn main() {
         .add_plugins(ClientPlugin);
 
     app.run();
-}
-
-#[cfg(not(feature = "with-inspector"))]
-fn spawn_camera(mut commands: Commands) {
-    commands.spawn(Camera3dBundle {
-        transform: Transform::from_xyz(0., 500., 30.)
-            .looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
-        ..Default::default()
-    });
 }
