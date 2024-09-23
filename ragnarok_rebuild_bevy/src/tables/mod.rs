@@ -1,21 +1,25 @@
 pub mod name_table;
+pub mod system_sets;
 
 use bevy::{
     app::Startup,
     asset::{AssetServer, Handle},
-    prelude::{Commands, Deref, ReflectResource, Res, Resource},
+    prelude::{App, Commands, Deref, IntoSystemConfigs, ReflectResource, Res, Resource},
     reflect::Reflect,
 };
 
 pub struct TablePlugins;
 
 impl bevy::app::Plugin for TablePlugins {
-    fn build(&self, app: &mut bevy::prelude::App) {
+    fn build(&self, app: &mut App) {
         app
             // Register Plugins
             .add_plugins(name_table::Plugin)
             // Init name tables
-            .add_systems(Startup, init_indoor_rsw);
+            .add_systems(
+                Startup,
+                init_indoor_rsw.in_set(system_sets::TableSystems::TableStartup),
+            );
     }
 }
 
