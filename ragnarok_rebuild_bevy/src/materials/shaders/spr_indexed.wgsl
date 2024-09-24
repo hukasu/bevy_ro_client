@@ -39,9 +39,22 @@ fn fragment(
     let index = textureLoad(index_texture, index_texture_coords, 0).x;
 
     pbr_input.material.base_color = textureLoad(palette_texture, index, 0);
+    
+// alpha discard
+    // pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
 
+#ifdef PREPASS_PIPELINE
+    // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.
+    let out = deferred_output(in, pbr_input);
+#else
     var out: FragmentOutput;
-    out.color = pbr_input.material.base_color;
+    // apply lighting
+    out.color = apply_pbr_lighting(pbr_input);
+
+    // apply in-shader post processing (fog, alpha-premultiply, and also tonemapping, debanding if the camera is non-hdr)
+    // note this does not include fullscreen postprocessing effects like bloom.
+    out.color = main_pass_post_lighting_processing(pbr_input, out.color);
+#endif
 
     return out;
 }
