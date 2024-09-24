@@ -9,7 +9,7 @@ use bevy::{
         texture::ImageSampler,
     },
 };
-use ragnarok_rebuild_assets::{common::FColor, pal};
+use ragnarok_rebuild_assets::pal;
 
 pub struct AssetLoader;
 
@@ -36,28 +36,15 @@ impl bevy::asset::AssetLoader for AssetLoader {
                     .colors
                     .iter()
                     .flat_map(|color| {
-                        let fcolor = FColor::from(*color);
                         if color.alpha > 0
                             || (color.red == transparency_color.red
                                 && color.green == transparency_color.green
                                 && color.blue == transparency_color.blue)
                         {
-                            [
-                                fcolor.red.to_le_bytes(),
-                                fcolor.green.to_le_bytes(),
-                                fcolor.blue.to_le_bytes(),
-                                fcolor.alpha.to_le_bytes(),
-                            ]
+                            [color.red, color.green, color.blue, color.alpha]
                         } else {
-                            [
-                                fcolor.red.to_le_bytes(),
-                                fcolor.green.to_le_bytes(),
-                                fcolor.blue.to_le_bytes(),
-                                (1.0f32).to_le_bytes(),
-                            ]
+                            [color.red, color.green, color.blue, 255]
                         }
-                        .into_iter()
-                        .flatten()
                     })
                     .collect(),
                 texture_descriptor: TextureDescriptor {
@@ -70,7 +57,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
                     mip_level_count: 1,
                     sample_count: 1,
                     dimension: TextureDimension::D2,
-                    format: TextureFormat::Rgba32Float,
+                    format: TextureFormat::Rgba8Unorm,
                     usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
                     view_formats: &[],
                 },
