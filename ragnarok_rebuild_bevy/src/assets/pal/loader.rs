@@ -1,14 +1,4 @@
-use bevy::{
-    asset::AsyncReadExt,
-    prelude::Image,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-        },
-        texture::ImageSampler,
-    },
-};
+use bevy::{asset::AsyncReadExt, prelude::Image};
 use ragnarok_rebuild_assets::pal;
 
 pub struct AssetLoader;
@@ -27,50 +17,9 @@ impl bevy::asset::AssetLoader for AssetLoader {
         Box::pin(async {
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
-            let pal = pal::Palette::from_reader(&mut data.as_slice())?;
+            let palette = pal::Palette::from_reader(&mut data.as_slice())?;
 
-            let transparency_color = pal.colors[0];
-
-            let image = Image {
-                data: pal
-                    .colors
-                    .iter()
-                    .flat_map(|color| {
-                        if color.alpha > 0
-                            || (color.red == transparency_color.red
-                                && color.green == transparency_color.green
-                                && color.blue == transparency_color.blue)
-                        {
-                            [color.red, color.green, color.blue, color.alpha]
-                        } else {
-                            [color.red, color.green, color.blue, 255]
-                        }
-                    })
-                    .collect(),
-                texture_descriptor: TextureDescriptor {
-                    label: Some("palette"),
-                    size: Extent3d {
-                        width: 8,
-                        height: 8,
-                        depth_or_array_layers: 1,
-                    },
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: TextureDimension::D2,
-                    format: TextureFormat::Rgba8Unorm,
-                    usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
-                    view_formats: &[],
-                },
-                sampler: ImageSampler::nearest(),
-                texture_view_descriptor: None,
-                asset_usage: if cfg!(feature = "debug") {
-                    RenderAssetUsages::all()
-                } else {
-                    RenderAssetUsages::RENDER_WORLD
-                },
-            };
-
-            Ok(image)
+            Ok(super::palette_to_image(&palette))
         })
     }
 
