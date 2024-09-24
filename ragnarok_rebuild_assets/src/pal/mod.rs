@@ -1,38 +1,38 @@
 mod error;
 
-use std::io::Write;
+use std::io::Read;
 
-use crate::reader_ext::ReaderExt;
+use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
-pub use self::error::PaletteError;
+pub use self::error::Error;
 
 #[derive(Debug)]
 pub struct Palette {
-    colors: [u8; 1024],
+    pub colors: [PaletteColor; 256],
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PaletteColor {
+    pub red: u8,
+    pub green: u8,
+    pub blue: u8,
+    pub alpha: u8,
 }
 
 impl Palette {
-    pub fn from_bytes(mut bytes: &[u8]) -> Result<Self, PaletteError> {
-        let mut colors = bytes.read_array()?;
-        // colors.reverse();
+    pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, Error> {
+        let palette_contents: [u8; 1024] = reader.read_array()?;
+        Ok(Self::from_bytes(&palette_contents))
+    }
 
-        if let Ok(mut file) = std::fs::File::create("palette.ppm") {
-            writeln!(file, "P3");
-            writeln!(file, "16 16");
-            writeln!(file, "255");
-            colors.windows(4).for_each(|wind| {
-                if let [r, g, b, a] = wind {
-                    writeln!(
-                        file,
-                        "{} {} {}",
-                        g.saturating_sub(255 - r),
-                        b.saturating_sub(255 - r),
-                        a.saturating_sub(255 - r)
-                    );
-                };
-            })
-        };
-
-        Ok(Self { colors })
+    pub fn from_bytes(bytes: &[u8; 1024]) -> Self {
+        Self {
+            colors: std::array::from_fn(|index| PaletteColor {
+                red: bytes[index * 4],
+                green: bytes[index * 4 + 1],
+                blue: bytes[index * 4 + 2],
+                alpha: bytes[index * 4 + 3],
+            }),
+        }
     }
 }
