@@ -4,19 +4,13 @@ use std::io::Read;
 
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
+use crate::common::UColor;
+
 pub use self::error::Error;
 
 #[derive(Debug)]
 pub struct Palette {
-    pub colors: [PaletteColor; 256],
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct PaletteColor {
-    pub red: u8,
-    pub green: u8,
-    pub blue: u8,
-    pub alpha: u8,
+    pub colors: [UColor; 256],
 }
 
 impl Palette {
@@ -27,7 +21,7 @@ impl Palette {
 
     pub fn from_bytes(bytes: &[u8; 1024]) -> Self {
         Self {
-            colors: std::array::from_fn(|index| PaletteColor {
+            colors: std::array::from_fn(|index| UColor {
                 red: bytes[index * 4],
                 green: bytes[index * 4 + 1],
                 blue: bytes[index * 4 + 2],

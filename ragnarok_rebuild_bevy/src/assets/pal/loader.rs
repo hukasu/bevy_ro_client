@@ -9,7 +9,7 @@ use bevy::{
         texture::ImageSampler,
     },
 };
-use ragnarok_rebuild_assets::pal;
+use ragnarok_rebuild_assets::{common::FColor, pal};
 
 pub struct AssetLoader;
 
@@ -36,22 +36,23 @@ impl bevy::asset::AssetLoader for AssetLoader {
                     .colors
                     .iter()
                     .flat_map(|color| {
+                        let fcolor = FColor::from(*color);
                         if color.alpha > 0
                             || (color.red == transparency_color.red
                                 && color.green == transparency_color.green
                                 && color.blue == transparency_color.blue)
                         {
                             [
-                                (color.red as f32 / 255.).to_le_bytes(),
-                                (color.green as f32 / 255.).to_le_bytes(),
-                                (color.blue as f32 / 255.).to_le_bytes(),
-                                (color.alpha as f32 / 255.).to_le_bytes(),
+                                fcolor.red.to_le_bytes(),
+                                fcolor.green.to_le_bytes(),
+                                fcolor.blue.to_le_bytes(),
+                                fcolor.alpha.to_le_bytes(),
                             ]
                         } else {
                             [
-                                (color.red as f32 / 255.).to_le_bytes(),
-                                (color.green as f32 / 255.).to_le_bytes(),
-                                (color.blue as f32 / 255.).to_le_bytes(),
+                                fcolor.red.to_le_bytes(),
+                                fcolor.green.to_le_bytes(),
+                                fcolor.blue.to_le_bytes(),
                                 (1.0f32).to_le_bytes(),
                             ]
                         }
