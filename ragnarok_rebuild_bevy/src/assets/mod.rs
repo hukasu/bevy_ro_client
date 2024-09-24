@@ -1,5 +1,6 @@
 pub mod gnd;
 pub mod grf;
+pub mod pal;
 pub mod paths;
 pub mod rsm;
 pub mod rsw;
@@ -13,6 +14,7 @@ impl BevyPluginGroup for PluginGroup {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(gnd::Plugin)
+            .add(pal::Plugin)
             .add(rsm::Plugin)
             .add(rsw::Plugin)
             .add(water_plane::Plugin)
