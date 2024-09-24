@@ -4,6 +4,7 @@ pub mod grf;
 pub mod pal;
 pub mod rsm;
 pub mod rsw;
+pub mod spr;
 
 use std::io::{self, Read};
 
