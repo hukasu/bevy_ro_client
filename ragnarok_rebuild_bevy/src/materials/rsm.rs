@@ -27,7 +27,7 @@ impl bevy::app::Plugin for Plugin {
         load_internal_asset!(
             app,
             RSM_MATERIAL_HANDLE,
-            "rsm_shader.wgsl",
+            "shaders/rsm_shader.wgsl",
             Shader::from_wgsl
         );
     }
