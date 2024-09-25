@@ -113,7 +113,9 @@ impl Act {
         animation_clip_count: usize,
     ) -> Result<Box<[f32]>, Error> {
         match version {
-            Version(2, 0, 0) | Version(2, 1, 0) => Ok(Box::new([])),
+            Version(2, 0, 0) | Version(2, 1, 0) => (0..animation_clip_count)
+                .map(|_| Ok(4.))
+                .collect::<Result<Box<[_]>, _>>(),
             Version(2, 3, 0) | Version(2, 4, 0) | Version(2, 5, 0) => (0..animation_clip_count)
                 .map(|_| reader.read_le_f32().map_err(Error::from))
                 .collect::<Result<Box<[_]>, _>>(),
