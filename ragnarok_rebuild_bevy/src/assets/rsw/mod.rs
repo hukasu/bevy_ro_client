@@ -5,7 +5,7 @@ mod resources;
 
 use bevy::{
     app::Update,
-    asset::{AssetApp, AssetServer, Assets, Handle},
+    asset::{AssetApp, AssetServer, Handle},
     core::Name,
     prelude::{
         resource_exists, Children, Commands, DespawnRecursiveExt, Entity, IntoSystemConfigs, OnAdd,
@@ -16,17 +16,13 @@ use bevy::{
 
 pub use ragnarok_rebuild_assets::rsw::Error;
 
-use crate::{
-    assets::{paths, rsm},
-    tables::{name_table::NameTable, IndoorRsw},
-};
+use crate::assets::{paths, rsm};
 
 pub use self::{
     components::{
         AnimatedProp, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
     },
     events::{LoadWorld, WorldLoaded},
-    loader::RswSettings,
 };
 use self::{events::UnloadWorld, loader::AssetLoader, resources::LoadingWorld};
 
@@ -63,26 +59,12 @@ fn load_world(
     trigger: Trigger<LoadWorld>,
     mut scene_spawner: ResMut<SceneSpawner>,
     asset_loader: Res<AssetServer>,
-    indoor_rsws: Res<IndoorRsw>,
-    name_tables: Res<Assets<NameTable>>,
 ) {
     let world_to_load = &trigger.event().world;
-    let is_indoor = {
-        if let Some(name_table) = name_tables.get(&**indoor_rsws) {
-            name_table.contains(&world_to_load.to_string())
-        } else {
-            bevy::log::error!("IndoorRsw name table does not exist.");
-            false
-        }
-    };
 
     // Spawn new world
-    let next_world_handle: Handle<Scene> = asset_loader.load_with_settings(
-        format!("{}{}", paths::WORLD_FILES_FOLDER, world_to_load),
-        move |settings: &mut RswSettings| {
-            settings.is_indoor = is_indoor;
-        },
-    );
+    let next_world_handle: Handle<Scene> =
+        asset_loader.load(format!("{}{}", paths::WORLD_FILES_FOLDER, world_to_load));
     scene_spawner.spawn(next_world_handle);
 }
 

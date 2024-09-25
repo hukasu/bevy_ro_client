@@ -3,11 +3,14 @@ use std::time::Duration;
 use bevy::{
     asset::{io::Reader, AsyncReadExt, Handle, LoadContext},
     audio::AudioSource,
-    color::Color,
+    color::{Color, Luminance},
     core::Name,
     hierarchy::BuildWorldChildren,
     math::{EulerRot, Quat, Vec3},
-    pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight, PointLightBundle},
+    pbr::{
+        light_consts::lux, AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight,
+        PointLightBundle,
+    },
     prelude::{Entity, SpatialBundle, TransformBundle},
     render::primitives::Aabb,
     scene::{Scene, SceneBundle},
@@ -15,7 +18,6 @@ use bevy::{
     transform::components::Transform,
 };
 use ragnarok_rebuild_assets::rsw;
-use serde::{Deserialize, Serialize};
 
 use crate::assets::{
     paths,
@@ -25,22 +27,17 @@ use crate::assets::{
     },
 };
 
-#[derive(Debug, Default, Serialize, Deserialize)]
-pub struct RswSettings {
-    pub is_indoor: bool,
-}
-
 pub struct AssetLoader;
 
 impl bevy::asset::AssetLoader for AssetLoader {
     type Asset = Scene;
-    type Settings = RswSettings;
+    type Settings = ();
     type Error = super::Error;
 
     fn load<'a>(
         &'a self,
         reader: &'a mut Reader,
-        settings: &'a Self::Settings,
+        _settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
     ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
         Box::pin(async {
@@ -48,7 +45,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
             reader.read_to_end(&mut data).await?;
             let rsw = rsw::RSW::from_reader(&mut data.as_slice())?;
 
-            Ok(Self::generate_world(&rsw, settings, load_context))
+            Ok(Self::generate_world(&rsw, load_context))
         })
     }
 
@@ -60,18 +57,13 @@ impl bevy::asset::AssetLoader for AssetLoader {
 impl AssetLoader {
     const UNNAMED_RSW: &str = "Unnamed Rsw";
 
-    fn generate_world(
-        rsw: &rsw::RSW,
-        settings: &RswSettings,
-        load_context: &mut LoadContext,
-    ) -> Scene {
+    fn generate_world(rsw: &rsw::RSW, load_context: &mut LoadContext) -> Scene {
         bevy::log::trace!("Generating {:?} world.", load_context.path());
 
         let mut world = bevy::ecs::world::World::new();
 
         Self::set_ambient_light(rsw, &mut world, load_context);
-        let directional_light =
-            Self::spawn_directional_light(rsw, &mut world, settings, load_context);
+        let directional_light = Self::spawn_directional_light(rsw, &mut world, load_context);
         let ground = Self::spawn_ground(rsw, &mut world, load_context);
         let animated_props = Self::spawn_animated_props(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
@@ -125,7 +117,6 @@ impl AssetLoader {
     fn spawn_directional_light(
         rsw: &rsw::RSW,
         world: &mut bevy::ecs::world::World,
-        settings: &RswSettings,
         load_context: &mut LoadContext,
     ) -> Entity {
         bevy::log::trace!("Spawning directional light of {:?}", load_context.path());
@@ -137,17 +128,18 @@ impl AssetLoader {
         light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_x(longitude_radians));
         light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_y(latitude_radians));
 
+        let directional_light_color = Color::linear_rgb(
+            rsw.lighting_parameters.diffuse_color[0],
+            rsw.lighting_parameters.diffuse_color[1],
+            rsw.lighting_parameters.diffuse_color[2],
+        );
         world
             .spawn((
                 Name::new("DirectionalLight"),
                 DirectionalLightBundle {
                     directional_light: DirectionalLight {
-                        color: Color::linear_rgb(
-                            rsw.lighting_parameters.diffuse_color[0],
-                            rsw.lighting_parameters.diffuse_color[1],
-                            rsw.lighting_parameters.diffuse_color[2],
-                        ),
-                        illuminance: if settings.is_indoor { 100. } else { 10000. },
+                        color: directional_light_color,
+                        illuminance: lux::OVERCAST_DAY * directional_light_color.luminance(),
                         shadows_enabled: true,
                         ..Default::default()
                     },
