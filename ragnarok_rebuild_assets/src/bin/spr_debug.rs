@@ -1,6 +1,6 @@
 use std::{io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::{grf::GRF, spr::Sprite};
+use ragnarok_rebuild_assets::{grf::GRF, spr::Spr};
 
 fn main() {
     let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
@@ -22,7 +22,7 @@ fn main() {
         else {
             continue;
         };
-        let Ok(_spr) = Sprite::from_reader(&mut Cursor::new(spr_content))
+        let Ok(_spr) = Spr::from_reader(&mut Cursor::new(spr_content))
             .inspect_err(|err| eprintln!("{spr_filename:?}: {err}"))
         else {
             continue;
