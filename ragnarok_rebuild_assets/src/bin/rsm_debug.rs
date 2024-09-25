@@ -24,12 +24,12 @@ fn main() {
     {
         let Ok(rsm_content) = grf
             .read_file(rsm_filename)
-            .inspect_err(|err| eprintln!("{err}"))
+            .inspect_err(|err| eprintln!("{rsm_filename:?}: {err}"))
         else {
             continue;
         };
-        let Ok(rsm) =
-            RSM::from_reader(&mut Cursor::new(rsm_content)).inspect_err(|err| eprintln!("{err}"))
+        let Ok(rsm) = RSM::from_reader(&mut Cursor::new(rsm_content))
+            .inspect_err(|err| eprintln!("{rsm_filename:?}: {err}"))
         else {
             continue;
         };
