@@ -32,7 +32,7 @@ pub struct Sprite {
     /// Images storing only the index to a palette
     pub bitmap_images: Box<[IndexedSprite]>,
     /// Images storing ABGR bitmaps
-    pub truecolor_images: Box<[TrueColorSprite]>,
+    pub true_color_images: Box<[TrueColorSprite]>,
     /// 256 RGBA colors
     pub palette: Option<pal::Palette>,
 }
@@ -41,13 +41,7 @@ impl Sprite {
     pub fn from_reader(reader: &mut dyn Read) -> Result<Self, Error> {
         let signature = Self::read_signature(reader)?;
         let version = Self::read_version(reader)?;
-
-        let sprite = match version {
-            Version(1, 1, 0) => Self::load_version_1_1(reader, signature, version),
-            Version(2, 0, 0) => Self::load_version_2_0(reader, signature, version),
-            Version(2, 1, 0) => Self::load_version_2_1(reader, signature, version),
-            _ => unreachable!(),
-        };
+        let sprite = Self::load_sprite(reader, signature, version)?;
 
         let mut remainder = vec![];
         reader.read_to_end(&mut remainder)?;
@@ -55,7 +49,7 @@ impl Sprite {
         if !remainder.is_empty() {
             Err(Error::IncompleteRead(remainder.len()))
         } else {
-            sprite
+            Ok(sprite)
         }
     }
 
@@ -70,86 +64,68 @@ impl Sprite {
 
     fn read_version(mut reader: &mut dyn Read) -> Result<Version, Error> {
         let array: [u8; 2] = reader.read_array()?;
-        let version = Version(array[1], array[0], 0);
-        match &version {
-            Version(1, 1, 0) | Version(2, 0, 0) | Version(2, 1, 0) => Ok(version),
-            _ => Err(Error::UnsupportedVersion(version)),
+        Ok(Version(array[1], array[0], 0))
+    }
+
+    fn load_sprite(
+        reader: &mut dyn Read,
+        signature: [u8; 2],
+        version: Version,
+    ) -> Result<Sprite, Error> {
+        let (bitmap_image_count, truecolor_image_count) = Self::load_image_count(reader, &version)?;
+        let bitmap_images = Self::load_bitmap_images(reader, &version, bitmap_image_count)?;
+        let true_color_images =
+            Self::load_true_color_images(reader, &version, truecolor_image_count)?;
+        let palette = Self::load_palette(reader)?;
+
+        Ok(Sprite {
+            signature,
+            version,
+            bitmap_images,
+            true_color_images,
+            palette,
+        })
+    }
+
+    fn load_image_count(mut reader: &mut dyn Read, version: &Version) -> Result<(u16, u16), Error> {
+        let bitmap_image_count = reader.read_le_u16()?;
+        let true_color_image_count = match version {
+            Version(1, 1, 0) => 0,
+            Version(2, 0, 0) | Version(2, 1, 0) => reader.read_le_u16()?,
+            version => Err(Error::UnsupportedVersion(*version))?,
+        };
+
+        Ok((bitmap_image_count, true_color_image_count))
+    }
+
+    fn load_bitmap_images(
+        mut reader: &mut dyn Read,
+        version: &Version,
+        bitmap_image_count: u16,
+    ) -> Result<Box<[IndexedSprite]>, Error> {
+        match version {
+            Version(1, 1, 0) | Version(2, 0, 0) => (0..bitmap_image_count)
+                .map(|_| Self::load_uncompressed_bitmap(&mut reader))
+                .collect::<Result<_, _>>(),
+            Version(2, 1, 0) => (0..bitmap_image_count)
+                .map(|_| Self::load_compressed_bitmap(&mut reader))
+                .collect::<Result<_, _>>(),
+            version => Err(Error::UnsupportedVersion(*version))?,
         }
     }
 
-    fn load_version_1_1(
+    fn load_true_color_images(
         mut reader: &mut dyn Read,
-        signature: [u8; 2],
-        version: Version,
-    ) -> Result<Self, Error> {
-        let bitmap_image_count = reader.read_le_u16()?;
-
-        let bitmap_images = (0..bitmap_image_count)
-            .map(|_| Self::load_uncompressed_bitmap(&mut reader))
-            .collect::<Result<_, _>>()?;
-        let truecolor_image = [].into();
-
-        let palette = Self::load_palette(reader)?;
-
-        Ok(Sprite {
-            signature,
-            version,
-            bitmap_images,
-            truecolor_images: truecolor_image,
-            palette,
-        })
-    }
-
-    fn load_version_2_0(
-        mut reader: &mut dyn Read,
-        signature: [u8; 2],
-        version: Version,
-    ) -> Result<Self, Error> {
-        let bitmap_image_count = reader.read_le_u16()?;
-        let truecolor_image_count = reader.read_le_u16()?;
-
-        let bitmap_images = (0..bitmap_image_count)
-            .map(|_| Self::load_uncompressed_bitmap(&mut reader))
-            .collect::<Result<_, _>>()?;
-        let truecolor_image = (0..truecolor_image_count)
-            .map(|_| Self::load_truecolor_bitmap(&mut reader))
-            .collect::<Result<_, _>>()?;
-
-        let palette = Self::load_palette(reader)?;
-
-        Ok(Sprite {
-            signature,
-            version,
-            bitmap_images,
-            truecolor_images: truecolor_image,
-            palette,
-        })
-    }
-
-    fn load_version_2_1(
-        mut reader: &mut dyn Read,
-        signature: [u8; 2],
-        version: Version,
-    ) -> Result<Self, Error> {
-        let bitmap_image_count = reader.read_le_u16()?;
-        let truecolor_image_count = reader.read_le_u16()?;
-
-        let bitmap_images = (0..bitmap_image_count)
-            .map(|_| Self::load_compressed_bitmap(&mut reader))
-            .collect::<Result<_, _>>()?;
-        let truecolor_image = (0..truecolor_image_count)
-            .map(|_| Self::load_truecolor_bitmap(&mut reader))
-            .collect::<Result<_, _>>()?;
-
-        let palette = Self::load_palette(reader)?;
-
-        Ok(Sprite {
-            signature,
-            version,
-            bitmap_images,
-            truecolor_images: truecolor_image,
-            palette,
-        })
+        version: &Version,
+        true_color_image_count: u16,
+    ) -> Result<Box<[TrueColorSprite]>, Error> {
+        match version {
+            Version(1, 1, 0) => Ok(Box::new([])),
+            Version(2, 0, 0) | Version(2, 1, 0) => (0..true_color_image_count)
+                .map(|_| Self::load_truecolor_bitmap(&mut reader))
+                .collect::<Result<_, _>>(),
+            version => Err(Error::UnsupportedVersion(*version))?,
+        }
     }
 
     fn load_uncompressed_bitmap(mut reader: &mut dyn Read) -> Result<IndexedSprite, Error> {
