@@ -26,7 +26,7 @@ pub struct IndexedSprite {
 }
 
 #[derive(Debug)]
-pub struct Sprite {
+pub struct Spr {
     pub signature: [u8; 2],
     pub version: Version,
     /// Images storing only the index to a palette
@@ -37,7 +37,7 @@ pub struct Sprite {
     pub palette: Option<pal::Palette>,
 }
 
-impl Sprite {
+impl Spr {
     pub fn from_reader(reader: &mut dyn Read) -> Result<Self, Error> {
         let signature = Self::read_signature(reader)?;
         let version = Self::read_version(reader)?;
@@ -71,14 +71,14 @@ impl Sprite {
         reader: &mut dyn Read,
         signature: [u8; 2],
         version: Version,
-    ) -> Result<Sprite, Error> {
+    ) -> Result<Spr, Error> {
         let (bitmap_image_count, truecolor_image_count) = Self::load_image_count(reader, &version)?;
         let bitmap_images = Self::load_bitmap_images(reader, &version, bitmap_image_count)?;
         let true_color_images =
             Self::load_true_color_images(reader, &version, truecolor_image_count)?;
         let palette = Self::load_palette(reader)?;
 
-        Ok(Sprite {
+        Ok(Spr {
             signature,
             version,
             bitmap_images,

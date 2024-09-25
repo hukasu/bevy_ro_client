@@ -38,7 +38,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
         Box::pin(async {
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
-            let sprite = spr::Sprite::from_reader(&mut data.as_slice())?;
+            let sprite = spr::Spr::from_reader(&mut data.as_slice())?;
 
             Ok(Self::generate_sprite(load_context, sprite))
         })
@@ -50,10 +50,10 @@ impl bevy::asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    fn generate_sprite(load_context: &mut bevy::asset::LoadContext, sprite: spr::Sprite) -> Sprite {
+    fn generate_sprite(load_context: &mut bevy::asset::LoadContext, sprite: spr::Spr) -> Sprite {
         let indexed_sprites = Self::load_indexed_sprites(load_context, &sprite.bitmap_images);
         let true_color_sprites =
-            Self::load_true_color_sprites(load_context, &sprite.truecolor_images);
+            Self::load_true_color_sprites(load_context, &sprite.true_color_images);
         let palette = if let Some(palette) = sprite.palette {
             let handle = load_context
                 .add_labeled_asset("Palette".to_owned(), pal::palette_to_image(&palette));
