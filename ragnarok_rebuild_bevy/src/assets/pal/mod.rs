@@ -50,7 +50,7 @@ pub fn palette_to_image(palette: &pal::Palette) -> Image {
             mip_level_count: 1,
             sample_count: 1,
             dimension: TextureDimension::D1,
-            format: TextureFormat::Rgba8Unorm,
+            format: TextureFormat::Rgba8UnormSrgb,
             usage: TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         },
