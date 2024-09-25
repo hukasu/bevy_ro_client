@@ -4,7 +4,7 @@ use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
 use crate::{gnd, grf, rsm, rsw};
 
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Version(pub u8, pub u8, pub u32);
 
 impl Version {
