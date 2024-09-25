@@ -51,75 +51,9 @@ impl AnimationClip {
 
 impl AnimationFrame {
     pub fn from_reader(reader: &mut dyn Read, version: &Version) -> Result<Self, super::Error> {
-        match version {
-            Version(2, 0, 0) => Self::load_version_2_0(reader, version),
-            Version(2, 1, 0) => Self::load_version_2_1(reader, version),
-            Version(2, 3, 0) | Version(2, 4, 0) | Version(2, 5, 0) => {
-                Self::load_version_2_3(reader, version)
-            }
-            version => Err(super::Error::UnsupportedVersion(*version)),
-        }
-    }
-
-    fn load_version_2_0(
-        mut reader: &mut dyn Read,
-        version: &Version,
-    ) -> Result<Self, super::Error> {
-        let _unused: [u8; 32] = reader.read_array()?;
-
-        let sprite_layer_count = reader.read_le_u32()?;
-        let sprite_layers = (0..sprite_layer_count)
-            .map(|_| SpriteLayer::from_reader(reader, version))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        // Frame has 4 bytes that seems to be animation_event_id, but it is discarded for v2.0
-        let _unused = reader.read_le_i32()?;
-        let animation_event_id = -1;
-
-        Ok(Self {
-            sprite_layers,
-            animation_event_id,
-            sprite_anchors: Box::new([]),
-        })
-    }
-
-    fn load_version_2_1(
-        mut reader: &mut dyn Read,
-        version: &Version,
-    ) -> Result<Self, super::Error> {
-        let _unused: [u8; 32] = reader.read_array()?;
-
-        let sprite_layer_count = reader.read_le_u32()?;
-        let sprite_layers = (0..sprite_layer_count)
-            .map(|_| SpriteLayer::from_reader(reader, version))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        let animation_event_id = reader.read_le_i32()?;
-
-        Ok(Self {
-            sprite_layers,
-            animation_event_id,
-            sprite_anchors: Box::new([]),
-        })
-    }
-
-    fn load_version_2_3(
-        mut reader: &mut dyn Read,
-        version: &Version,
-    ) -> Result<Self, super::Error> {
-        let _unused: [u8; 32] = reader.read_array()?;
-
-        let sprite_layer_count = reader.read_le_u32()?;
-        let sprite_layers = (0..sprite_layer_count)
-            .map(|_| SpriteLayer::from_reader(reader, version))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        let animation_event_id = reader.read_le_i32()?;
-
-        let sprite_anchor_count = reader.read_le_u32()?;
-        let sprite_anchors = (0..sprite_anchor_count)
-            .map(|_| SpriteAnchor::from_reader(reader))
-            .collect::<Result<Box<[_]>, _>>()?;
+        let sprite_layers = Self::load_sprite_layers(reader, version)?;
+        let animation_event_id = Self::load_animation_event_id(reader, version)?;
+        let sprite_anchors = Self::load_sprite_anchors(reader, version)?;
 
         Ok(Self {
             sprite_layers,
@@ -127,99 +61,62 @@ impl AnimationFrame {
             sprite_anchors,
         })
     }
-}
 
-impl SpriteLayer {
-    pub fn from_reader(reader: &mut dyn Read, version: &Version) -> Result<Self, super::Error> {
+    fn load_sprite_layers(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<Box<[SpriteLayer]>, super::Error> {
+        let _unused: [u8; 32] = reader.read_array()?;
+
+        let sprite_layer_count = reader.read_le_u32()?;
+        (0..sprite_layer_count)
+            .map(|_| SpriteLayer::from_reader(reader, version))
+            .collect::<Result<Box<[_]>, _>>()
+    }
+
+    fn load_animation_event_id(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<i32, super::Error> {
         match version {
-            Version(2, 0, 0) | Version(2, 1, 0) | Version(2, 3, 0) => {
-                Self::load_version_2_0(reader)
+            Version(2, 0, 0) => {
+                // Frame has 4 bytes that seems to be animation_event_id, but it is discarded for v2.0
+                let _unused = reader.read_le_i32()?;
+                Ok(-1)
             }
-            Version(2, 4, 0) => Self::load_version_2_4(reader),
-            Version(2, 5, 0) => Self::load_version_2_5(reader),
+            Version(2, 1, 0) | Version(2, 3, 0) | Version(2, 4, 0) | Version(2, 5, 0) => {
+                reader.read_le_i32().map_err(super::Error::from)
+            }
             version => Err(super::Error::UnsupportedVersion(*version)),
         }
     }
 
-    fn load_version_2_0(mut reader: &mut dyn Read) -> Result<Self, super::Error> {
-        let position_u: i32 = reader.read_le_i32()?;
-        let position_v: i32 = reader.read_le_i32()?;
-        let spritesheet_cell_index: i32 = reader.read_le_i32()?;
-        let is_flipped_v: i32 = reader.read_le_i32()?;
-        let tint: Color = Color {
-            red: reader.read_u8()?,
-            green: reader.read_u8()?,
-            blue: reader.read_u8()?,
-            alpha: reader.read_u8()?,
-        };
-        let scale_u: f32 = reader.read_le_f32()?;
-        let scale_v = scale_u;
-        let rotation: i32 = reader.read_le_i32()?;
-        let image_type_id: i32 = reader.read_le_i32()?;
-
-        Ok(Self {
-            position_u,
-            position_v,
-            spritesheet_cell_index,
-            is_flipped_v,
-            tint,
-            scale_u,
-            scale_v,
-            rotation,
-            image_type_id,
-            image_width: -1,
-            image_height: -1,
-        })
+    fn load_sprite_anchors(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<Box<[SpriteAnchor]>, super::Error> {
+        match version {
+            Version(2, 0, 0) | Version(2, 1, 0) => Ok(Box::new([])),
+            Version(2, 3, 0) | Version(2, 4, 0) | Version(2, 5, 0) => {
+                let sprite_anchor_count = reader.read_le_u32()?;
+                (0..sprite_anchor_count)
+                    .map(|_| SpriteAnchor::from_reader(reader))
+                    .collect::<Result<Box<[_]>, _>>()
+            }
+            version => Err(super::Error::UnsupportedVersion(*version)),
+        }
     }
+}
 
-    fn load_version_2_4(mut reader: &mut dyn Read) -> Result<Self, super::Error> {
-        let position_u = reader.read_le_i32()?;
-        let position_v = reader.read_le_i32()?;
-        let spritesheet_cell_index = reader.read_le_i32()?;
-        let is_flipped_v = reader.read_le_i32()?;
-        let tint = Color {
-            red: reader.read_u8()?,
-            green: reader.read_u8()?,
-            blue: reader.read_u8()?,
-            alpha: reader.read_u8()?,
-        };
-        let scale_u = reader.read_le_f32()?;
-        let scale_v = reader.read_le_f32()?;
-        let rotation = reader.read_le_i32()?;
-        let image_type_id = reader.read_le_i32()?;
-
-        Ok(Self {
-            position_u,
-            position_v,
-            spritesheet_cell_index,
-            is_flipped_v,
-            tint,
-            scale_u,
-            scale_v,
-            rotation,
-            image_type_id,
-            image_width: -1,
-            image_height: -1,
-        })
-    }
-
-    fn load_version_2_5(mut reader: &mut dyn Read) -> Result<Self, super::Error> {
-        let position_u = reader.read_le_i32()?;
-        let position_v = reader.read_le_i32()?;
-        let spritesheet_cell_index = reader.read_le_i32()?;
-        let is_flipped_v = reader.read_le_i32()?;
-        let tint = Color {
-            red: reader.read_u8()?,
-            green: reader.read_u8()?,
-            blue: reader.read_u8()?,
-            alpha: reader.read_u8()?,
-        };
-        let scale_u = reader.read_le_f32()?;
-        let scale_v = reader.read_le_f32()?;
-        let rotation = reader.read_le_i32()?;
-        let image_type_id = reader.read_le_i32()?;
-        let image_width = reader.read_le_i32()?;
-        let image_height = reader.read_le_i32()?;
+impl SpriteLayer {
+    pub fn from_reader(reader: &mut dyn Read, version: &Version) -> Result<Self, super::Error> {
+        let (position_u, position_v) = Self::load_position(reader)?;
+        let (spritesheet_cell_index, is_flipped_v) = Self::load_spritesheet(reader)?;
+        let tint = Self::load_tint(reader)?;
+        let (scale_u, scale_v) = Self::load_scale(reader, version)?;
+        let rotation = Self::load_rotation(reader)?;
+        let image_type_id = Self::load_image_type(reader)?;
+        let (image_width, image_height) = Self::load_image_dimensions(reader, version)?;
 
         Ok(Self {
             position_u,
@@ -234,6 +131,60 @@ impl SpriteLayer {
             image_width,
             image_height,
         })
+    }
+
+    fn load_position(mut reader: &mut dyn Read) -> Result<(i32, i32), super::Error> {
+        Ok((reader.read_le_i32()?, reader.read_le_i32()?))
+    }
+
+    fn load_spritesheet(mut reader: &mut dyn Read) -> Result<(i32, i32), super::Error> {
+        Ok((reader.read_le_i32()?, reader.read_le_i32()?))
+    }
+
+    fn load_tint(mut reader: &mut dyn Read) -> Result<Color, super::Error> {
+        Ok(Color {
+            red: reader.read_u8()?,
+            green: reader.read_u8()?,
+            blue: reader.read_u8()?,
+            alpha: reader.read_u8()?,
+        })
+    }
+
+    fn load_scale(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<(f32, f32), super::Error> {
+        match version {
+            Version(2, 0, 0) | Version(2, 1, 0) | Version(2, 3, 0) => {
+                let scale = reader.read_le_f32()?;
+                Ok((scale, scale))
+            }
+            Version(2, 4, 0) | Version(2, 5, 0) => {
+                Ok((reader.read_le_f32()?, reader.read_le_f32()?))
+            }
+            version => Err(super::Error::UnsupportedVersion(*version)),
+        }
+    }
+
+    fn load_rotation(mut reader: &mut dyn Read) -> Result<i32, super::Error> {
+        Ok(reader.read_le_i32()?)
+    }
+
+    fn load_image_type(mut reader: &mut dyn Read) -> Result<i32, super::Error> {
+        Ok(reader.read_le_i32()?)
+    }
+
+    fn load_image_dimensions(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<(i32, i32), super::Error> {
+        match version {
+            Version(2, 0, 0) | Version(2, 1, 0) | Version(2, 3, 0) | Version(2, 4, 0) => {
+                Ok((-1, -1))
+            }
+            Version(2, 5, 0) => Ok((reader.read_le_i32()?, reader.read_le_i32()?)),
+            version => Err(super::Error::UnsupportedVersion(*version)),
+        }
     }
 }
 

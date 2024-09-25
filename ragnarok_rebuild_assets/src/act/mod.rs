@@ -26,11 +26,11 @@ impl Act {
         let version = Self::read_version(reader)?;
 
         let actor = match version {
-            Version(2, 0, 0) => Self::load_version_2_0(reader, signature, version),
-            Version(2, 1, 0) => Self::load_version_2_1(reader, signature, version),
-            Version(2, 3, 0) | Version(2, 4, 0) | Version(2, 5, 0) => {
-                Self::load_version_2_3(reader, signature, version)
-            }
+            Version(2, 0, 0)
+            | Version(2, 1, 0)
+            | Version(2, 3, 0)
+            | Version(2, 4, 0)
+            | Version(2, 5, 0) => Self::load_act(reader, signature, version),
             version => Err(Error::UnsupportedVersion(version)),
         }?;
 
@@ -58,73 +58,14 @@ impl Act {
         Ok(Version(array[1], array[0], 0))
     }
 
-    fn load_version_2_0(
-        mut reader: &mut dyn Read,
+    fn load_act(
+        reader: &mut dyn Read,
         signature: [u8; 2],
         version: Version,
     ) -> Result<Self, Error> {
-        let animation_clip_count = reader.read_le_u16()?;
-        let _unused: [u8; 10] = reader.read_array()?;
-
-        let animation_clips = (0..animation_clip_count)
-            .map(|_| AnimationClip::from_reader(reader, &version))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        Ok(Self {
-            signature,
-            version,
-            animation_clips,
-            animation_events: Box::new([]),
-            frame_times: Box::new([]),
-        })
-    }
-
-    fn load_version_2_1(
-        mut reader: &mut dyn Read,
-        signature: [u8; 2],
-        version: Version,
-    ) -> Result<Self, Error> {
-        let animation_clip_count = reader.read_le_u16()?;
-        let _unused: [u8; 10] = reader.read_array()?;
-
-        let animation_clips = (0..animation_clip_count)
-            .map(|_| AnimationClip::from_reader(reader, &version))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        let animation_event_count = reader.read_le_u32()?;
-        let animation_events = (0..animation_event_count)
-            .map(|_| AnimationEvent::from_reader(reader))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        Ok(Self {
-            signature,
-            version,
-            animation_clips,
-            animation_events,
-            frame_times: Box::new([]),
-        })
-    }
-
-    fn load_version_2_3(
-        mut reader: &mut dyn Read,
-        signature: [u8; 2],
-        version: Version,
-    ) -> Result<Self, Error> {
-        let animation_clip_count = reader.read_le_u16()?;
-        let _unused: [u8; 10] = reader.read_array()?;
-
-        let animation_clips = (0..animation_clip_count)
-            .map(|_| AnimationClip::from_reader(reader, &version))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        let animation_event_count = reader.read_le_u32()?;
-        let animation_events = (0..animation_event_count)
-            .map(|_| AnimationEvent::from_reader(reader))
-            .collect::<Result<Box<[_]>, _>>()?;
-
-        let frame_times = (0..animation_clip_count)
-            .map(|_| reader.read_le_f32())
-            .collect::<Result<Box<[_]>, _>>()?;
+        let animation_clips = Self::load_animation_clips(reader, &version)?;
+        let animation_events = Self::load_animation_events(reader, &version)?;
+        let frame_times = Self::load_frame_times(reader, &version, animation_clips.len())?;
 
         Ok(Self {
             signature,
@@ -133,5 +74,47 @@ impl Act {
             animation_events,
             frame_times,
         })
+    }
+
+    fn load_animation_clips(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<Box<[AnimationClip]>, Error> {
+        let animation_clip_count = reader.read_le_u16()?;
+        let _unused: [u8; 10] = reader.read_array()?;
+
+        (0..animation_clip_count)
+            .map(|_| AnimationClip::from_reader(reader, version))
+            .collect::<Result<Box<[_]>, _>>()
+    }
+
+    fn load_animation_events(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<Box<[AnimationEvent]>, Error> {
+        match version {
+            Version(2, 0, 0) => Ok(Box::new([])),
+            Version(2, 1, 0) | Version(2, 3, 0) | Version(2, 4, 0) | Version(2, 5, 0) => {
+                let animation_event_count = reader.read_le_u32()?;
+                (0..animation_event_count)
+                    .map(|_| AnimationEvent::from_reader(reader))
+                    .collect::<Result<Box<[_]>, _>>()
+            }
+            version => Err(Error::UnsupportedVersion(*version)),
+        }
+    }
+
+    fn load_frame_times(
+        mut reader: &mut dyn Read,
+        version: &Version,
+        animation_clip_count: usize,
+    ) -> Result<Box<[f32]>, Error> {
+        match version {
+            Version(2, 0, 0) | Version(2, 1, 0) => Ok(Box::new([])),
+            Version(2, 3, 0) | Version(2, 4, 0) | Version(2, 5, 0) => (0..animation_clip_count)
+                .map(|_| reader.read_le_f32().map_err(Error::from))
+                .collect::<Result<Box<[_]>, _>>(),
+            version => Err(Error::UnsupportedVersion(*version)),
+        }
     }
 }
