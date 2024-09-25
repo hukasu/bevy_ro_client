@@ -4,12 +4,15 @@ mod error;
 
 use std::io::Read;
 
-use animation_event::AnimationEvent;
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
 use crate::common::Version;
 
-pub use self::{animation_clip::AnimationClip, error::Error};
+pub use self::{
+    animation_clip::{AnimationClip, AnimationFrame, SpriteAnchor, SpriteLayer},
+    animation_event::AnimationEvent,
+    error::Error,
+};
 
 #[derive(Debug)]
 pub struct Act {
