@@ -6,6 +6,9 @@ use bevy::{
     render::render_resource::AsBindGroup,
 };
 
+const SPR_VERTEX_HANDLE: Handle<Shader> = Handle::weak_from_u128(u128::from_le_bytes([
+    0x0e, 0xd8, 0xf3, 0xb1, 0x37, 0xfa, 0x41, 0xad, 0x96, 0x52, 0xe2, 0xd3, 0x2b, 0x3e, 0xee, 0xd5,
+]));
 const SPR_INDEXED_MATERIAL_HANDLE: Handle<Shader> = Handle::weak_from_u128(u128::from_le_bytes([
     0x8f, 0x19, 0x02, 0x50, 0xcf, 0x0c, 0x44, 0x4a, 0x92, 0x0c, 0xed, 0xe0, 0x79, 0x54, 0x58, 0x3f,
 ]));
@@ -25,6 +28,12 @@ impl bevy::app::Plugin for Plugin {
             .add_plugins(MaterialPlugin::<SprTrueColorMaterial>::default());
 
         // Shader handles
+        load_internal_asset!(
+            app,
+            SPR_VERTEX_HANDLE,
+            "shaders/spr_vertex.wgsl",
+            Shader::from_wgsl
+        );
         load_internal_asset!(
             app,
             SPR_INDEXED_MATERIAL_HANDLE,
@@ -53,12 +62,34 @@ impl Material for SprIndexedMaterial {
         bevy::prelude::AlphaMode::Blend
     }
 
+    fn vertex_shader() -> bevy::render::render_resource::ShaderRef {
+        SPR_VERTEX_HANDLE.into()
+    }
+
+    fn deferred_vertex_shader() -> bevy::render::render_resource::ShaderRef {
+        SPR_VERTEX_HANDLE.into()
+    }
+
     fn fragment_shader() -> bevy::render::render_resource::ShaderRef {
         SPR_INDEXED_MATERIAL_HANDLE.into()
     }
 
     fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
         SPR_INDEXED_MATERIAL_HANDLE.into()
+    }
+
+    fn specialize(
+        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
+        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        _layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
+        _key: bevy::pbr::MaterialPipelineKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        descriptor
+            .vertex
+            .shader_defs
+            .push("SPR_INDEXED_PIPELINE".into());
+
+        Ok(())
     }
 }
 
@@ -74,11 +105,33 @@ impl Material for SprTrueColorMaterial {
         bevy::prelude::AlphaMode::Blend
     }
 
+    fn vertex_shader() -> bevy::render::render_resource::ShaderRef {
+        SPR_VERTEX_HANDLE.into()
+    }
+
+    fn deferred_vertex_shader() -> bevy::render::render_resource::ShaderRef {
+        SPR_VERTEX_HANDLE.into()
+    }
+
     fn fragment_shader() -> bevy::render::render_resource::ShaderRef {
         SPR_TRUE_COLOR_MATERIAL_HANDLE.into()
     }
 
     fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
         SPR_TRUE_COLOR_MATERIAL_HANDLE.into()
+    }
+
+    fn specialize(
+        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
+        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        _layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
+        _key: bevy::pbr::MaterialPipelineKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        descriptor
+            .vertex
+            .shader_defs
+            .push("SPR_TRUE_COLOR_PIPELINE".into());
+
+        Ok(())
     }
 }
