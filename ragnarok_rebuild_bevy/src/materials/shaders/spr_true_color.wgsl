@@ -1,6 +1,5 @@
 #import bevy_pbr::{
     pbr_fragment::pbr_input_from_vertex_output,
-    pbr_functions::alpha_discard,
     pbr_types::PbrInput
 }
 
@@ -34,9 +33,6 @@ fn fragment(
 ) -> FragmentOutput {
     var pbr_input = spr_true_color_default_material(in, is_front);
     pbr_input.material.base_color = textureSample(color_texture, color_sampler, in.uv);
-
-    // alpha discard
-    // pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
 
 #ifdef PREPASS_PIPELINE
     // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.
