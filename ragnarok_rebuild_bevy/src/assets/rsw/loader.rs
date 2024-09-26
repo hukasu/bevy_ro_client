@@ -7,10 +7,7 @@ use bevy::{
     core::Name,
     hierarchy::BuildWorldChildren,
     math::{EulerRot, Quat, Vec3},
-    pbr::{
-        light_consts::lux, AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight,
-        PointLightBundle,
-    },
+    pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight, PointLightBundle},
     prelude::{Entity, SpatialBundle, TransformBundle},
     render::primitives::Aabb,
     scene::{Scene, SceneBundle},
@@ -56,6 +53,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
 
 impl AssetLoader {
     const UNNAMED_RSW: &str = "Unnamed Rsw";
+    const DIRECTIONAL_LIGHT_LUX: f32 = 4300.;
 
     fn generate_world(rsw: &rsw::RSW, load_context: &mut LoadContext) -> Scene {
         bevy::log::trace!("Generating {:?} world.", load_context.path());
@@ -139,7 +137,8 @@ impl AssetLoader {
                 DirectionalLightBundle {
                     directional_light: DirectionalLight {
                         color: directional_light_color,
-                        illuminance: lux::OVERCAST_DAY * directional_light_color.luminance(),
+                        illuminance: Self::DIRECTIONAL_LIGHT_LUX
+                            * directional_light_color.luminance(),
                         shadows_enabled: true,
                         ..Default::default()
                     },
