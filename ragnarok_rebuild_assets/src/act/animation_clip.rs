@@ -171,7 +171,10 @@ impl SpriteLayer {
     }
 
     fn load_image_type(mut reader: &mut dyn Read) -> Result<i32, super::Error> {
-        Ok(reader.read_le_i32()?)
+        match reader.read_le_i32()? {
+            a if (0..=1).contains(&a) => Ok(a),
+            id => Err(super::Error::UnknownImageType(id)),
+        }
     }
 
     fn load_image_dimensions(
