@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{load_internal_asset, Asset, Handle},
+    asset::{load_internal_asset, Asset, AssetApp, Handle},
     pbr::{Material, MaterialPlugin},
     prelude::{Image, Shader},
     reflect::Reflect,
@@ -15,6 +15,11 @@ pub struct Plugin;
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
+            // Asset
+            .init_asset::<SprIndexedMaterial>()
+            .register_asset_reflect::<SprIndexedMaterial>()
+            .init_asset::<SprTrueColorMaterial>()
+            .register_asset_reflect::<SprTrueColorMaterial>()
             // Material Plugin
             .add_plugins(MaterialPlugin::<SprIndexedMaterial>::default())
             .add_plugins(MaterialPlugin::<SprTrueColorMaterial>::default());
