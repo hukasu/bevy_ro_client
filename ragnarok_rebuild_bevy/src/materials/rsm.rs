@@ -16,7 +16,11 @@ pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.register_asset_reflect::<RsmMaterial>()
+        app
+            // Asset
+            .init_asset::<RsmMaterial>()
+            .register_asset_reflect::<RsmMaterial>()
+            // Material Plugin
             .add_plugins(
                 MaterialPlugin::<ExtendedMaterial<StandardMaterial, RsmMaterial>> {
                     prepass_enabled: true,
