@@ -20,11 +20,10 @@ use bevy::{
 };
 
 use crate::{
+    assets::{paths, spr},
     audio::PlaySound,
     materials::{SprIndexedMaterial, SprTrueColorMaterial},
 };
-
-use crate::assets::{paths, spr};
 
 pub use self::{
     assets::Animation,
@@ -88,7 +87,10 @@ fn load_actor(trigger: Trigger<LoadActor>, mut commands: Commands, asset_server:
         let actor_name = &trigger.event().actor;
         commands.entity(actor).insert((
             Name::new(format!("{}.act", actor_name)),
-            SpatialBundle::default(),
+            SpatialBundle {
+                transform: Transform::from_rotation(Quat::from_rotation_x(-f32::consts::FRAC_PI_8)),
+                ..Default::default()
+            },
             Actor {
                 act: asset_server.load(format!("{}{}.act", paths::SPR_FILES_FOLDER, actor_name)),
                 sprite: asset_server.load(format!("{}{}.spr", paths::SPR_FILES_FOLDER, actor_name)),
@@ -241,13 +243,8 @@ fn swap_animations(
                 entity_commands.insert((
                     Name::new(format!("Layer{}", i)),
                     SpatialBundle {
-                        transform: Transform::from_rotation(Quat::from_euler(
-                            bevy::math::EulerRot::XYZ,
-                            -f32::consts::FRAC_PI_6,
-                            0.,
-                            layer.rotation,
-                        ))
-                        .with_scale(layer.scale.extend(1.)),
+                        transform: Transform::from_rotation(Quat::from_rotation_z(layer.rotation))
+                            .with_scale(layer.scale.extend(1.)),
                         ..Default::default()
                     },
                 ));
@@ -255,11 +252,14 @@ fn swap_animations(
         });
 
         if let Some(AnimationEvent::Sound(sound)) = &frame.event {
-            let sound_path = if let Some(sound_path) = sound.path() {
-                sound_path.to_string()
-            } else {
-                "sound".to_owned()
-            };
+            let sound_path = sound
+                .path()
+                .map(|path| {
+                    path.to_string()
+                        .trim_start_matches(paths::WAV_FILES_FOLDER)
+                        .to_owned()
+                })
+                .unwrap_or("sound".to_owned());
             commands.trigger(PlaySound {
                 name: sound_path,
                 track: sound.clone(),
