@@ -69,7 +69,7 @@ impl bevy::app::Plugin for Plugin {
 
         app.world_mut().resource_mut::<Assets<Mesh>>().insert(
             &IDENTITY_PLANE_HANDLE,
-            Plane3d::new(Vec3::Z, Vec2::splat(1.)).into(),
+            Plane3d::new(Vec3::Z, Vec2::splat(0.5)).into(),
         );
     }
 }
