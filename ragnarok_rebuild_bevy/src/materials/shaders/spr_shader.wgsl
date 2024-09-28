@@ -40,21 +40,7 @@ fn vertex(in: Vertex, @builtin(vertex_index) vertex_index: u32) -> VertexOutput 
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
 
     var dimensions = vec2<f32>(textureDimensions(spr_texture)) / 6.4;
-    var offset: vec3<f32>;
-    if vertex_index == 0 {
-        // Top left
-        offset = vec3<f32>(-dimensions.x / 2., dimensions.y, 0.);
-    } else if vertex_index == 1 {
-        // Top right
-        offset = vec3<f32>(dimensions.x / 2., dimensions.y, 0.);
-    } else if vertex_index == 2 {
-        // Bottom left
-        offset = vec3<f32>(-dimensions.x / 2., 0., 0.);
-    } else if vertex_index == 3 {
-        // Bottom right
-        offset = vec3<f32>(dimensions.x / 2., 0., 0.);
-    }
-    let position = vec4<f32>(offset, 1.0);
+    let position = vec4<f32>((in.position + vec3<f32>(0., 0.5, 0.)) * vec3<f32>(dimensions, 1.), 1.0);
     
 #ifdef VERTEX_POSITIONS
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
