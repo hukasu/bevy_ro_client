@@ -39,7 +39,7 @@ fn vertex(in: Vertex, @builtin(vertex_index) vertex_index: u32) -> VertexOutput 
 
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
 
-    var dimensions = vec2<f32>(textureDimensions(spr_texture) / 5);
+    var dimensions = vec2<f32>(textureDimensions(spr_texture)) / 6.4;
     var offset: vec3<f32>;
     if vertex_index == 0 {
         // Top left
