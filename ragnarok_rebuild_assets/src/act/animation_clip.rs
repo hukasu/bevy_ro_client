@@ -21,7 +21,7 @@ pub struct SpriteLayer {
     pub position_u: i32,
     pub position_v: i32,
     pub spritesheet_cell_index: i32,
-    pub is_flipped_v: i32,
+    pub is_flipped_v: bool,
     pub tint: Color,
     pub scale_u: f32,
     pub scale_v: f32,
@@ -111,7 +111,8 @@ impl AnimationFrame {
 impl SpriteLayer {
     pub fn from_reader(reader: &mut dyn Read, version: &Version) -> Result<Self, super::Error> {
         let (position_u, position_v) = Self::load_position(reader)?;
-        let (spritesheet_cell_index, is_flipped_v) = Self::load_spritesheet(reader)?;
+        let spritesheet_cell_index = Self::load_spritesheet_id(reader)?;
+        let is_flipped_v = Self::load_spritesheet_flags(reader)?;
         let tint = Self::load_tint(reader)?;
         let (scale_u, scale_v) = Self::load_scale(reader, version)?;
         let rotation = Self::load_rotation(reader)?;
@@ -137,8 +138,16 @@ impl SpriteLayer {
         Ok((reader.read_le_i32()?, reader.read_le_i32()?))
     }
 
-    fn load_spritesheet(mut reader: &mut dyn Read) -> Result<(i32, i32), super::Error> {
-        Ok((reader.read_le_i32()?, reader.read_le_i32()?))
+    fn load_spritesheet_id(mut reader: &mut dyn Read) -> Result<i32, super::Error> {
+        reader.read_le_i32().map_err(super::Error::from)
+    }
+
+    fn load_spritesheet_flags(mut reader: &mut dyn Read) -> Result<bool, super::Error> {
+        match reader.read_le_i32()? {
+            0 => Ok(false),
+            1 => Ok(true),
+            flag => Err(super::Error::UnknownSpritesheetFlag(flag)),
+        }
     }
 
     fn load_tint(mut reader: &mut dyn Read) -> Result<Color, super::Error> {
