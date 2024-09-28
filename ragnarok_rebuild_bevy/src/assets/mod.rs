@@ -1,3 +1,4 @@
+pub mod act;
 pub mod gnd;
 pub mod grf;
 pub mod pal;
@@ -14,6 +15,7 @@ pub struct PluginGroup;
 impl BevyPluginGroup for PluginGroup {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
+            .add(act::Plugin)
             .add(gnd::Plugin)
             .add(pal::Plugin)
             .add(rsm::Plugin)

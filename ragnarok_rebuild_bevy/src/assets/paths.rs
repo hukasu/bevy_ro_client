@@ -8,6 +8,10 @@ pub const WORLD_FILES_FOLDER: &str = "data/";
 pub const GROUND_FILES_FOLDER: &str = "data/";
 /// Folder prefix for Model (animated props) files `.rsm`
 pub const MODEL_FILES_FOLDER: &str = "data/model/";
+/// Folder prefix for Sprite files (`.spr`)
+pub const SPR_FILES_FOLDER: &str = "data/sprite/";
+/// Folder prefix for Actor files (`.act`)
+pub const ACT_FILES_FOLDER: &str = SPR_FILES_FOLDER;
 /// Folder prefix for Texture files (`.bmp`, `.jpg`, `.tga`)
 pub const TEXTURE_FILES_FOLDER: &str = "data/texture/";
 /// Folder prefix for Audio files (`.wav`)
