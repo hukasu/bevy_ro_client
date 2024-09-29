@@ -182,7 +182,7 @@ impl AssetLoader {
                     }
                     1 => {
                         let color = load_context.load(format!(
-                            "{}#TrueColor{}",
+                            "{}#TrueColorSprite{}",
                             settings.sprite, layer.spritesheet_cell_index
                         ));
                         AnimationLayerSprite::TrueColor(load_context.add_labeled_asset(
