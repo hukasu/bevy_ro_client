@@ -1,9 +1,10 @@
 use bevy::{
     asset::{load_internal_asset, Asset, AssetApp, Handle},
+    color::LinearRgba,
     pbr::{Material, MaterialPlugin},
     prelude::{Image, Shader},
     reflect::Reflect,
-    render::render_resource::AsBindGroup,
+    render::render_resource::{AsBindGroup, ShaderType},
 };
 
 const SPR_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(u128::from_le_bytes([
@@ -34,11 +35,18 @@ impl bevy::app::Plugin for Plugin {
     }
 }
 
+#[derive(Debug, Clone, Reflect, ShaderType)]
+pub struct SprUniform {
+    pub tint: LinearRgba,
+}
+
 #[derive(Clone, Asset, Reflect, AsBindGroup)]
 pub struct SprIndexedMaterial {
-    #[texture(0, sample_type = "u_int")]
+    #[uniform(0)]
+    pub uniform: SprUniform,
+    #[texture(1, sample_type = "u_int")]
     pub index_image: Handle<Image>,
-    #[texture(1, dimension = "1d")]
+    #[texture(2, dimension = "1d")]
     pub palette: Handle<Image>,
 }
 
@@ -86,8 +94,10 @@ impl Material for SprIndexedMaterial {
 
 #[derive(Clone, Asset, Reflect, AsBindGroup)]
 pub struct SprTrueColorMaterial {
-    #[texture(0)]
-    #[sampler(1)]
+    #[uniform(0)]
+    pub uniform: SprUniform,
+    #[texture(1)]
+    #[sampler(2)]
     pub color: Handle<Image>,
 }
 

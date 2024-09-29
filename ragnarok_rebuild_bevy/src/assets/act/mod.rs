@@ -22,7 +22,7 @@ use bevy::{
 use crate::{
     assets::{paths, spr},
     audio::PlaySound,
-    materials::{SprIndexedMaterial, SprTrueColorMaterial},
+    materials::{SprIndexedMaterial, SprTrueColorMaterial, SprUniform},
 };
 
 pub use self::{
@@ -223,6 +223,9 @@ fn swap_animations(
                             return;
                         };
                         let handle = sprites_indexed.add(SprIndexedMaterial {
+                            uniform: SprUniform {
+                                tint: layer.tint.into(),
+                            },
                             index_image,
                             palette: actor.palette.clone(),
                         });
@@ -235,6 +238,9 @@ fn swap_animations(
                             return;
                         };
                         let handle = sprites_true_color.add(SprTrueColorMaterial {
+                            uniform: SprUniform {
+                                tint: layer.tint.into(),
+                            },
                             color: color_texture,
                         });
                         builder.spawn((IDENTITY_PLANE_HANDLE, handle))
@@ -243,7 +249,10 @@ fn swap_animations(
                 entity_commands.insert((
                     Name::new(format!("Layer{}", i)),
                     SpatialBundle {
-                        transform: Transform::from_rotation(Quat::from_rotation_z(layer.rotation))
+                        transform: Transform::from_rotation(Quat::from_rotation_z(-layer.rotation))
+                            .with_translation(
+                                Vec3::new(layer.origin.x as f32, -layer.origin.y as f32, 0.) / 6.4,
+                            )
                             .with_scale(layer.scale.extend(1.)),
                         ..Default::default()
                     },

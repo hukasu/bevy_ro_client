@@ -5,7 +5,7 @@ use bevy::app::PluginGroupBuilder;
 
 pub use self::{
     rsm::RsmMaterial,
-    spr::{SprIndexedMaterial, SprTrueColorMaterial},
+    spr::{SprIndexedMaterial, SprTrueColorMaterial, SprUniform},
 };
 
 pub struct PluginGroup;
