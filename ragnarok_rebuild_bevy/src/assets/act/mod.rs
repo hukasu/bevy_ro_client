@@ -3,7 +3,6 @@ mod components;
 mod events;
 mod loader;
 
-use core::f32;
 use std::time::Duration;
 
 use bevy::{
@@ -13,17 +12,13 @@ use bevy::{
     math::{Quat, Vec2, Vec3},
     prelude::{
         BuildChildren, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter,
-        IntoSystemConfigs, Mesh, Plane3d, Query, Res, ResMut, SpatialBundle, Transform, Trigger,
-        With, Without,
+        IntoSystemConfigs, Mesh, Plane3d, Query, Res, SpatialBundle, Transform, Trigger, With,
+        Without,
     },
     time::{Time, Timer},
 };
 
-use crate::{
-    assets::{paths, spr},
-    audio::PlaySound,
-    materials::{SprIndexedMaterial, SprTrueColorMaterial, SprUniform},
-};
+use crate::{assets::paths, audio::PlaySound};
 
 pub use self::{
     assets::Animation,
@@ -35,6 +30,7 @@ use self::{
     components::LoadingActor,
     events::ActorTimerTick,
     events::StartActor,
+    loader::{AssetLoader, AssetLoaderSettings},
 };
 
 const IDENTITY_PLANE_HANDLE: Handle<Mesh> = Handle::weak_from_u128(0);
@@ -47,7 +43,7 @@ impl bevy::app::Plugin for Plugin {
             // Assets
             .init_asset::<Animation>()
             // AssetLoaders
-            .register_asset_loader(loader::AssetLoader)
+            .register_asset_loader(AssetLoader)
             // Events
             .add_event::<ActorTimerTick>()
             // Observers
@@ -84,21 +80,24 @@ fn load_actor(trigger: Trigger<LoadActor>, mut commands: Commands, asset_server:
         // actor to have access to Parent on the OnAdd of the Actor components
         commands.entity(trigger.entity()).add_child(actor);
         // Adding actor components
-        let actor_name = &trigger.event().actor;
+        let actor_name = trigger.event().actor.clone();
         commands.entity(actor).insert((
             Name::new(format!("{}.act", actor_name)),
             SpatialBundle {
-                transform: Transform::from_rotation(Quat::from_rotation_x(-f32::consts::FRAC_PI_8)),
+                transform: Transform::from_rotation(Quat::from_rotation_x(
+                    -std::f32::consts::FRAC_PI_8,
+                )),
                 ..Default::default()
             },
             Actor {
-                act: asset_server.load(format!("{}{}.act", paths::SPR_FILES_FOLDER, actor_name)),
-                sprite: asset_server.load(format!("{}{}.spr", paths::SPR_FILES_FOLDER, actor_name)),
-                palette: asset_server.load(format!(
-                    "{}{}.spr#Palette",
-                    paths::SPR_FILES_FOLDER,
-                    actor_name
-                )),
+                act: asset_server.load_with_settings(
+                    format!("{}{}.act", paths::SPR_FILES_FOLDER, actor_name),
+                    move |settings: &mut AssetLoaderSettings| {
+                        settings.sprite = format!("{}{}.spr", paths::SPR_FILES_FOLDER, actor_name);
+                        settings.palette =
+                            format!("{}{}.spr#Palette", paths::SPR_FILES_FOLDER, actor_name)
+                    },
+                ),
                 facing: trigger.event().facing.unwrap_or_default(),
                 clip: 0,
                 frame: 0,
@@ -193,9 +192,6 @@ fn swap_animations(
     mut event_reader: EventReader<ActorTimerTick>,
     actors: Query<(&Actor, &Transform), Without<LoadingActor>>,
     animations: Res<Assets<Animation>>,
-    sprites: Res<Assets<spr::Sprite>>,
-    mut sprites_indexed: ResMut<Assets<SprIndexedMaterial>>,
-    mut sprites_true_color: ResMut<Assets<SprTrueColorMaterial>>,
 ) {
     for actor_id in event_reader.read() {
         let Ok((actor, actor_transform)) = actors.get(actor_id.entity) else {
@@ -212,38 +208,12 @@ fn swap_animations(
 
         commands.entity(actor_id.entity).with_children(|builder| {
             for (i, layer) in frame.layers.iter().enumerate() {
-                let Some(actor_spritesheet) = sprites.get(&actor.sprite) else {
-                    return;
-                };
-
-                let mut entity_commands = match layer.sprite {
-                    AnimationLayerSprite::Indexed(id) => {
-                        let Some(index_image) = actor_spritesheet.indexed_sprites.get(id).cloned()
-                        else {
-                            return;
-                        };
-                        let handle = sprites_indexed.add(SprIndexedMaterial {
-                            uniform: SprUniform {
-                                tint: layer.tint.into(),
-                            },
-                            index_image,
-                            palette: actor.palette.clone(),
-                        });
-                        builder.spawn((IDENTITY_PLANE_HANDLE, handle))
+                let mut entity_commands = match &layer.sprite {
+                    AnimationLayerSprite::Indexed(handle) => {
+                        builder.spawn((IDENTITY_PLANE_HANDLE, handle.clone()))
                     }
-                    AnimationLayerSprite::TrueColor(id) => {
-                        let Some(color_texture) =
-                            actor_spritesheet.true_color_sprites.get(id).cloned()
-                        else {
-                            return;
-                        };
-                        let handle = sprites_true_color.add(SprTrueColorMaterial {
-                            uniform: SprUniform {
-                                tint: layer.tint.into(),
-                            },
-                            color: color_texture,
-                        });
-                        builder.spawn((IDENTITY_PLANE_HANDLE, handle))
+                    AnimationLayerSprite::TrueColor(handle) => {
+                        builder.spawn((IDENTITY_PLANE_HANDLE, handle.clone()))
                     }
                 };
                 entity_commands.insert((

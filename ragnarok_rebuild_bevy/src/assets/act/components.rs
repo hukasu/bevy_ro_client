@@ -1,11 +1,9 @@
 use bevy::{
     asset::Handle,
-    prelude::{Component, Image, ReflectComponent, ReflectDefault},
+    prelude::{Component, ReflectComponent, ReflectDefault},
     reflect::Reflect,
     time::Timer,
 };
-
-use crate::assets::spr::Sprite;
 
 use super::Animation;
 
@@ -13,8 +11,6 @@ use super::Animation;
 #[reflect(Component)]
 pub struct Actor {
     pub act: Handle<Animation>,
-    pub sprite: Handle<Sprite>,
-    pub palette: Handle<Image>,
     pub facing: ActorFacing,
     pub clip: usize,
     pub frame: usize,

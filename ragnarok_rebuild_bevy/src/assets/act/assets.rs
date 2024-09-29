@@ -3,11 +3,19 @@ use bevy::{
     audio::AudioSource,
     color::Color,
     math::{IVec2, Vec2},
+    prelude::Image,
     reflect::TypePath,
+};
+
+use crate::{
+    assets::spr,
+    materials::{SprIndexedMaterial, SprTrueColorMaterial},
 };
 
 #[derive(Debug, Asset, TypePath)]
 pub struct Animation {
+    pub sprite: Handle<spr::Sprite>,
+    pub palette: Handle<Image>,
     pub clips: Box<[AnimationClip]>,
 }
 
@@ -38,8 +46,8 @@ pub struct AnimationLayer {
 
 #[derive(Debug)]
 pub enum AnimationLayerSprite {
-    Indexed(usize),
-    TrueColor(usize),
+    Indexed(Handle<SprIndexedMaterial>),
+    TrueColor(Handle<SprTrueColorMaterial>),
 }
 
 #[derive(Debug)]

@@ -4,12 +4,17 @@ use bevy::{
     asset::{io::Reader, AsyncReadExt, LoadContext},
     color::Color,
     math::{IVec2, Vec2},
+    reflect::TypePath,
     utils::ConditionalSendFuture,
 };
 
 use ragnarok_rebuild_assets::act;
+use serde::{Deserialize, Serialize};
 
-use crate::assets::paths;
+use crate::{
+    assets::paths,
+    materials::{SprIndexedMaterial, SprTrueColorMaterial, SprUniform},
+};
 
 use super::{
     assets::AnimationLayerSprite, Animation, AnimationClip, AnimationEvent, AnimationFrame,
@@ -18,17 +23,23 @@ use super::{
 
 const ANIMATION_FRAME_TIME_FACTOR: f32 = 24. / 1000.;
 
+#[derive(Debug, Default, Serialize, Deserialize, TypePath)]
+pub struct AssetLoaderSettings {
+    pub sprite: String,
+    pub palette: String,
+}
+
 pub struct AssetLoader;
 
 impl bevy::asset::AssetLoader for AssetLoader {
     type Asset = Animation;
-    type Settings = ();
+    type Settings = AssetLoaderSettings;
     type Error = AssetLoaderError;
 
     fn load<'a>(
         &'a self,
         reader: &'a mut Reader,
-        _settings: &'a Self::Settings,
+        settings: &'a Self::Settings,
         load_context: &'a mut LoadContext,
     ) -> impl ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
         Box::pin(async {
@@ -36,7 +47,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
             reader.read_to_end(&mut data).await?;
             let actor = act::Act::from_reader(&mut data.as_slice())?;
 
-            Self::generate_actor(load_context, &actor)
+            Self::generate_actor(load_context, settings, &actor)
         })
     }
 
@@ -48,15 +59,21 @@ impl bevy::asset::AssetLoader for AssetLoader {
 impl AssetLoader {
     fn generate_actor(
         load_context: &mut LoadContext,
+        settings: &AssetLoaderSettings,
         act: &act::Act,
     ) -> Result<Animation, AssetLoaderError> {
+        let sprite = load_context.load(&settings.sprite);
+        let palette = load_context.load(&settings.palette);
         Ok(Animation {
-            clips: Self::generate_clips(load_context, act)?,
+            sprite,
+            palette,
+            clips: Self::generate_clips(load_context, settings, act)?,
         })
     }
 
     fn generate_clips(
         load_context: &mut LoadContext,
+        settings: &AssetLoaderSettings,
         act: &act::Act,
     ) -> Result<Box<[AnimationClip]>, AssetLoaderError> {
         act.animation_clips
@@ -66,7 +83,13 @@ impl AssetLoader {
             .map(|(i, (clip, frame_time))| {
                 Ok(AnimationClip {
                     frame_time: frame_time * ANIMATION_FRAME_TIME_FACTOR,
-                    frames: Self::generate_frames(load_context, clip, &act.animation_events, i)?,
+                    frames: Self::generate_frames(
+                        load_context,
+                        settings,
+                        clip,
+                        &act.animation_events,
+                        i,
+                    )?,
                 })
             })
             .collect::<Result<Box<[_]>, _>>()
@@ -74,6 +97,7 @@ impl AssetLoader {
 
     fn generate_frames(
         load_context: &mut LoadContext,
+        settings: &AssetLoaderSettings,
         clip: &act::AnimationClip,
         events: &[act::AnimationEvent],
         clip_id: usize,
@@ -108,7 +132,7 @@ impl AssetLoader {
                 };
 
                 Ok(AnimationFrame {
-                                    layers: Self::generate_layers(frame)?,
+                                    layers: Self::generate_layers(load_context, settings, frame, clip_id, i)?,
                                     anchors: Box::new([]),
                                     event: ani_event,
                                 })
@@ -117,26 +141,18 @@ impl AssetLoader {
     }
 
     fn generate_layers(
+        load_context: &mut LoadContext,
+        settings: &AssetLoaderSettings,
         frame: &act::AnimationFrame,
+        clip_id: usize,
+        frame_id: usize,
     ) -> Result<Box<[AnimationLayer]>, AssetLoaderError> {
         frame
             .sprite_layers
             .iter()
-            .map(|layer| {
+            .enumerate()
+            .map(|(i, layer)| {
                 let origin = IVec2::new(layer.position_u, layer.position_v);
-                let sprite = match layer.image_type_id {
-                    0 => AnimationLayerSprite::Indexed(
-                        usize::try_from(layer.spritesheet_cell_index)
-                            .map_err(|_| AssetLoaderError::UsizeConversion)?,
-                    ),
-                    1 => AnimationLayerSprite::TrueColor(
-                        usize::try_from(layer.spritesheet_cell_index)
-                            .map_err(|_| AssetLoaderError::UsizeConversion)?,
-                    ),
-                    _ => unreachable!(
-                        "Act file should not be loaded if it has a value different from this"
-                    ),
-                };
                 let is_flipped = layer.is_flipped_v;
                 let tint = Color::srgba_u8(
                     layer.tint.red,
@@ -147,6 +163,40 @@ impl AssetLoader {
                 let scale = Vec2::new(layer.scale_u, layer.scale_v);
                 let rotation = (layer.rotation as f32).to_radians();
                 let image_size = IVec2::new(layer.image_width, layer.image_height);
+
+                let sprite = match layer.image_type_id {
+                    0 => {
+                        let index_image = load_context.load(format!(
+                            "{}#IndexedSprite{}",
+                            settings.sprite, layer.spritesheet_cell_index
+                        ));
+                        let palette = load_context.load(&settings.palette);
+                        AnimationLayerSprite::Indexed(load_context.add_labeled_asset(
+                            format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
+                            SprIndexedMaterial {
+                                uniform: SprUniform { tint: tint.into() },
+                                index_image,
+                                palette,
+                            },
+                        ))
+                    }
+                    1 => {
+                        let color = load_context.load(format!(
+                            "{}#TrueColor{}",
+                            settings.sprite, layer.spritesheet_cell_index
+                        ));
+                        AnimationLayerSprite::TrueColor(load_context.add_labeled_asset(
+                            format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
+                            SprTrueColorMaterial {
+                                uniform: SprUniform { tint: tint.into() },
+                                color,
+                            },
+                        ))
+                    }
+                    _ => unreachable!(
+                        "Act file should not be loaded if it has a value different from this"
+                    ),
+                };
 
                 Ok(AnimationLayer {
                     origin,
