@@ -12,8 +12,8 @@ use bevy::{
     math::{Quat, Vec2, Vec3},
     prelude::{
         BuildChildren, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter,
-        IntoSystemConfigs, Mesh, Plane3d, Query, Res, SpatialBundle, Transform, Trigger, With,
-        Without,
+        IntoSystemConfigs, Mesh, Parent, Plane3d, Query, Res, SpatialBundle, Transform, Trigger,
+        With, Without,
     },
     time::{Time, Timer},
 };
@@ -64,7 +64,7 @@ impl bevy::app::Plugin for Plugin {
 
         app.world_mut().resource_mut::<Assets<Mesh>>().insert(
             &IDENTITY_PLANE_HANDLE,
-            Plane3d::new(Vec3::Z, Vec2::splat(0.5)).into(),
+            Plane3d::new(Vec3::NEG_Z, Vec2::splat(0.5)).into(),
         );
     }
 }
@@ -190,11 +190,12 @@ fn tick_animations(
 fn swap_animations(
     mut commands: Commands,
     mut event_reader: EventReader<ActorTimerTick>,
-    actors: Query<(&Actor, &Transform), Without<LoadingActor>>,
+    actors: Query<(&Actor, &Parent), Without<LoadingActor>>,
+    transforms: Query<&Transform>,
     animations: Res<Assets<Animation>>,
 ) {
     for actor_id in event_reader.read() {
-        let Ok((actor, actor_transform)) = actors.get(actor_id.entity) else {
+        let Ok((actor, actor_parent)) = actors.get(actor_id.entity) else {
             bevy::log::error!("An event to swap Actor's sprites had an inexistent Entity.");
             continue;
         };
@@ -221,7 +222,7 @@ fn swap_animations(
                     SpatialBundle {
                         transform: Transform::from_rotation(Quat::from_rotation_z(-layer.rotation))
                             .with_translation(
-                                Vec3::new(layer.origin.x as f32, -layer.origin.y as f32, 0.) / 6.4,
+                                Vec3::new(layer.origin.x as f32, layer.origin.y as f32, 0.) / 6.4,
                             )
                             .with_scale(layer.scale.extend(1.)),
                         ..Default::default()
@@ -230,6 +231,9 @@ fn swap_animations(
             }
         });
 
+        let Ok(actor_transform) = transforms.get(actor_parent.get()) else {
+            return;
+        };
         if let Some(AnimationEvent::Sound(sound)) = &frame.event {
             let sound_path = sound
                 .path()
