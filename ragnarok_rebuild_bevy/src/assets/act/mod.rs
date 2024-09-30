@@ -6,7 +6,7 @@ mod loader;
 use std::time::Duration;
 
 use bevy::{
-    app::Update,
+    app::FixedUpdate,
     asset::{AssetApp, AssetServer, Assets, Handle, LoadState},
     core::Name,
     math::{Quat, Vec2, Vec3},
@@ -51,13 +51,13 @@ impl bevy::app::Plugin for Plugin {
             .observe(start_animation)
             // Systems
             .add_systems(
-                Update,
+                FixedUpdate,
                 check_actor_loading_state
                     .run_if(has_actors_loading)
                     .before(tick_animations),
             )
-            .add_systems(Update, tick_animations.before(swap_animations))
-            .add_systems(Update, swap_animations)
+            .add_systems(FixedUpdate, tick_animations.before(swap_animations))
+            .add_systems(FixedUpdate, swap_animations)
             // Types
             .register_type::<Actor>()
             .register_type::<ActorFacing>();
