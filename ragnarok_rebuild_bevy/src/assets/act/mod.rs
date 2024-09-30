@@ -217,14 +217,16 @@ fn swap_animations(
                         builder.spawn((IDENTITY_PLANE_HANDLE, handle.clone()))
                     }
                 };
+                let world_scale = 32. / 5.;
                 entity_commands.insert((
                     Name::new(format!("Layer{}", i)),
                     SpatialBundle {
-                        transform: Transform::from_rotation(Quat::from_rotation_z(-layer.rotation))
+                        transform: Transform::from_rotation(Quat::from_rotation_z(layer.rotation))
                             .with_translation(
-                                Vec3::new(layer.origin.x as f32, layer.origin.y as f32, 0.) / 6.4,
+                                Vec3::new(layer.origin.x as f32, layer.origin.y as f32, 0.)
+                                    / world_scale,
                             )
-                            .with_scale(layer.scale.extend(1.)),
+                            .with_scale(layer.scale.extend(1.) / world_scale),
                         ..Default::default()
                     },
                 ));

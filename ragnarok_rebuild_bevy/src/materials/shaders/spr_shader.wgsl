@@ -45,7 +45,7 @@ fn vertex(in: Vertex, @builtin(vertex_index) vertex_index: u32) -> VertexOutput 
 
     var dimensions = vec2<f32>(textureDimensions(spr_texture));
     let position = vec4<f32>(
-        (in.position.xy * dimensions) / 6.4,
+        in.position.xy * dimensions,
         0.0,
         1.0
     );
@@ -53,6 +53,7 @@ fn vertex(in: Vertex, @builtin(vertex_index) vertex_index: u32) -> VertexOutput 
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
+    
     vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
         in.normal,
         in.instance_index
