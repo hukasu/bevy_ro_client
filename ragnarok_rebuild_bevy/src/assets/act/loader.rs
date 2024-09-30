@@ -174,7 +174,10 @@ impl AssetLoader {
                         AnimationLayerSprite::Indexed(load_context.add_labeled_asset(
                             format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
                             SprIndexedMaterial {
-                                uniform: SprUniform { tint: tint.into() },
+                                uniform: SprUniform {
+                                    uv_flip: if is_flipped { 1 } else { 0 },
+                                    tint: tint.into(),
+                                },
                                 index_image,
                                 palette,
                             },
@@ -188,7 +191,10 @@ impl AssetLoader {
                         AnimationLayerSprite::TrueColor(load_context.add_labeled_asset(
                             format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
                             SprTrueColorMaterial {
-                                uniform: SprUniform { tint: tint.into() },
+                                uniform: SprUniform {
+                                    uv_flip: if is_flipped { 1 } else { 0 },
+                                    tint: tint.into(),
+                                },
                                 color,
                             },
                         ))

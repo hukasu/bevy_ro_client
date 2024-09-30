@@ -18,7 +18,8 @@
 #endif
 
 struct SprUniform {
-    tint: vec4<f32>
+    uv_flip: u32,
+    tint: vec4<f32>,
 }
 
 @group(2) @binding(0) var<uniform> spr_uniform: SprUniform;
@@ -58,7 +59,11 @@ fn vertex(in: Vertex, @builtin(vertex_index) vertex_index: u32) -> VertexOutput 
         in.normal,
         in.instance_index
     );
-    vertex_output.uv = in.uv;
+    if spr_uniform.uv_flip == 1u {
+        vertex_output.uv = vec2<f32>(1. - in.uv.x, in.uv.y);
+    } else {
+        vertex_output.uv = in.uv;
+    }
 
     return vertex_output;
 }
