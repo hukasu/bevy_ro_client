@@ -1,4 +1,4 @@
-use std::{fmt::Write, io::Cursor, path::Path};
+use std::{collections::BTreeSet, fmt::Write, io::Cursor, path::Path};
 
 use ragnarok_rebuild_assets::{
     grf::GRF,
@@ -24,12 +24,12 @@ fn main() {
     {
         let Ok(rsm_content) = grf
             .read_file(rsm_filename)
-            .inspect_err(|err| eprintln!("{rsm_filename:?}: {err}"))
+            .inspect_err(|err| println!("{rsm_filename:?}: {err}"))
         else {
             continue;
         };
         let Ok(rsm) = RSM::from_reader(&mut Cursor::new(rsm_content))
-            .inspect_err(|err| eprintln!("{rsm_filename:?}: {err}"))
+            .inspect_err(|err| println!("{rsm_filename:?}: {err}"))
         else {
             continue;
         };
@@ -91,6 +91,11 @@ fn debug_mesh(mesh: &Mesh) -> Option<String> {
         }
     }
 
+    if let Some(face_debug) = check_unused_vertices(mesh) {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\t{}", face_debug).unwrap();
+    }
+
     debug
 }
 
@@ -114,4 +119,24 @@ fn debug_face(face: &Face, index: usize) -> Option<String> {
     }
 
     debug
+}
+
+fn check_unused_vertices(mesh: &Mesh) -> Option<String> {
+    let mut used_vertices = BTreeSet::new();
+
+    for face in mesh.faces.iter() {
+        used_vertices.insert(face.vertices[0]);
+        used_vertices.insert(face.vertices[1]);
+        used_vertices.insert(face.vertices[2]);
+    }
+
+    if used_vertices.len() != mesh.vertices.len() {
+        Some(format!(
+            "has unused vertices. Has {}, used {}.",
+            mesh.vertices.len(),
+            used_vertices.len()
+        ))
+    } else {
+        None
+    }
 }
