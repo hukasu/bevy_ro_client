@@ -512,22 +512,7 @@ impl AssetLoader {
 
     #[must_use]
     fn mesh_transform(mesh: &rsm::mesh::Mesh) -> Transform {
-        let translation = Vec3::from_array(mesh.position);
-        let rotation = {
-            let rotation_axis = Vec3::from_array(mesh.rotation_axis);
-            if rotation_axis.length() <= 0. {
-                Quat::default()
-            } else {
-                Quat::from_axis_angle(rotation_axis, mesh.rotation_angle)
-            }
-        };
-        let scale = Vec3::from_array(mesh.scale);
-
-        Transform {
-            translation,
-            rotation,
-            scale,
-        }
+        Self::recentered_mesh_transform(mesh, &Aabb::from_min_max(Vec3::splat(0.), Vec3::splat(0.)))
     }
 
     #[must_use]
