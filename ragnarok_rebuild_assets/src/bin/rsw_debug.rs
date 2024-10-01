@@ -1,7 +1,4 @@
-use std::{
-    io::Cursor,
-    path::{Path, PathBuf},
-};
+use std::{io::Cursor, path::Path};
 
 use ragnarok_rebuild_assets::{grf::GRF, rsw::Rsw};
 
@@ -10,20 +7,17 @@ fn main() {
         return;
     };
 
-    for rsw_filename in ["data/rag_fes.rsw", "data/rag_fes_a.rsw"]
-        .iter()
-        .map(PathBuf::from)
-    // grf
-    //     .iter_filenames()
-    //     .filter(|filename| match filename.extension() {
-    //         Some(ext) => {
-    //             matches!(ext.to_str(), Some("rsw"))
-    //         }
-    //         None => false,
-    //     })
+    for rsw_filename in grf
+        .iter_filenames()
+        .filter(|filename| match filename.extension() {
+            Some(ext) => {
+                matches!(ext.to_str(), Some("rsw"))
+            }
+            None => false,
+        })
     {
         let Ok(rsm_content) = grf
-            .read_file(&rsw_filename)
+            .read_file(rsw_filename)
             .inspect_err(|err| println!("{rsw_filename:?}: {err}"))
         else {
             continue;
