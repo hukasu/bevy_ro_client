@@ -26,8 +26,8 @@ pub use self::{
 type Objects = (Box<[Model]>, Box<[Light]>, Box<[Sound]>, Box<[Effect]>);
 
 #[derive(Debug)]
-pub struct RSW {
-    pub signature: Box<str>,
+pub struct Rsw {
+    pub signature: [u8; 4],
     pub version: Version,
     pub flag: u8,
     pub ini_file: Box<str>,
@@ -44,40 +44,45 @@ pub struct RSW {
     pub quad_tree: QuadTree,
 }
 
-impl RSW {
-    pub fn from_reader(mut reader: &mut dyn Read) -> Result<RSW, Error> {
+impl Rsw {
+    pub fn from_reader(reader: &mut dyn Read) -> Result<Rsw, Error> {
         let signature = Self::read_signature(reader)?;
-        let version = Version::rsw_version_from_reader(reader)?;
-        let flag = if version >= Version(2, 5, 0) {
-            reader.read_u8()?
-        } else {
-            0
+        let version = Self::read_version(reader)?;
+
+        match version {
+            Version(1, 9, 0)
+            | Version(2, 1, 0)
+            | Version(2, 2, 0)
+            | Version(2, 2, 1)
+            | Version(2, 3, 1)
+            | Version(2, 4, 1)
+            | Version(2, 5, 36)
+            | Version(2, 5, 50)
+            | Version(2, 5, 55)
+            | Version(2, 5, 131)
+            | Version(2, 5, 143)
+            | Version(2, 5, 146)
+            | Version(2, 6, 161)
+            | Version(2, 6, 162)
+            | Version(2, 6, 187) => (),
+            version => return Err(Error::UnknownVersion(version)),
         };
+
+        let flag = Self::read_flag(reader, &version)?;
 
         let ini_file = super::read_euc_kr_string(reader, 40)?;
         let gnd_file = super::read_euc_kr_string(reader, 40)?;
         let gat_file = super::read_euc_kr_string(reader, 40)?;
         let source_file = super::read_euc_kr_string(reader, 40)?;
 
-        let water_configuration = if version < Version(2, 6, 0) {
-            Some(WaterPlane::from_reader(reader)?)
-        } else {
-            None
-        };
+        let water_configuration = Self::read_water_configuration(reader, &version)?;
         let lighting_parameters = LightingParams::from_reader(reader)?;
 
         let map_boundaries = BoundingBox::from_reader(reader)?;
 
         let (models, lights, sounds, effects) = Self::read_objects(reader, &version)?;
 
-        let quad_tree = if version >= Version(2, 0, 0) {
-            QuadTree::from_reader(reader)?
-        } else {
-            QuadTree {
-                ranges: std::array::from_fn::<Range, QUAD_TREE_SIZE, _>(|_| Range::default())
-                    .into(),
-            }
-        };
+        let quad_tree = Self::read_quad_tree(reader, &version)?;
 
         let mut rest = vec![];
         reader.read_to_end(&mut rest)?;
@@ -104,19 +109,42 @@ impl RSW {
         })
     }
 
-    fn read_signature(mut reader: &mut dyn Read) -> Result<Box<str>, Error> {
-        let signature = {
-            let buffer: [u8; 4] = reader.read_array()?;
-            String::from_utf8(buffer.to_vec())
-                .map_err(|_| {
-                    std::io::Error::new(std::io::ErrorKind::InvalidData, "Read invalid Utf8.")
-                })?
-                .into_boxed_str()
-        };
-        if (*signature).eq("GRSW") {
+    fn read_signature(mut reader: &mut dyn Read) -> Result<[u8; 4], Error> {
+        let signature = reader.read_array()?;
+        if signature.eq(b"GRSW") {
             Ok(signature)
         } else {
-            Err(Error::InvalidSignature(signature))
+            Err(Error::InvalidSignature)
+        }
+    }
+
+    fn read_version(mut reader: &mut dyn Read) -> Result<Version, std::io::Error> {
+        let major = reader.read_u8()?;
+        let minor = reader.read_u8()?;
+        let build = if major == 2 && (2..5).contains(&minor) {
+            u32::from(reader.read_u8()?)
+        } else if major == 2 && (5..7).contains(&minor) {
+            reader.read_le_u32()?
+        } else {
+            0
+        };
+        Ok(Version(major, minor, build))
+    }
+
+    fn read_flag(mut reader: &mut dyn Read, version: &Version) -> Result<u8, std::io::Error> {
+        match version {
+            Version(2, 5, _) | Version(2, 6, _) => reader.read_u8(),
+            _ => Ok(0),
+        }
+    }
+
+    fn read_water_configuration(
+        reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<Option<WaterPlane>, std::io::Error> {
+        match version {
+            Version(2, 6, _) => Ok(None),
+            _ => Ok(Some(WaterPlane::from_reader(reader)?)),
         }
     }
 
@@ -133,13 +161,13 @@ impl RSW {
                     models.push(Model::from_reader(reader, version)?);
                 }
                 2 => {
-                    lights.push(Light::from_reader(reader, version)?);
+                    lights.push(Light::from_reader(reader)?);
                 }
                 3 => {
                     sounds.push(Sound::from_reader(reader, version)?);
                 }
                 4 => {
-                    effects.push(Effect::from_reader(reader, version)?);
+                    effects.push(Effect::from_reader(reader)?);
                 }
                 _ => Err(Error::UnknownObjectType(obj_type))?,
             }
@@ -150,5 +178,21 @@ impl RSW {
             sounds.into_boxed_slice(),
             effects.into_boxed_slice(),
         ))
+    }
+
+    fn read_quad_tree(reader: &mut dyn Read, version: &Version) -> Result<QuadTree, Error> {
+        match version {
+            Version(2, 1, 0)
+            | Version(2, 2, 0)
+            | Version(2, 2, _)
+            | Version(2, 3, _)
+            | Version(2, 4, _)
+            | Version(2, 5, _)
+            | Version(2, 6, _) => QuadTree::from_reader(reader),
+            _ => Ok(QuadTree {
+                ranges: std::array::from_fn::<Range, QUAD_TREE_SIZE, _>(|_| Range::default())
+                    .into(),
+            }),
+        }
     }
 }

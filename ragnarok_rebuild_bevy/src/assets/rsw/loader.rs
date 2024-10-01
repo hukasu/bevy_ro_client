@@ -40,7 +40,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
         Box::pin(async {
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
-            let rsw = rsw::RSW::from_reader(&mut data.as_slice())?;
+            let rsw = rsw::Rsw::from_reader(&mut data.as_slice())?;
 
             Ok(Self::generate_world(&rsw, load_context))
         })
@@ -55,7 +55,7 @@ impl AssetLoader {
     const UNNAMED_RSW: &str = "Unnamed Rsw";
     const DIRECTIONAL_LIGHT_LUX: f32 = 4300.;
 
-    fn generate_world(rsw: &rsw::RSW, load_context: &mut LoadContext) -> Scene {
+    fn generate_world(rsw: &rsw::Rsw, load_context: &mut LoadContext) -> Scene {
         bevy::log::trace!("Generating {:?} world.", load_context.path());
 
         let mut world = bevy::ecs::world::World::new();
@@ -97,7 +97,7 @@ impl AssetLoader {
     }
 
     fn set_ambient_light(
-        rsw: &rsw::RSW,
+        rsw: &rsw::Rsw,
         world: &mut bevy::prelude::World,
         load_context: &mut LoadContext,
     ) {
@@ -113,7 +113,7 @@ impl AssetLoader {
     }
 
     fn spawn_directional_light(
-        rsw: &rsw::RSW,
+        rsw: &rsw::Rsw,
         world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
@@ -151,7 +151,7 @@ impl AssetLoader {
     }
 
     fn spawn_ground(
-        rsw: &rsw::RSW,
+        rsw: &rsw::Rsw,
         world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
@@ -172,7 +172,7 @@ impl AssetLoader {
     }
 
     fn spawn_animated_props(
-        rsw: &rsw::RSW,
+        rsw: &rsw::Rsw,
         world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
@@ -213,7 +213,7 @@ impl AssetLoader {
     }
 
     fn spawn_environmental_lights(
-        rsw: &rsw::RSW,
+        rsw: &rsw::Rsw,
         world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
@@ -252,7 +252,7 @@ impl AssetLoader {
     }
 
     fn spawn_environmental_sounds(
-        rsw: &rsw::RSW,
+        rsw: &rsw::Rsw,
         world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
@@ -295,7 +295,7 @@ impl AssetLoader {
     }
 
     fn spawn_environmental_effects(
-        rsw: &rsw::RSW,
+        rsw: &rsw::Rsw,
         world: &mut bevy::ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {

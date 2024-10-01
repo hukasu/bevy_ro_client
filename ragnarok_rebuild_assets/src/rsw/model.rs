@@ -2,9 +2,7 @@ use std::io::Read;
 
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
-use crate::read_euc_kr_string;
-
-use super::Version;
+use crate::{common::Version, read_euc_kr_string};
 
 #[derive(Debug)]
 pub struct Model {
@@ -22,12 +20,16 @@ pub struct Model {
 impl Model {
     pub fn from_reader(
         mut reader: &mut dyn Read,
-        _version: &Version,
+        version: &Version,
     ) -> Result<Self, std::io::Error> {
         let name = read_euc_kr_string(reader, 40)?;
         let animation_type = reader.read_le_i32()?;
         let animation_speed = reader.read_le_f32()?;
         let block_type = reader.read_le_i32()?;
+        let _unknown = match version {
+            Version(2, 6, 187) => reader.read_u8()?,
+            _ => 0,
+        };
         let filename = read_euc_kr_string(reader, 80)?;
         // There are models were this field is corrupt
         let node_name = read_euc_kr_string(reader, 80).unwrap_or_default();

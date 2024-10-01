@@ -36,10 +36,15 @@ impl Sound {
         let width = reader.read_le_i32()?;
         let height = reader.read_le_i32()?;
         let range = reader.read_le_f32()?;
-        let cycle = if version >= &Version(2, 1, 0) {
-            reader.read_le_f32()?
-        } else {
-            4.
+
+        let cycle = match version {
+            Version(2, 1, 0)
+            | Version(2, 2, _)
+            | Version(2, 3, _)
+            | Version(2, 4, _)
+            | Version(2, 5, _)
+            | Version(2, 6, _) => reader.read_le_f32()?,
+            _ => 4.,
         };
 
         Ok(Self {

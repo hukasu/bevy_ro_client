@@ -2,8 +2,6 @@ use std::io::Read;
 
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
-use super::Version;
-
 #[derive(Debug)]
 pub struct Effect {
     pub name: Box<str>,
@@ -14,10 +12,7 @@ pub struct Effect {
 }
 
 impl Effect {
-    pub fn from_reader(
-        mut reader: &mut dyn Read,
-        _version: &Version,
-    ) -> Result<Self, std::io::Error> {
+    pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, std::io::Error> {
         let name = crate::read_euc_kr_string(reader, 80)?;
 
         let position = [

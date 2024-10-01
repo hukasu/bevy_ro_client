@@ -2,7 +2,7 @@ use crate::common::Version;
 
 #[derive(Debug)]
 pub enum Error {
-    InvalidSignature(Box<str>),
+    InvalidSignature,
     UnknownVersion(Version),
     Io(std::io::Error),
     UnknownObjectType(u32),
@@ -18,7 +18,7 @@ impl From<std::io::Error> for Error {
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::InvalidSignature(signature) => write!(f, "The signature {signature} is invalid."),
+            Self::InvalidSignature => write!(f, "Rsw file had wrong signature."),
             Self::UnknownVersion(version) => {
                 write!(f, "The version '{version}' is unknown.")
             }
