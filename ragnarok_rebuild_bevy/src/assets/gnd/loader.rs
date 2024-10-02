@@ -1,10 +1,10 @@
 use bevy::{
-    asset::{io::Reader, AssetLoader as BevyAssetLoader, AsyncReadExt, Handle, LoadContext},
+    asset::{io::Reader, AsyncReadExt, Handle, LoadContext},
     core::Name,
     ecs::world::World,
     hierarchy::BuildWorldChildren,
     math::{Vec2, Vec3},
-    pbr::{PbrBundle, StandardMaterial},
+    pbr::MaterialMeshBundle,
     prelude::SpatialBundle,
     render::{
         mesh::{Mesh, PrimitiveTopology},
@@ -15,13 +15,13 @@ use bevy::{
 };
 use ragnarok_rebuild_assets::gnd;
 
-use crate::assets::paths;
+use crate::{assets::paths, materials::GndMaterial};
 
 use super::components::Ground;
 
 pub struct AssetLoader;
 
-impl BevyAssetLoader for AssetLoader {
+impl bevy::asset::AssetLoader for AssetLoader {
     type Asset = Scene;
     type Settings = ();
     type Error = gnd::Error;
@@ -54,7 +54,7 @@ impl AssetLoader {
             .iter()
             .map(|path| load_context.load(format!("{}{}", paths::TEXTURE_FILES_FOLDER, path)))
             .collect();
-        let materials: Vec<Handle<StandardMaterial>> = textures
+        let materials: Vec<Handle<GndMaterial>> = textures
             .iter()
             .cloned()
             .map(Self::mesh_material)
@@ -71,7 +71,7 @@ impl AssetLoader {
 
     fn build_cubes(
         gnd: &gnd::GND,
-        materials: &[Handle<StandardMaterial>],
+        materials: &[Handle<GndMaterial>],
         world: &mut World,
         load_context: &mut LoadContext,
     ) {
@@ -126,7 +126,7 @@ impl AssetLoader {
                 for (i, mesh) in meshs.iter().enumerate() {
                     parent.spawn((
                         Name::new(format!("Primitive{i}")),
-                        PbrBundle {
+                        MaterialMeshBundle {
                             mesh: mesh.clone(),
                             material: materials[i].clone(),
                             ..Default::default()
@@ -294,11 +294,9 @@ impl AssetLoader {
     }
 
     #[must_use]
-    fn mesh_material(texture: Handle<Image>) -> StandardMaterial {
-        StandardMaterial {
-            base_color_texture: Some(texture),
-            reflectance: 0.2,
-            ..Default::default()
+    fn mesh_material(texture: Handle<Image>) -> GndMaterial {
+        GndMaterial {
+            color_texture: texture,
         }
     }
 }
