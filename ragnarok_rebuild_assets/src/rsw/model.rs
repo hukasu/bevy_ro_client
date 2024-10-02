@@ -10,6 +10,7 @@ pub struct Model {
     pub animation_type: i32,
     pub animation_speed: f32,
     pub block_type: i32,
+    pub flag: u8,
     pub filename: Box<str>,
     pub node_name: Box<str>,
     pub position: [f32; 3],
@@ -26,7 +27,7 @@ impl Model {
         let animation_type = reader.read_le_i32()?;
         let animation_speed = reader.read_le_f32()?;
         let block_type = reader.read_le_i32()?;
-        let _unknown = match version {
+        let flag = match version {
             Version(2, 6, 187) => reader.read_u8()?,
             _ => 0,
         };
@@ -55,6 +56,7 @@ impl Model {
             animation_type,
             animation_speed,
             block_type,
+            flag,
             filename,
             node_name,
             position,

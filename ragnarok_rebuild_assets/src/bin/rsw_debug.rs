@@ -1,6 +1,6 @@
-use std::{io::Cursor, path::Path};
+use std::{fmt::Write, io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::{grf::GRF, rsw::Rsw};
+use ragnarok_rebuild_assets::{grf::GRF, rsw};
 
 fn main() {
     let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
@@ -22,7 +22,7 @@ fn main() {
         else {
             continue;
         };
-        let Ok(rsw) = Rsw::from_reader(&mut Cursor::new(rsm_content))
+        let Ok(rsw) = rsw::Rsw::from_reader(&mut Cursor::new(rsm_content))
             .inspect_err(|err| println!("{rsw_filename:?}: {err}"))
         else {
             continue;
@@ -35,11 +35,34 @@ fn main() {
     }
 }
 
-fn debug_rsw(rsw: &Rsw) -> Option<String> {
+fn debug_rsw(rsw: &rsw::Rsw) -> Option<String> {
     let header = || format!("\t{:?}\n", rsw.version);
     let mut debug = None;
 
-    // TODO
+    for model in rsw.models.iter() {
+        if let Some(model_debug) = debug_model(model) {
+            let debug_ref = debug.get_or_insert_with(header);
+            write!(debug_ref, "{}", model_debug).unwrap();
+        }
+    }
+
+    debug
+}
+
+fn debug_model(model: &rsw::Model) -> Option<String> {
+    const INDENT: &str = "\t";
+    let header = || format!("{INDENT}Model \"{}\"\n", model.name);
+    let mut debug = None;
+
+    if model.flag != 0 {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(
+            debug_ref,
+            "{INDENT}\thas a non-zero flag. (\"{}\")",
+            model.flag
+        )
+        .unwrap();
+    }
 
     debug
 }
