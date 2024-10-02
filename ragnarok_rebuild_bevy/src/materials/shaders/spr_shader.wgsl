@@ -41,7 +41,7 @@ fn spr_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
 }
 
 @vertex
-fn vertex(in: Vertex, @builtin(vertex_index) vertex_index: u32) -> VertexOutput {
+fn vertex(in: Vertex) -> VertexOutput {
     var vertex_output: VertexOutput;
 
     var dimensions = vec2<f32>(textureDimensions(spr_texture));
