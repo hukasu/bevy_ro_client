@@ -33,7 +33,8 @@ use self::{
     loader::{AssetLoader, AssetLoaderSettings},
 };
 
-const IDENTITY_PLANE_HANDLE: Handle<Mesh> = Handle::weak_from_u128(0);
+const IDENTITY_PLANE_HANDLE: Handle<Mesh> =
+    Handle::weak_from_u128(0xe19c5b465ee0452a8d601d8b0da1fdf3);
 
 pub struct Plugin;
 
