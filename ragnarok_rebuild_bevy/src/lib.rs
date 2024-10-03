@@ -25,9 +25,7 @@ impl Plugin for RagnarokPlugin {
         #[cfg(feature = "debug")]
         app.add_plugins(debug::DebugPlugin);
 
-        app.register_type::<WorldTransform>();
-        if !app.world_mut().contains_resource::<WorldTransform>() {
-            app.init_resource::<WorldTransform>();
-        }
+        app.register_type::<WorldTransform>()
+            .init_resource::<WorldTransform>();
     }
 }

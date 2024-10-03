@@ -1,9 +1,10 @@
 mod components;
 mod loader;
+mod resources;
 
 use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
 
-pub use self::{components::Ground, loader::AssetLoader};
+pub use self::{components::Ground, loader::AssetLoader, resources::GroundScale};
 
 pub struct Plugin;
 
@@ -11,7 +12,10 @@ impl BevyPlugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             // Types
-            .register_type::<components::Ground>()
+            .register_type::<Ground>()
+            .register_type::<GroundScale>()
+            // Resources
+            .init_resource::<GroundScale>()
             // Asset Loader
             .register_asset_loader(AssetLoader);
     }

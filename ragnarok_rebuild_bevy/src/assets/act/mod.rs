@@ -18,7 +18,7 @@ use bevy::{
     time::{Time, Timer},
 };
 
-use crate::{assets::paths, audio::PlaySound, WorldTransform};
+use crate::{assets::paths, audio::PlaySound, resources::WorldTransform};
 
 pub use self::{
     assets::Animation,

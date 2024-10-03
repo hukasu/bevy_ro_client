@@ -3,17 +3,17 @@ mod components;
 pub mod entities;
 
 use bevy::{
-    app::{Plugin, Startup},
+    app::{Plugin, Startup, Update},
     core::Name,
     math::{Quat, Vec3},
     prelude::{
-        BuildChildren, Commands, Entity, OnAdd, Query, ResMut, SpatialBundle, Transform, Trigger,
-        With,
+        resource_changed, BuildChildren, Commands, Entity, IntoSystemConfigs, OnAdd, Query, Res,
+        ResMut, SpatialBundle, Transform, Trigger, With,
     },
 };
 
 use ragnarok_rebuild_bevy::{
-    assets::{gnd::Ground, rsw::World},
+    assets::{gnd, rsw},
     audio::{Bgm, Sound},
     WorldTransform,
 };
@@ -25,20 +25,21 @@ pub struct ClientPlugin;
 impl Plugin for ClientPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
-            // Resources
-            .init_resource::<WorldTransform>()
             // Plugins
             .add_plugins(entities::Plugin)
             // Startup system
             .add_systems(Startup, start_up)
+            .add_systems(
+                Update,
+                update_world_transform.run_if(resource_changed::<gnd::GroundScale>),
+            )
             // Observers
             .observe(attach_world_to_game)
             .observe(attach_entity_to_game)
             // TODO Change to observe on the the container entity
             // in 0.15
             .observe(attach_bgm_to_game)
-            .observe(attach_sound_to_game)
-            .observe(update_world_transform);
+            .observe(attach_sound_to_game);
     }
 }
 
@@ -60,7 +61,7 @@ fn start_up(mut commands: Commands) {
 }
 
 fn attach_world_to_game(
-    trigger: Trigger<OnAdd, World>,
+    trigger: Trigger<OnAdd, rsw::World>,
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
@@ -120,8 +121,8 @@ fn attach_sound_to_game(
 }
 
 fn update_world_transform(
-    _trigger: Trigger<OnAdd, Ground>,
     mut games: Query<&mut Transform, With<Game>>,
+    ground_scale: Res<gnd::GroundScale>,
     mut world_transform: ResMut<WorldTransform>,
 ) {
     bevy::log::trace!("Updating world transform.");
@@ -134,6 +135,6 @@ fn update_world_transform(
 
     // TODO use ground scale
     *game_transform = Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI))
-        .with_scale(Vec3::splat(0.2));
+        .with_scale(Vec3::splat(**ground_scale));
     **world_transform = *game_transform;
 }

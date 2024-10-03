@@ -13,11 +13,12 @@ use bevy::{
     },
     scene::Scene,
 };
+
 use ragnarok_rebuild_assets::gnd;
 
 use crate::{assets::paths, materials::GndMaterial};
 
-use super::components::Ground;
+use super::{components::Ground, GroundScale};
 
 pub struct AssetLoader;
 
@@ -64,6 +65,8 @@ impl AssetLoader {
 
         let mut world = World::new();
 
+        // 2x2 tiles per gnd cube
+        world.insert_resource(GroundScale(2. / gnd.scale));
         Self::build_cubes(gnd, &materials, &mut world, load_context);
 
         Scene::new(world)
