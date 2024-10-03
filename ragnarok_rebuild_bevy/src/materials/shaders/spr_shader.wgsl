@@ -55,7 +55,7 @@ fn vertex(in: Vertex) -> VertexOutput {
     
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
-    vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
+    vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz) + vec4(0., 0., 1. / 192., 0.);
     
     vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
         in.normal,
