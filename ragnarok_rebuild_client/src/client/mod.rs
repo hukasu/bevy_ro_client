@@ -49,8 +49,7 @@ fn start_up(mut commands: Commands) {
             Name::new("RagnarokOnline"),
             components::Game,
             SpatialBundle {
-                transform: Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI))
-                    .with_scale(Vec3::splat(0.2)),
+                transform: Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI)),
                 ..Default::default()
             },
         ))
@@ -134,7 +133,6 @@ fn update_world_transform(
     };
 
     // TODO use ground scale
-    *game_transform = Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI))
-        .with_scale(Vec3::splat(**ground_scale));
+    *game_transform = game_transform.with_scale(Vec3::splat(**ground_scale));
     **world_transform = *game_transform;
 }
