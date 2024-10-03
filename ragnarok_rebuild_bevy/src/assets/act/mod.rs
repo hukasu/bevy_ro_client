@@ -6,19 +6,19 @@ mod loader;
 use std::time::Duration;
 
 use bevy::{
-    app::FixedUpdate,
+    app::{FixedUpdate, Update},
     asset::{AssetApp, AssetServer, Assets, Handle, LoadState},
     core::Name,
     math::{Quat, Vec2, Vec3},
     prelude::{
-        BuildChildren, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter,
+        BuildChildren, Camera3d, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter,
         IntoSystemConfigs, Mesh, Parent, Plane3d, Query, Res, SpatialBundle, Transform, Trigger,
         With, Without,
     },
     time::{Time, Timer},
 };
 
-use crate::{assets::paths, audio::PlaySound};
+use crate::{assets::paths, audio::PlaySound, WorldTransform};
 
 pub use self::{
     assets::Animation,
@@ -57,6 +57,7 @@ impl bevy::app::Plugin for Plugin {
                     .before(tick_animations),
             )
             .add_systems(FixedUpdate, tick_animations.before(swap_animations))
+            .add_systems(Update, actor_look_at_camera.before(swap_animations))
             .add_systems(FixedUpdate, swap_animations)
             // Types
             .register_type::<Actor>()
@@ -185,6 +186,21 @@ fn tick_animations(
                 Some(ActorTimerTick { entity })
             }),
     );
+}
+
+fn actor_look_at_camera(
+    mut actors: Query<&mut Transform, With<Actor>>,
+    cameras: Query<&Transform, (With<Camera3d>, Without<Actor>)>,
+    world_transform: Res<WorldTransform>,
+) {
+    let Ok(camera) = cameras.get_single() else {
+        bevy::log::error_once!("Couldn't get a camera for actors to look at.");
+        return;
+    };
+
+    for mut actor in actors.iter_mut() {
+        *actor = actor.looking_at(world_transform.transform_point(camera.translation), Vec3::Y);
+    }
 }
 
 fn swap_animations(
