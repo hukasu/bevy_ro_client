@@ -198,8 +198,9 @@ fn actor_look_at_camera(
         return;
     };
 
+    let actor_look_at_offset = world_transform.transform_point(camera.local_z().as_vec3());
     for mut actor in actors.iter_mut() {
-        *actor = actor.looking_at(world_transform.transform_point(camera.translation), Vec3::Y);
+        *actor = actor.looking_at(actor.translation + actor_look_at_offset, Vec3::Y);
     }
 }
 
