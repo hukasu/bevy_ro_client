@@ -1,7 +1,8 @@
 #import bevy_pbr::{
     mesh_functions,
     pbr_fragment::pbr_input_from_vertex_output,
-    pbr_types::PbrInput,
+    pbr_functions::alpha_discard,
+    pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND},
     view_transformations::position_world_to_clip,
 }
 
@@ -36,6 +37,7 @@ fn spr_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
 
     pbr_input.material.reflectance = 0.0;
+    pbr_input.material.flags = STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND;
 
     return pbr_input;
 }
@@ -84,6 +86,9 @@ fn fragment(
 #else ifdef SPR_TRUE_COLOR_PIPELINE
     pbr_input.material.base_color = textureSample(spr_texture, spr_sampler, in.uv) * spr_uniform.tint;
 #endif
+
+    // alpha discard
+    pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
 
 #ifdef PREPASS_PIPELINE
     // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.
