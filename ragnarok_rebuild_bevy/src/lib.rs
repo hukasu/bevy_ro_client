@@ -4,9 +4,12 @@ pub mod audio;
 #[cfg(feature = "debug")]
 pub mod debug;
 pub mod materials;
+mod resources;
 pub mod tables;
 
 use bevy::app::Plugin;
+
+pub use self::resources::WorldTransform;
 
 pub struct RagnarokPlugin;
 
@@ -21,5 +24,10 @@ impl Plugin for RagnarokPlugin {
 
         #[cfg(feature = "debug")]
         app.add_plugins(debug::DebugPlugin);
+
+        app.register_type::<WorldTransform>();
+        if !app.world_mut().contains_resource::<WorldTransform>() {
+            app.init_resource::<WorldTransform>();
+        }
     }
 }

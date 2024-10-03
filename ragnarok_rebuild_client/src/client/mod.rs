@@ -7,13 +7,15 @@ use bevy::{
     core::Name,
     math::{Quat, Vec3},
     prelude::{
-        BuildChildren, Commands, Entity, OnAdd, Query, SpatialBundle, Transform, Trigger, With,
+        BuildChildren, Commands, Entity, OnAdd, Query, ResMut, SpatialBundle, Transform, Trigger,
+        With,
     },
 };
 
 use ragnarok_rebuild_bevy::{
-    assets::rsw::World,
+    assets::{gnd::Ground, rsw::World},
     audio::{Bgm, Sound},
+    WorldTransform,
 };
 
 use self::components::Game;
@@ -23,6 +25,8 @@ pub struct ClientPlugin;
 impl Plugin for ClientPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
+            // Resources
+            .init_resource::<WorldTransform>()
             // Plugins
             .add_plugins(entities::Plugin)
             // Startup system
@@ -33,7 +37,8 @@ impl Plugin for ClientPlugin {
             // TODO Change to observe on the the container entity
             // in 0.15
             .observe(attach_bgm_to_game)
-            .observe(attach_sound_to_game);
+            .observe(attach_sound_to_game)
+            .observe(update_world_transform);
     }
 }
 
@@ -112,4 +117,23 @@ fn attach_sound_to_game(
     };
 
     commands.entity(game).add_child(trigger.entity());
+}
+
+fn update_world_transform(
+    _trigger: Trigger<OnAdd, Ground>,
+    mut games: Query<&mut Transform, With<Game>>,
+    mut world_transform: ResMut<WorldTransform>,
+) {
+    bevy::log::trace!("Updating world transform.");
+    let Ok(mut game_transform) = games
+        .get_single_mut()
+        .inspect_err(|err| bevy::log::error!("{err}"))
+    else {
+        return;
+    };
+
+    // TODO use ground scale
+    *game_transform = Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI))
+        .with_scale(Vec3::splat(0.2));
+    **world_transform = *game_transform;
 }
