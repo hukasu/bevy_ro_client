@@ -21,7 +21,7 @@ impl WaterPlane {
             current_frame: 0,
             frames: textures,
             timer: Timer::new(
-                Duration::from_secs_f32((1. / 60.) * cycle as f32),
+                Duration::from_secs_f32(cycle as f32 / 60.),
                 bevy::time::TimerMode::Repeating,
             ),
         }
