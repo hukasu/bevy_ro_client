@@ -1,8 +1,9 @@
 use std::io::Read;
 
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WaterPlane {
     pub water_level: f32,
     pub water_type: i32,

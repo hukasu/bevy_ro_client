@@ -13,5 +13,6 @@ ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 
 log = { workspace = true }
 
+serde = { workspace = true }
 flate2 = { workspace = true }
 encoding_rs = { workspace = true }
