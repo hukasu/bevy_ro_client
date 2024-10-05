@@ -1,18 +1,22 @@
 use std::time::Duration;
 
 use bevy::{
-    asset::Handle, ecs::component::Component, reflect::Reflect, render::texture::Image, time::Timer,
+    asset::Handle, ecs::component::Component, prelude::ReflectComponent, reflect::Reflect,
+    time::Timer,
 };
 
+use crate::materials::WaterPlaneMaterial;
+
 #[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
 pub struct WaterPlane {
-    pub current_frame: usize,
-    pub frames: [Handle<Image>; 32],
-    pub timer: Timer,
+    pub(super) current_frame: usize,
+    pub(super) frames: [Handle<WaterPlaneMaterial>; 32],
+    pub(super) timer: Timer,
 }
 
 impl WaterPlane {
-    pub fn new(textures: [Handle<Image>; 32], cycle: i32) -> Self {
+    pub fn new(textures: [Handle<WaterPlaneMaterial>; 32], cycle: i32) -> Self {
         Self {
             current_frame: 0,
             frames: textures,
