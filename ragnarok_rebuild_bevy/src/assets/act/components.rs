@@ -21,14 +21,14 @@ pub struct Actor {
 #[reflect(Default)]
 pub enum ActorFacing {
     #[default]
-    SouthWest,
     South,
-    SouthEast,
-    East,
-    NorthEast,
-    North,
-    NorthWest,
+    SouthWest,
     West,
+    NorthWest,
+    North,
+    NorthEast,
+    East,
+    SouthEast,
 }
 
 #[derive(Debug, Component)]
