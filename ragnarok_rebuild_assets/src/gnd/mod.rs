@@ -109,7 +109,7 @@ impl GND {
             let extras = (0..(horizontal * vertical))
                 .map(|_| {
                     let level = reader.read_le_f32()?;
-                    let mut water_plane = base_water_plane.clone();
+                    let mut water_plane = base_water_plane;
                     water_plane.water_level = level;
                     Ok(water_plane)
                 })

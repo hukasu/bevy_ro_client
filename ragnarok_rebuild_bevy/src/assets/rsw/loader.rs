@@ -17,7 +17,7 @@ use bevy::{
 use ragnarok_rebuild_assets::rsw;
 
 use crate::assets::{
-    paths,
+    gnd, paths,
     rsw::{
         components::{AnimatedProp, DiffuseLight, EnvironmentalLight, EnvironmentalSound, World},
         EnvironmentalEffect,
@@ -157,8 +157,13 @@ impl AssetLoader {
     ) -> Entity {
         bevy::log::trace!("Spawning ground of {:?}", load_context.path());
 
-        let world_ground =
-            load_context.load(format!("{}{}", paths::GROUND_FILES_FOLDER, rsw.gnd_file));
+        let rsw_water_plane = rsw.water_configuration;
+        let world_ground = load_context
+            .loader()
+            .with_settings(move |settings: &mut gnd::AssetLoaderSettings| {
+                settings.water_plane = rsw_water_plane;
+            })
+            .load(format!("{}{}", paths::GROUND_FILES_FOLDER, rsw.gnd_file));
 
         world
             .spawn((

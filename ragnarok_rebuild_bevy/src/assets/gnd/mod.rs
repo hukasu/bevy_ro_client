@@ -4,7 +4,11 @@ mod resources;
 
 use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
 
-pub use self::{components::Ground, loader::AssetLoader, resources::GroundScale};
+pub use self::{
+    components::Ground,
+    loader::{AssetLoader, AssetLoaderSettings},
+    resources::GroundScale,
+};
 
 pub struct Plugin;
 
