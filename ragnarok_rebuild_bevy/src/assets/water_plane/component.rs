@@ -1,8 +1,10 @@
 use std::time::Duration;
 
-use bevy::{asset::Handle, ecs::component::Component, render::texture::Image, time::Timer};
+use bevy::{
+    asset::Handle, ecs::component::Component, reflect::Reflect, render::texture::Image, time::Timer,
+};
 
-#[derive(Debug, Component)]
+#[derive(Debug, Component, Reflect)]
 pub struct WaterPlane {
     pub current_frame: usize,
     pub frames: [Handle<Image>; 32],
