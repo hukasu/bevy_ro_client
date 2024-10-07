@@ -1,9 +1,13 @@
 use bevy::{
     asset::{load_internal_asset, Asset, AssetApp, Handle},
+    math::Vec2,
     pbr::{Material, MaterialPlugin},
-    prelude::{AlphaMode, Image, Shader},
+    prelude::{AlphaMode, Image, Mesh, Shader},
     reflect::Reflect,
-    render::render_resource::AsBindGroup,
+    render::{
+        mesh::MeshVertexAttribute,
+        render_resource::{AsBindGroup, VertexFormat},
+    },
 };
 
 const GND_SHADER_HANDLE: Handle<Shader> =
@@ -35,6 +39,13 @@ pub struct GndMaterial {
     #[texture(0)]
     #[sampler(1)]
     pub color_texture: Handle<Image>,
+    #[storage(2, read_only)]
+    pub texture_uvs: Vec<Vec2>,
+}
+
+impl GndMaterial {
+    pub const TEXTURE_ID_VERTEX_ATTRIBUTE: MeshVertexAttribute =
+        MeshVertexAttribute::new("TextureId", 1010101001, VertexFormat::Uint32);
 }
 
 impl Material for GndMaterial {
@@ -56,5 +67,21 @@ impl Material for GndMaterial {
 
     fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
         GND_SHADER_HANDLE.into()
+    }
+
+    fn specialize(
+        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
+        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
+        _key: bevy::pbr::MaterialPipelineKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        let vertex_layout = layout.0.get_layout(&[
+            Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
+            Mesh::ATTRIBUTE_NORMAL.at_shader_location(1),
+            Mesh::ATTRIBUTE_UV_0.at_shader_location(2),
+            Self::TEXTURE_ID_VERTEX_ATTRIBUTE.at_shader_location(3),
+        ])?;
+        descriptor.vertex.buffers = vec![vertex_layout];
+        Ok(())
     }
 }

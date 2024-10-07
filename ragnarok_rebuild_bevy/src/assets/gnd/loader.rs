@@ -5,18 +5,20 @@ use bevy::{
     core::Name,
     ecs::world::World,
     hierarchy::BuildWorldChildren,
-    math::{Vec2, Vec3},
+    math::{UVec2, Vec2, Vec3},
     pbr::{MaterialMeshBundle, NotShadowCaster, NotShadowReceiver},
     prelude::{Entity, SpatialBundle},
     render::{
         mesh::{Indices, Mesh, PrimitiveTopology},
         render_asset::RenderAssetUsages,
+        render_resource::{Extent3d, TextureDimension, TextureFormat},
         texture::{
             Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
             ImageSamplerDescriptor,
         },
     },
     scene::Scene,
+    sprite::{TextureAtlasBuilder, TextureAtlasLayout},
 };
 
 use ragnarok_rebuild_assets::{common, gnd};
@@ -54,7 +56,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
             reader.read_to_end(&mut data).await?;
             let gnd = gnd::GND::from_reader(&mut data.as_slice())?;
 
-            Ok(Self::generate_ground(&gnd, settings, load_context))
+            Ok(Self::generate_ground(&gnd, settings, load_context).await)
         })
     }
 
@@ -64,35 +66,28 @@ impl bevy::asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    fn generate_ground(
+    async fn generate_ground<'a>(
         gnd: &gnd::GND,
         settings: &AssetLoaderSettings,
-        load_context: &mut LoadContext,
+        load_context: &mut LoadContext<'a>,
     ) -> Scene {
         let mut world = World::new();
 
         // 2x2 tiles per gnd cube
         world.insert_resource(GroundScale(2. / gnd.scale));
-        Self::generate_ground_mesh(gnd, &mut world, load_context);
+        Self::generate_ground_mesh(gnd, &mut world, load_context).await;
         Self::generate_water_planes(gnd, settings, &mut world, load_context);
 
         Scene::new(world)
     }
 
-    fn generate_ground_mesh(gnd: &gnd::GND, world: &mut World, load_context: &mut LoadContext) {
-        let textures: Vec<Handle<Image>> = gnd
-            .textures
-            .iter()
-            .map(|path| load_context.load(format!("{}{}", paths::TEXTURE_FILES_FOLDER, path)))
-            .collect();
-        let materials: Vec<Handle<GndMaterial>> = textures
-            .iter()
-            .cloned()
-            .map(Self::mesh_material)
-            .enumerate()
-            .map(|(i, material)| load_context.add_labeled_asset(format!("Material{i}"), material))
-            .collect();
-        Self::build_cubes(gnd, &materials, world, load_context);
+    async fn generate_ground_mesh<'a>(
+        gnd: &gnd::GND,
+        world: &mut World,
+        load_context: &mut LoadContext<'a>,
+    ) {
+        let texture_atlas = Self::build_ground_texture_atlas(load_context, &gnd.textures).await;
+        Self::build_cubes(gnd, texture_atlas, world, load_context);
     }
 
     fn generate_water_planes(
@@ -123,21 +118,32 @@ impl AssetLoader {
 
     fn build_cubes(
         gnd: &gnd::GND,
-        materials: &[Handle<GndMaterial>],
+        material: Handle<GndMaterial>,
         world: &mut World,
         load_context: &mut LoadContext,
     ) {
-        let mut groups = vec![(vec![], vec![]); materials.len()];
+        let mut vertices = vec![];
+        let mut uvs = vec![];
+        let mut texture_ids = vec![];
         for (i, cube) in gnd.ground_mesh_cubes.iter().enumerate() {
             if cube.upwards_facing_surface >= 0 {
-                Self::build_up_face(gnd, cube, &mut groups, i as i32);
+                Self::build_up_face(
+                    gnd,
+                    cube,
+                    &mut vertices,
+                    &mut uvs,
+                    &mut texture_ids,
+                    i as i32,
+                );
             };
             if cube.east_facing_surface >= 0 {
                 Self::build_east_face(
                     gnd,
                     cube,
                     &gnd.ground_mesh_cubes[i + 1],
-                    &mut groups,
+                    &mut vertices,
+                    &mut uvs,
+                    &mut texture_ids,
                     i as i32,
                 );
             };
@@ -146,7 +152,9 @@ impl AssetLoader {
                     gnd,
                     cube,
                     &gnd.ground_mesh_cubes[i + gnd.width as usize],
-                    &mut groups,
+                    &mut vertices,
+                    &mut uvs,
+                    &mut texture_ids,
                     i as i32,
                 );
             };
@@ -158,60 +166,51 @@ impl AssetLoader {
             RenderAssetUsages::RENDER_WORLD
         };
 
-        let meshs = groups
-            .into_iter()
-            .enumerate()
-            .map(|(i, (vertex, uvs))| {
-                load_context.add_labeled_asset(
-                    format!("Primitive{i}"),
-                    Mesh::new(PrimitiveTopology::TriangleList, asset_usage)
-                        .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertex)
-                        .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-                        .with_computed_flat_normals(),
-                )
-            })
-            .collect::<Vec<_>>();
+        let mesh = load_context.add_labeled_asset(
+            "Ground".to_string(),
+            Mesh::new(PrimitiveTopology::TriangleList, asset_usage)
+                .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices)
+                .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
+                .with_inserted_attribute(GndMaterial::TEXTURE_ID_VERTEX_ATTRIBUTE, texture_ids)
+                .with_computed_flat_normals(),
+        );
 
-        world
-            .spawn((Name::new("Primitives"), SpatialBundle::default(), Ground))
-            .with_children(|parent| {
-                for (i, mesh) in meshs.iter().enumerate() {
-                    parent.spawn((
-                        Name::new(format!("Primitive{i}")),
-                        MaterialMeshBundle {
-                            mesh: mesh.clone(),
-                            material: materials[i].clone(),
-                            ..Default::default()
-                        },
-                    ));
-                }
-            });
+        world.spawn((
+            Name::new("Ground"),
+            Ground,
+            MaterialMeshBundle {
+                mesh,
+                material,
+                ..Default::default()
+            },
+        ));
     }
 
     fn build_up_face(
         gnd: &gnd::GND,
         cube: &gnd::GroundMeshCube,
-        groups: &mut [(Vec<Vec3>, Vec<Vec2>)],
+        vertices: &mut Vec<Vec3>,
+        uvs: &mut Vec<Vec2>,
+        texture_ids: &mut Vec<u32>,
         i: i32,
     ) {
         let surface = &gnd.surfaces[cube.upwards_facing_surface as usize];
-        let (vertex, uvs) = &mut groups[surface.texture_id as usize];
 
         // Referent to the current cube
         let bottom_left_x = ((i % gnd.width as i32) - (gnd.width as i32 / 2)) as f32 * gnd.scale;
         let bottom_left_z = ((i / gnd.width as i32) - (gnd.height as i32 / 2)) as f32 * gnd.scale;
 
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_left_x,
             cube.bottom_left_height,
             bottom_left_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_left_x + gnd.scale,
             cube.bottom_right_height,
             bottom_left_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_left_x,
             cube.top_left_height,
             bottom_left_z + gnd.scale,
@@ -219,18 +218,21 @@ impl AssetLoader {
         uvs.push(Vec2::from_array(surface.bottom_left));
         uvs.push(Vec2::from_array(surface.bottom_right));
         uvs.push(Vec2::from_array(surface.top_left));
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
 
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_left_x + gnd.scale,
             cube.bottom_right_height,
             bottom_left_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_left_x + gnd.scale,
             cube.top_right_height,
             bottom_left_z + gnd.scale,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_left_x,
             cube.top_left_height,
             bottom_left_z + gnd.scale,
@@ -238,34 +240,38 @@ impl AssetLoader {
         uvs.push(Vec2::from_array(surface.bottom_right));
         uvs.push(Vec2::from_array(surface.top_right));
         uvs.push(Vec2::from_array(surface.top_left));
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
     }
 
     fn build_east_face(
         gnd: &gnd::GND,
         cube: &gnd::GroundMeshCube,
         east_cube: &gnd::GroundMeshCube,
-        groups: &mut [(Vec<Vec3>, Vec<Vec2>)],
+        vertices: &mut Vec<Vec3>,
+        uvs: &mut Vec<Vec2>,
+        texture_ids: &mut Vec<u32>,
         i: i32,
     ) {
         let surface = &gnd.surfaces[cube.east_facing_surface as usize];
-        let (vertex, uvs) = &mut groups[surface.texture_id as usize];
 
         // Referent to the current cube
         let bottom_right_x =
             (((i + 1) % gnd.width as i32) - (gnd.width as i32 / 2)) as f32 * gnd.scale;
         let bottom_right_z = ((i / gnd.width as i32) - (gnd.height as i32 / 2)) as f32 * gnd.scale;
 
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_right_x,
             cube.bottom_right_height,
             bottom_right_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_right_x,
             east_cube.bottom_left_height,
             bottom_right_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_right_x,
             cube.top_right_height,
             bottom_right_z + gnd.scale,
@@ -273,18 +279,21 @@ impl AssetLoader {
         uvs.push(Vec2::from_array(surface.bottom_right));
         uvs.push(Vec2::from_array(surface.top_right));
         uvs.push(Vec2::from_array(surface.bottom_left));
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
 
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_right_x,
             cube.top_right_height,
             bottom_right_z + gnd.scale,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_right_x,
             east_cube.bottom_left_height,
             bottom_right_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             bottom_right_x,
             east_cube.top_left_height,
             bottom_right_z + gnd.scale,
@@ -292,17 +301,21 @@ impl AssetLoader {
         uvs.push(Vec2::from_array(surface.bottom_left));
         uvs.push(Vec2::from_array(surface.top_right));
         uvs.push(Vec2::from_array(surface.top_left));
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
     }
 
     fn build_north_face(
         gnd: &gnd::GND,
         cube: &gnd::GroundMeshCube,
         north_cube: &gnd::GroundMeshCube,
-        groups: &mut [(Vec<Vec3>, Vec<Vec2>)],
+        vertices: &mut Vec<Vec3>,
+        uvs: &mut Vec<Vec2>,
+        texture_ids: &mut Vec<u32>,
         i: i32,
     ) {
         let surface = &gnd.surfaces[cube.north_facing_surface as usize];
-        let (vertex, uvs) = &mut groups[surface.texture_id as usize];
 
         // Referent to the current cube
         let top_left_x = ((i % gnd.width as i32) - (gnd.width as i32 / 2)) as f32 * gnd.scale;
@@ -310,13 +323,13 @@ impl AssetLoader {
             as f32
             * gnd.scale;
 
-        vertex.push(Vec3::new(top_left_x, cube.top_left_height, top_left_z));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(top_left_x, cube.top_left_height, top_left_z));
+        vertices.push(Vec3::new(
             top_left_x + gnd.scale,
             cube.top_right_height,
             top_left_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             top_left_x,
             north_cube.bottom_left_height,
             top_left_z,
@@ -324,18 +337,21 @@ impl AssetLoader {
         uvs.push(Vec2::from_array(surface.bottom_left));
         uvs.push(Vec2::from_array(surface.bottom_right));
         uvs.push(Vec2::from_array(surface.top_left));
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
 
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             top_left_x,
             north_cube.bottom_left_height,
             top_left_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             top_left_x + gnd.scale,
             cube.top_right_height,
             top_left_z,
         ));
-        vertex.push(Vec3::new(
+        vertices.push(Vec3::new(
             top_left_x + gnd.scale,
             north_cube.bottom_right_height,
             top_left_z,
@@ -343,6 +359,9 @@ impl AssetLoader {
         uvs.push(Vec2::from_array(surface.top_left));
         uvs.push(Vec2::from_array(surface.bottom_right));
         uvs.push(Vec2::from_array(surface.top_right));
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
+        texture_ids.push(surface.texture_id as u32);
     }
 
     #[must_use]
@@ -374,11 +393,78 @@ impl AssetLoader {
             .id()
     }
 
-    #[must_use]
-    fn mesh_material(texture: Handle<Image>) -> GndMaterial {
-        GndMaterial {
-            color_texture: texture,
+    async fn build_ground_texture_atlas<'a, 'b>(
+        load_context: &mut LoadContext<'a>,
+        texture_paths: &'b [Box<str>],
+    ) -> Handle<GndMaterial> {
+        let mut images = Vec::with_capacity(texture_paths.len());
+        let mut texture_atlas_builder = TextureAtlasBuilder::default();
+
+        for path in texture_paths.iter() {
+            let direct_image = load_context
+                .loader()
+                .direct()
+                .load::<Image>(format!("{}{}", paths::TEXTURE_FILES_FOLDER, path))
+                .await;
+            match direct_image {
+                Ok(image) => {
+                    images.push(image.take());
+                }
+                Err(err) => {
+                    bevy::log::error!("Could not load {} with error '{:?}'", path, err);
+                    images.push(Image::new_fill(
+                        Extent3d {
+                            width: 8,
+                            height: 8,
+                            depth_or_array_layers: 1,
+                        },
+                        TextureDimension::D2,
+                        &[255, 0, 255, 255],
+                        TextureFormat::Rgba8UnormSrgb,
+                        RenderAssetUsages::RENDER_WORLD,
+                    ));
+                }
+            }
         }
+
+        for image in images.iter() {
+            texture_atlas_builder.add_texture(None, image);
+        }
+
+        let (layout, color_texture_image) = texture_atlas_builder.build().unwrap_or((
+            TextureAtlasLayout::new_empty(UVec2::splat(0)),
+            Image::new_fill(
+                Extent3d {
+                    width: 8,
+                    height: 8,
+                    depth_or_array_layers: 1,
+                },
+                TextureDimension::D2,
+                &[255, 0, 255, 255],
+                TextureFormat::Rgba8UnormSrgb,
+                RenderAssetUsages::RENDER_WORLD,
+            ),
+        ));
+        let color_texture =
+            load_context.add_labeled_asset("TextureAtlas/Image".to_string(), color_texture_image);
+
+        let layout_size = layout.size.as_vec2();
+        let texture_uvs = layout
+            .textures
+            .iter()
+            .flat_map(|texture_rect| {
+                let rect = texture_rect.as_rect();
+                [rect.min / layout_size, (rect.max - rect.min) / layout_size]
+            })
+            .collect();
+
+        load_context.add_labeled_asset(
+            "TextureAtlas".to_string(),
+            GndMaterial {
+                color_texture,
+                texture_uvs,
+            },
+        )
     }
 
     #[must_use]

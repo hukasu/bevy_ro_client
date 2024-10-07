@@ -8,18 +8,27 @@
 
 #ifdef PREPASS_PIPELINE
 #import bevy_pbr::{
-    prepass_io::{Vertex, VertexOutput, FragmentOutput},
+    prepass_io::{VertexOutput, FragmentOutput},
     pbr_deferred_functions::deferred_output,
 }
 #else
 #import bevy_pbr::{
-    forward_io::{Vertex, VertexOutput, FragmentOutput},
+    forward_io::{VertexOutput, FragmentOutput},
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
 }
 #endif
 
+struct Vertex {
+    @builtin(instance_index) instance_index: u32,
+    @location(0) position: vec3<f32>,
+    @location(1) normal: vec3<f32>,
+    @location(2) uv: vec2<f32>,
+    @location(3) texture_id: u32
+}
+
 @group(2) @binding(0) var gnd_texture: texture_2d<f32>;
 @group(2) @binding(1) var gnd_sampler: sampler;
+@group(2) @binding(2) var<storage> texture_uvs: array<vec2<f32>>;
 
 fn gnd_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
@@ -47,7 +56,8 @@ fn vertex(in: Vertex) -> VertexOutput {
         in.normal,
         in.instance_index
     );
-    vertex_output.uv = in.uv;
+    let texture_uv_index = in.texture_id * 2;
+    vertex_output.uv = texture_uvs[texture_uv_index] + (texture_uvs[texture_uv_index + 1] * in.uv);
 
     return vertex_output;
 }
