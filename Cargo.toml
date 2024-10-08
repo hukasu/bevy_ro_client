@@ -35,6 +35,9 @@ sqlx = { version = "0.8.0", features = [
     "uuid",
 ] }
 
+wgpu = "0.20.1"
+criterion = "0.5.1"
+
 [workspace.lints.clippy]
 todo = "warn"
 unimplemented = "warn"
