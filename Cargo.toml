@@ -4,7 +4,7 @@ members = [
     "ragnarok_rebuild_assets",
     "ragnarok_rebuild_bevy",
     "ragnarok_rebuild_client",
-    "ragnarok_rebuild_server",
+    # "ragnarok_rebuild_server",
 ]
 resolver = "2"
 
