@@ -8,7 +8,7 @@ use bevy::{
     ecs::world::World,
     hierarchy::BuildWorldChildren,
     math::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4},
-    pbr::{ExtendedMaterial, MaterialMeshBundle, StandardMaterial},
+    pbr::MaterialMeshBundle,
     prelude::{AnimationGraph, AnimationTransitions, Entity, Interpolation, SpatialBundle},
     render::{
         mesh::{Indices, Mesh},
@@ -355,13 +355,8 @@ impl AssetLoader {
                 );
                 let material = asset_loader_context.load_context.add_labeled_asset(
                     format!("{}Material{}", rsm_mesh.name, i),
-                    ExtendedMaterial {
-                        base: Self::mesh_material(
-                            &mesh_textures[*texture_id as usize],
-                            shade_type == rsm::ShadeType::Unlit,
-                            two_sided == &1,
-                        ),
-                        extension: RsmMaterial {},
+                    RsmMaterial {
+                        texture: mesh_textures[usize::from(*texture_id)].texture.clone(),
                     },
                 );
 
@@ -645,26 +640,6 @@ impl AssetLoader {
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
             .with_inserted_indices(Indices::U16(indices))
             .with_computed_smooth_normals()
-    }
-
-    #[must_use]
-    fn mesh_material(
-        loaded_texture: &LoadedTexture,
-        unlit: bool,
-        double_sided: bool,
-    ) -> StandardMaterial {
-        StandardMaterial {
-            base_color_texture: Some(loaded_texture.texture.clone()),
-            double_sided,
-            cull_mode: None,
-            unlit,
-            reflectance: 0.2,
-            alpha_mode: match loaded_texture.format {
-                LoadedTextureFormat::Bmp => bevy::render::alpha::AlphaMode::Mask(0.5),
-                LoadedTextureFormat::Tga => bevy::render::alpha::AlphaMode::Blend,
-            },
-            ..Default::default()
-        }
     }
 
     #[must_use]
