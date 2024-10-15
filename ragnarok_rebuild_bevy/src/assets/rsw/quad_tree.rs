@@ -41,7 +41,8 @@ impl<T: Borrow<rsw::QuadTree>> From<T> for QuadTree {
                 .ranges
                 .iter()
                 .map(|range| {
-                    Aabb::from_min_max(Vec3::from_array(range.bottom), Vec3::from_array(range.top))
+                    // Due to Ragnarok's inverted coordinate system, top in min and bottom is max
+                    Aabb::from_min_max(Vec3::from_array(range.top), Vec3::from_array(range.bottom))
                 })
                 .collect(),
         }
