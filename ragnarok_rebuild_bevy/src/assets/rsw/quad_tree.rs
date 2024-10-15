@@ -23,25 +23,6 @@ impl QuadTree {
             stack: vec![QuadTreeIndex::default()],
         }
     }
-
-    // pub fn iter_tiles(&self, quad_tree_index: QuadTreeIndex) -> impl Iterator<Item = &Tile> {
-    //     let aabb = self[quad_tree_index];
-    //     Self::get_tiles_from_aabb(&aabb, &self.tiles, self.tiles_width, self.tiles_height)
-    // }
-
-    // fn get_tiles_from_aabb<'a>(
-    //     aabb: &Aabb,
-    //     tiles: &'a [Tile],
-    //     width: u32,
-    //     height: u32,
-    // ) -> impl Iterator<Item = &'a Tile> + Clone {
-    //     let min = (aabb.min() + Vec3A::new((width / 2) as f32, 0., (height / 2) as f32)).as_uvec3();
-    //     let max = (aabb.max() + Vec3A::new((width / 2) as f32, 0., (height / 2) as f32)).as_uvec3();
-
-    //     ((min.z as usize)..(max.z as usize)).flat_map(move |z| {
-    //         ((min.x as usize)..(max.x as usize)).map(move |x| &tiles[x + z * width as usize])
-    //     })
-    // }
 }
 
 impl Index<QuadTreeIndex> for QuadTree {
@@ -204,91 +185,4 @@ mod tests {
         let top_right_parent = top_right.parent().unwrap();
         assert_eq!(top_right_parent, index);
     }
-
-    // #[test]
-    // fn test_iterate_tiles() {
-    //     let quad_tree = QuadTree {
-    //         ranges: vec![
-    //             // Root
-    //             Aabb::from_min_max(Vec3::new(-5., 0., -5.), Vec3::new(5., 0., 5.)),
-    //             // Bottom Left
-    //             Aabb::from_min_max(Vec3::new(-5., 0., -5.), Vec3::new(0., 0., 0.)),
-    //             // Bottom Right
-    //             Aabb::from_min_max(Vec3::new(0., 0., -5.), Vec3::new(5., 0., 0.)),
-    //             // Top Left
-    //             Aabb::from_min_max(Vec3::new(-5., 0., 0.), Vec3::new(0., 0., 5.)),
-    //             // Top Right
-    //             Aabb::from_min_max(Vec3::new(0., 0., 0.), Vec3::new(5., 0., 5.)),
-    //         ],
-    //         tiles_width: 10,
-    //         tiles_height: 10,
-    //         tiles: (0..100)
-    //             .map(|i| Tile {
-    //                 bottom_left: 0.,
-    //                 bottom_right: 0.,
-    //                 top_left: 0.,
-    //                 top_right: 0.,
-    //                 tile_type: i,
-    //                 is_water_tile: false,
-    //             })
-    //             .collect(),
-    //     };
-    //     // Iterating from the root should return all in order
-    //     // Using hardcoded index since the full tree is not built
-    //     assert!((0..100)
-    //         .zip(quad_tree.iter_tiles(QuadTreeIndex::default()))
-    //         .all(|(i, tile)| tile.tile_type == i));
-    //     // Iterating over lower lefy tiles
-    //     // Using hardcoded index since the full tree is not built
-    //     assert!(quad_tree
-    //         .iter_tiles(QuadTreeIndex {
-    //             index: 1,
-    //             ..Default::default()
-    //         })
-    //         .map(|tile| tile.tile_type)
-    //         .zip([
-    //             0, 1, 2, 3, 4, 10, 11, 12, 13, 14, 20, 21, 22, 23, 24, 30, 31, 32, 33, 34, 40, 41,
-    //             42, 43, 44,
-    //         ])
-    //         .all(|(tile, i)| tile == i));
-    //     // Iterating over lower right tiles
-    //     // Using hardcoded index since the full tree is not built
-    //     assert!(quad_tree
-    //         .iter_tiles(QuadTreeIndex {
-    //             index: 2,
-    //             ..Default::default()
-    //         })
-    //         .map(|tile| tile.tile_type)
-    //         .zip([
-    //             5, 6, 7, 8, 9, 15, 16, 17, 18, 19, 25, 26, 27, 28, 29, 35, 36, 37, 38, 39, 45, 46,
-    //             47, 48, 49
-    //         ])
-    //         .all(|(tile, i)| tile == i));
-    //     // Iterating over top left tiles
-    //     // Using hardcoded index since the full tree is not built
-    //     assert!(quad_tree
-    //         .iter_tiles(QuadTreeIndex {
-    //             index: 3,
-    //             ..Default::default()
-    //         })
-    //         .map(|tile| tile.tile_type)
-    //         .zip([
-    //             50, 51, 52, 53, 54, 60, 61, 62, 63, 64, 70, 71, 72, 73, 74, 80, 81, 82, 83, 84, 90,
-    //             91, 92, 93, 94
-    //         ])
-    //         .all(|(tile, i)| tile == i));
-    //     // Iterating over top right tiles
-    //     // Using hardcoded index since the full tree is not built
-    //     assert!(quad_tree
-    //         .iter_tiles(QuadTreeIndex {
-    //             index: 4,
-    //             ..Default::default()
-    //         })
-    //         .map(|tile| tile.tile_type)
-    //         .zip([
-    //             55, 56, 57, 58, 59, 65, 66, 67, 68, 69, 75, 76, 77, 78, 79, 85, 86, 87, 88, 89, 95,
-    //             96, 97, 98, 99
-    //         ])
-    //         .all(|(tile, i)| tile == i));
-    // }
 }
