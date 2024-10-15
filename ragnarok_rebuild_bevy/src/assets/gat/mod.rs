@@ -1,5 +1,7 @@
 mod assets;
 mod components;
+#[cfg(feature = "debug")]
+mod debug;
 mod loader;
 mod resources;
 
@@ -33,6 +35,11 @@ impl bevy::app::Plugin for Plugin {
             .register_type::<resources::HoveredTile>()
             // Systems
             .add_systems(Update, mouse_intersect_gat.run_if(is_mouse_free));
+
+        #[cfg(feature = "debug")]
+        {
+            app.add_plugins(debug::Plugin);
+        }
     }
 }
 
