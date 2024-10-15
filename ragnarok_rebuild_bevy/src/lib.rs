@@ -3,6 +3,7 @@ pub mod assets;
 pub mod audio;
 #[cfg(feature = "debug")]
 pub mod debug;
+pub mod helper;
 pub mod materials;
 mod resources;
 pub mod tables;

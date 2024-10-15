@@ -8,10 +8,10 @@ use bevy::{
         Resource, Transform, With,
     },
     reflect::Reflect,
-    render::{primitives::Aabb, view::VisibilitySystems},
+    render::view::VisibilitySystems,
 };
 
-use crate::assets::rsw;
+use crate::{assets::rsw, helper::AabbExt};
 
 #[derive(Debug, Clone, Default, Resource, Reflect)]
 #[reflect(Resource)]
@@ -384,7 +384,7 @@ fn show_rsw_quad_tree(
             let aabb = world.quad_tree[node_index];
 
             gizmos.cuboid(
-                aabb_transform(aabb, *rsw_transform),
+                aabb.compute_global_transform(*rsw_transform),
                 palettes::tailwind::BLUE_400,
             );
         }
@@ -394,13 +394,4 @@ fn show_rsw_quad_tree(
 fn show_rsw_aabb_condition(rsw_debug: Res<RswDebug>) -> bool {
     rsw_debug.show_quad_tree
         & (usize::from(rsw_debug.show_quad_tree_level) <= rsw::quad_tree::QuadTree::MAX_DEPTH)
-}
-
-// Copied from bevy_gizmos/src/aabb.rs
-fn aabb_transform(aabb: Aabb, transform: GlobalTransform) -> GlobalTransform {
-    transform
-        * GlobalTransform::from(
-            Transform::from_translation(aabb.center.into())
-                .with_scale((aabb.half_extents * 2.).into()),
-        )
 }
