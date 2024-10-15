@@ -63,6 +63,7 @@ impl AssetLoader {
         Self::set_ambient_light(rsw, &mut world, load_context);
         let directional_light = Self::spawn_directional_light(rsw, &mut world, load_context);
         let ground = Self::spawn_ground(rsw, &mut world, load_context);
+        let tiles = Self::spawn_tiles(rsw, &mut world, load_context);
         let animated_props = Self::spawn_animated_props(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
         let environmental_sounds = Self::spawn_environmental_sounds(rsw, &mut world, load_context);
@@ -88,6 +89,7 @@ impl AssetLoader {
             .push_children(&[
                 directional_light,
                 ground,
+                tiles,
                 animated_props,
                 environmental_lights,
                 environmental_sounds,
@@ -171,6 +173,30 @@ impl AssetLoader {
                 Name::new(rsw.gnd_file.to_string()),
                 SceneBundle {
                     scene: world_ground,
+                    ..Default::default()
+                },
+            ))
+            .id()
+    }
+
+    fn spawn_tiles(
+        rsw: &rsw::Rsw,
+        world: &mut bevy::ecs::world::World,
+        load_context: &mut LoadContext,
+    ) -> Entity {
+        bevy::log::trace!("Spawning tiles of {:?}", load_context.path());
+
+        let world_tiles = load_context.load(format!(
+            "{}{}#Scene",
+            paths::ALTITUDE_FILES_FOLDER,
+            rsw.gat_file
+        ));
+
+        world
+            .spawn((
+                Name::new(rsw.gat_file.to_string()),
+                SceneBundle {
+                    scene: world_tiles,
                     ..Default::default()
                 },
             ))

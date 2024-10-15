@@ -26,7 +26,7 @@ pub use self::{
         AnimatedProp, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
     },
     events::{LoadWorld, WorldLoaded},
-    quad_tree::QuadTree,
+    quad_tree::{QuadTree, QuadTreeIndex, QuadTreeIter},
 };
 use self::{events::UnloadWorld, loader::AssetLoader, resources::LoadingWorld};
 
