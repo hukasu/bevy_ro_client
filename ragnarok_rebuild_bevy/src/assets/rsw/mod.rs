@@ -1,4 +1,6 @@
 mod components;
+#[cfg(feature = "debug")]
+mod debug;
 mod events;
 mod loader;
 mod quad_tree;
@@ -51,6 +53,9 @@ impl bevy::app::Plugin for Plugin {
             .observe(unload_world)
             .observe(world_added)
             .observe(world_loaded);
+
+        #[cfg(feature = "debug")]
+        app.add_plugins(debug::Plugin);
 
         #[cfg(feature = "audio")]
         app.add_systems(Update, play_environmental_audio);

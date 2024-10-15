@@ -1,7 +1,5 @@
 mod gnd_debug;
 mod rsm_debug;
-mod rsw_debug;
-
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 
 pub struct DebugPlugin;
@@ -11,6 +9,5 @@ impl PluginGroup for DebugPlugin {
         PluginGroupBuilder::start::<Self>()
             .add(gnd_debug::GndDebugPlugin)
             .add(rsm_debug::RsmDebugPlugin)
-            .add(rsw_debug::RswDebugPlugin)
     }
 }

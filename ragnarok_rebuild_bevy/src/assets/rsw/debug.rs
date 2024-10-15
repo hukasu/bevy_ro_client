@@ -1,5 +1,5 @@
 use bevy::{
-    app::{Plugin, Update},
+    app::{PostUpdate, Update},
     color::palettes,
     math::{Dir3, EulerRot, Quat, Vec2, Vec3},
     pbr::{DirectionalLight, PointLight},
@@ -8,6 +8,7 @@ use bevy::{
         Resource, Transform, With,
     },
     reflect::Reflect,
+    render::{primitives::Aabb, view::VisibilitySystems},
 };
 
 use crate::assets::rsw;
@@ -19,11 +20,13 @@ pub struct RswDebug {
     show_point_lights: bool,
     show_sounds: bool,
     show_effects: bool,
+    show_quad_tree: bool,
+    show_quad_tree_level: u8,
 }
 
-pub struct RswDebugPlugin;
+pub struct Plugin;
 
-impl Plugin for RswDebugPlugin {
+impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             // Resource
@@ -38,6 +41,12 @@ impl Plugin for RswDebugPlugin {
                     sound_debug.run_if(sound_debug_condition),
                     effect_debug.run_if(effect_debug_condition),
                 ),
+            )
+            .add_systems(
+                PostUpdate,
+                show_rsw_quad_tree
+                    .run_if(show_rsw_aabb_condition)
+                    .after(VisibilitySystems::CheckVisibility),
             );
     }
 }
@@ -359,4 +368,39 @@ fn effect_debug(
         );
         gizmos.circle(translation, Dir3::NEG_Z, EFFECT_GIZMO_RADIUS, color);
     }
+}
+
+fn show_rsw_quad_tree(
+    mut gizmos: Gizmos,
+    rsw_debug: Res<RswDebug>,
+    rsws: Query<(&super::components::World, &GlobalTransform)>,
+) {
+    for (world, rsw_transform) in rsws.iter() {
+        for node_index in world
+            .quad_tree
+            .iter_indexes()
+            .filter(|node| node.depth() == usize::from(rsw_debug.show_quad_tree_level))
+        {
+            let aabb = world.quad_tree[node_index];
+
+            gizmos.cuboid(
+                aabb_transform(aabb, *rsw_transform),
+                palettes::tailwind::BLUE_400,
+            );
+        }
+    }
+}
+
+fn show_rsw_aabb_condition(rsw_debug: Res<RswDebug>) -> bool {
+    rsw_debug.show_quad_tree
+        & (usize::from(rsw_debug.show_quad_tree_level) <= rsw::quad_tree::QuadTree::MAX_DEPTH)
+}
+
+// Copied from bevy_gizmos/src/aabb.rs
+fn aabb_transform(aabb: Aabb, transform: GlobalTransform) -> GlobalTransform {
+    transform
+        * GlobalTransform::from(
+            Transform::from_translation(aabb.center.into())
+                .with_scale((aabb.half_extents * 2.).into()),
+        )
 }
