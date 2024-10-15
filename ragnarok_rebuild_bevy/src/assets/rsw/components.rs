@@ -15,6 +15,7 @@ pub struct World {
     pub has_lights: bool,
     pub has_sounds: bool,
     pub has_effects: bool,
+    pub quad_tree: super::QuadTree,
 }
 
 #[derive(Debug, Default, Component, Reflect)]

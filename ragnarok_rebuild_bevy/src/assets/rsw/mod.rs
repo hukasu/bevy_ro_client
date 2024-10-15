@@ -1,6 +1,7 @@
 mod components;
 mod events;
 mod loader;
+mod quad_tree;
 mod resources;
 
 use bevy::{
@@ -23,6 +24,7 @@ pub use self::{
         AnimatedProp, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
     },
     events::{LoadWorld, WorldLoaded},
+    quad_tree::QuadTree,
 };
 use self::{events::UnloadWorld, loader::AssetLoader, resources::LoadingWorld};
 

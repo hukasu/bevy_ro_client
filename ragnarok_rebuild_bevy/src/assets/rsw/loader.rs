@@ -82,6 +82,7 @@ impl AssetLoader {
                     has_lights: !rsw.lights.is_empty(),
                     has_sounds: !rsw.sounds.is_empty(),
                     has_effects: !rsw.effects.is_empty(),
+                    quad_tree: super::QuadTree::from(&rsw.quad_tree),
                 },
             ))
             .push_children(&[
