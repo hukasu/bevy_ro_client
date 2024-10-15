@@ -58,23 +58,24 @@ impl Iterator for QuadTreeIter {
     type Item = QuadTreeIndex;
 
     fn next(&mut self) -> Option<Self::Item> {
-        #[allow(clippy::expect_used)]
         self.stack.pop().inspect(|head| {
             if !head.is_leaf() {
-                self.stack.push(
-                    head.top_right()
-                        .expect("Should have top right if not leaf."),
-                );
-                self.stack
-                    .push(head.top_left().expect("Should have top left if not leaf."));
-                self.stack.push(
-                    head.bottom_right()
-                        .expect("Should have bottom right if not leaf."),
-                );
-                self.stack.push(
-                    head.bottom_left()
-                        .expect("Should have bottom left if not leaf."),
-                );
+                let Some(top_right) = head.top_right() else {
+                    unreachable!("Should have top right if not leaf.");
+                };
+                self.stack.push(top_right);
+                let Some(top_left) = head.top_left() else {
+                    unreachable!("Should have top left if not leaf.");
+                };
+                self.stack.push(top_left);
+                let Some(bottom_right) = head.bottom_right() else {
+                    unreachable!("Should have bottom right if not leaf.");
+                };
+                self.stack.push(bottom_right);
+                let Some(bottom_left) = head.bottom_left() else {
+                    unreachable!("Should have bottom left if not leaf.");
+                };
+                self.stack.push(bottom_left);
             };
         })
     }

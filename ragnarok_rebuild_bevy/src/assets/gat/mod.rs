@@ -106,7 +106,6 @@ fn mouse_intersect_gat(
 
         if ray_cast.aabb_intersection_at(&bounding).is_some() {
             if head.is_leaf() {
-                #[allow(clippy::expect_used)]
                 let node_tiles = tiles
                     .iter_tiles(
                         // QuadTree node is in game space, and requires conversion to world space
@@ -115,32 +114,25 @@ fn mouse_intersect_gat(
                     .map(|tile_ref| {
                         let x = tile_ref.x as f32 - (tiles.width / 2) as f32;
                         let z = tile_ref.z as f32 - (tiles.height / 2) as f32;
+                        let Some(tile_aabb) = Aabb::enclosing([
+                            Vec3::new(x, tile_ref.tile.bottom_left * world_transform.scale.y, z),
+                            Vec3::new(
+                                x + 1.,
+                                tile_ref.tile.bottom_right * world_transform.scale.y,
+                                z,
+                            ),
+                            Vec3::new(x, tile_ref.tile.top_left * world_transform.scale.y, z + 1.),
+                            Vec3::new(
+                                x + 1.,
+                                tile_ref.tile.top_right * world_transform.scale.y,
+                                z + 1.,
+                            ),
+                        ]) else {
+                            unreachable!("Aabb is created from enclosing point.")
+                        };
                         (
                             tile_ref,
-                            Aabb::enclosing([
-                                Vec3::new(
-                                    x,
-                                    tile_ref.tile.bottom_left * world_transform.scale.y,
-                                    z,
-                                ),
-                                Vec3::new(
-                                    x + 1.,
-                                    tile_ref.tile.bottom_right * world_transform.scale.y,
-                                    z,
-                                ),
-                                Vec3::new(
-                                    x,
-                                    tile_ref.tile.top_left * world_transform.scale.y,
-                                    z + 1.,
-                                ),
-                                Vec3::new(
-                                    x + 1.,
-                                    tile_ref.tile.top_right * world_transform.scale.y,
-                                    z + 1.,
-                                ),
-                            ])
-                            .expect("Aabb is created from enclosing point.")
-                            .rotate(world_transform.with_scale(Vec3::splat(1.))),
+                            tile_aabb.rotate(world_transform.with_scale(Vec3::splat(1.))),
                         )
                     })
                     .map(|(tile_ref, aabb)| (tile_ref, Aabb3d::new(aabb.center, aabb.half_extents)))

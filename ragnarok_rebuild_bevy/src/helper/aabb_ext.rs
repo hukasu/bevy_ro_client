@@ -20,8 +20,7 @@ impl AabbExt for Aabb {
     }
 
     fn rotate(&self, transform: impl TransformPoint) -> Self {
-        #[allow(clippy::expect_used)]
-        Aabb::enclosing(
+        let Some(aabb) = Aabb::enclosing(
             [
                 self.center + (Vec3A::new(1., 1., 1.) * self.half_extents),
                 self.center + (Vec3A::new(1., 1., -1.) * self.half_extents),
@@ -35,7 +34,9 @@ impl AabbExt for Aabb {
             .into_iter()
             .map(|point| transform.transform_point(point))
             .map(Vec3::from),
-        )
-        .expect("Aabb is calculated from rotated vertices.")
+        ) else {
+            unreachable!("Aabb is calculated from rotated vertices.")
+        };
+        aabb
     }
 }

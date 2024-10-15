@@ -25,10 +25,14 @@ pub fn decode(
 
     let mut j = 0;
     // Buffer should always be 8-bytes aligned, and therefore, chucks should always return slices that can be turned to [u8; 8]
-    #[allow(clippy::expect_used)]
     Ok(buffer
         .chunks(8)
-        .map(|block| block.try_into().expect("Chunk is 8 bytes long."))
+        .map(|block| {
+            let Ok(arr) = block.try_into() else {
+                unreachable!("Chunk is 8 bytes long.")
+            };
+            arr
+        })
         .enumerate()
         .flat_map(|(i, block): (usize, [u8; 8])| {
             let block_is_part_of_header = i < 20 && i < header_len;

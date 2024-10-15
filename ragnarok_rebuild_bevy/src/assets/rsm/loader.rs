@@ -489,7 +489,6 @@ impl AssetLoader {
     }
 
     #[must_use]
-    #[allow(clippy::type_complexity)]
     fn split_mesh_into_primitives(
         mesh: &rsm::mesh::Mesh,
     ) -> HashMap<(u16, u8), Vec<&rsm::mesh::Face>> {
@@ -614,9 +613,9 @@ impl AssetLoader {
                         indices.push(*occupied.get());
                     }
                     Entry::Vacant(vacant) => {
-                        #[allow(clippy::expect_used)]
-                        let new_index = u16::try_from(cache_len)
-                            .expect("there shouldn't be more that u16::MAX vertices.");
+                        let Ok(new_index) = u16::try_from(cache_len) else {
+                            unreachable!("there shouldn't be more that u16::MAX vertices.")
+                        };
                         vertices.push(mesh_vertexes[usize::from(vertex_uv_pair.0)]);
                         uvs.push(mesh_uvs[usize::from(vertex_uv_pair.1)]);
                         vertex_colors.push(mesh_vertex_colors[usize::from(vertex_uv_pair.1)]);
