@@ -6,6 +6,8 @@ pub const BASE_DATA_FOLDER: &str = "data/";
 pub const WORLD_FILES_FOLDER: &str = "data/";
 /// Folder prefix for Ground files (`.gnd`)
 pub const GROUND_FILES_FOLDER: &str = "data/";
+/// Folder prefix for Altitude files (`.gat`)
+pub const ALTITUDE_FILES_FOLDER: &str = "data/";
 /// Folder prefix for Model (animated props) files `.rsm`
 pub const MODEL_FILES_FOLDER: &str = "data/model/";
 /// Folder prefix for Sprite files (`.spr`)

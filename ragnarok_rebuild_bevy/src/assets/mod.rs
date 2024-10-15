@@ -1,4 +1,5 @@
 pub mod act;
+pub mod gat;
 pub mod gnd;
 pub mod grf;
 pub mod pal;
@@ -16,6 +17,7 @@ impl BevyPluginGroup for PluginGroup {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add(act::Plugin)
+            .add(gat::Plugin)
             .add(gnd::Plugin)
             .add(pal::Plugin)
             .add(rsm::Plugin)
