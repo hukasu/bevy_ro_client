@@ -21,8 +21,8 @@ impl Tiles {
         let max = (aabb.max() + Vec3A::new((self.width / 2) as f32, 0., (self.height / 2) as f32))
             .as_uvec3();
 
-        ((min.z as usize)..(max.z as usize).min(self.height as usize)).flat_map(move |z| {
-            ((min.x as usize)..(max.x as usize).min(self.width as usize)).map(move |x| TileRef {
+        ((min.z as usize)..=(max.z as usize).min(self.height as usize)).flat_map(move |z| {
+            ((min.x as usize)..=(max.x as usize).min(self.width as usize)).map(move |x| TileRef {
                 x: x as u16,
                 z: z as u16,
                 tile: self.tiles[x + z * self.width as usize],
