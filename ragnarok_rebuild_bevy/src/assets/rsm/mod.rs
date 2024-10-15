@@ -1,6 +1,7 @@
 mod components;
 mod events;
 mod loader;
+mod materials;
 
 use std::time::Duration;
 
@@ -24,6 +25,9 @@ impl BevyPlugin for Plugin {
             .register_asset_loader(AssetLoader)
             // Observers
             .observe(start_rsm_animation);
+
+        // Materials
+        app.add_plugins(materials::Plugin);
     }
 }
 

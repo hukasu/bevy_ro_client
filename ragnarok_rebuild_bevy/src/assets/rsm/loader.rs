@@ -24,10 +24,7 @@ use bevy::{
 use ragnarok_rebuild_assets::rsm;
 use uuid::Uuid;
 
-use crate::{
-    assets::{paths, rsm::components::ModelAnimation},
-    materials::RsmMaterial,
-};
+use crate::assets::{paths, rsm::components::ModelAnimation};
 
 pub struct AssetLoader;
 
@@ -355,7 +352,7 @@ impl AssetLoader {
                 );
                 let material = asset_loader_context.load_context.add_labeled_asset(
                     format!("{}Material{}", rsm_mesh.name, i),
-                    RsmMaterial {
+                    super::materials::RsmMaterial {
                         texture: mesh_textures[usize::from(*texture_id)].texture.clone(),
                     },
                 );
