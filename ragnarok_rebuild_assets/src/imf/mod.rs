@@ -15,6 +15,7 @@ pub use self::{animation::Animation, error::Error, frame::Frame, layer::Layer};
 pub struct Imf {
     pub version: Version,
     pub checksum: u32,
+    pub max_index: u32,
     pub layers: Box<[Layer]>,
 }
 
@@ -24,8 +25,8 @@ impl Imf {
 
         let checksum = reader.read_le_u32()?;
 
-        let layer_count = reader.read_le_u32()?;
-        let layers = (0..=layer_count)
+        let max_index = reader.read_le_u32()?;
+        let layers = (0..=max_index)
             .map(|_| Layer::from_reader(reader))
             .collect::<Result<_, _>>()?;
 
@@ -38,6 +39,7 @@ impl Imf {
         Ok(Self {
             version,
             checksum,
+            max_index,
             layers,
         })
     }
