@@ -1,10 +1,12 @@
 use std::{fs::File, io::BufReader, sync::MutexGuard};
 
+use crate::common::Version;
+
 #[derive(Debug)]
 pub enum Error {
     FileNotFound,
     WrongSignature,
-    UnsupportedVersion,
+    UnsupportedVersion(Version),
     Io(std::io::Error),
     Zip(flate2::DecompressError),
     MutexPoisoned,
@@ -33,7 +35,9 @@ impl std::fmt::Display for Error {
         let message = match self {
             Error::FileNotFound => "File not found within GRF.".to_owned(),
             Error::WrongSignature => "File had wrong signature.".to_owned(),
-            Error::UnsupportedVersion => "GRF in on a unsupported version.".to_owned(),
+            Error::UnsupportedVersion(version) => {
+                format!("GRF in on a unsupported version. ({:?})", version)
+            }
             Error::Io(io) => format!("An IO error occured. '{io}'"),
             Error::Zip(zip) => format!("An error occured while deflating GRF. '{zip}'"),
             Error::MutexPoisoned => "The Mutex that hold the file is poisoned.".to_string(),

@@ -25,10 +25,6 @@ use crate::grf::{
 
 pub use self::error::Error;
 
-use super::common::Version;
-
-const GRF_SIGNATURE: &str = "Master of Magic";
-
 pub struct GRF {
     reader: Mutex<BufReader<File>>,
     header: Header,
@@ -50,12 +46,6 @@ impl GRF {
         let mut reader = BufReader::new(file);
 
         let header = Header::from_reader(&mut reader)?;
-        if header.signature.ne(GRF_SIGNATURE.as_bytes()) {
-            Err(error::Error::WrongSignature)?;
-        }
-        if !Self::is_supported_version(&header) {
-            Err(error::Error::UnsupportedVersion)?;
-        }
 
         reader.seek_relative(header.filetableoffset as i64)?;
         let mut file_table = Self::read_file_table(
@@ -221,9 +211,5 @@ impl GRF {
             flags,
             offset,
         })
-    }
-
-    fn is_supported_version(header: &Header) -> bool {
-        header.version == Version(2, 0, 0)
     }
 }
