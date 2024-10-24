@@ -1,5 +1,6 @@
 mod components;
 // TODO remove pub after organizing the debug systems
+mod camera;
 pub mod entities;
 
 use bevy::{
@@ -27,6 +28,7 @@ impl Plugin for ClientPlugin {
         app
             // Plugins
             .add_plugins(entities::Plugin)
+            .add_plugins(camera::Plugin)
             // Startup system
             .add_systems(Startup, start_up)
             .add_systems(

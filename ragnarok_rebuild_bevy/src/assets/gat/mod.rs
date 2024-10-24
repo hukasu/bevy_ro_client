@@ -8,16 +8,20 @@ mod resources;
 use bevy::{
     app::Update,
     asset::AssetApp,
-    math::{
-        bounding::{Aabb3d, RayCast3d},
-        Quat, Vec3,
+    ecs::{
+        schedule::{
+            common_conditions::{resource_exists, resource_removed},
+            IntoSystemConfigs,
+        },
+        system::{Query, Res, ResMut},
     },
-    prelude::{Camera, GlobalTransform, IntoSystemConfigs, Query, Res, ResMut, With},
+    math::{bounding::Aabb3d, Quat, Vec3},
     render::primitives::Aabb,
-    window::{PrimaryWindow, Window},
 };
 
 use crate::{assets::rsw, helper::AabbExt, WorldTransform};
+
+pub use self::resources::TileRayCast;
 
 pub struct Plugin;
 
@@ -32,9 +36,17 @@ impl bevy::app::Plugin for Plugin {
             .init_resource::<resources::HoveredTile>()
             // Register types
             .register_type::<components::Tiles>()
+            .register_type::<resources::TileRayCast>()
             .register_type::<resources::HoveredTile>()
             // Systems
-            .add_systems(Update, mouse_intersect_gat.run_if(is_mouse_free));
+            .add_systems(
+                Update,
+                mouse_intersect_gat.run_if(resource_exists::<resources::TileRayCast>),
+            )
+            .add_systems(
+                Update,
+                clear_hovered_tile.run_if(resource_removed::<resources::TileRayCast>()),
+            );
 
         #[cfg(feature = "debug")]
         {
@@ -43,35 +55,13 @@ impl bevy::app::Plugin for Plugin {
     }
 }
 
-fn is_mouse_free(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
-    if let Ok(primary_window) = windows.get_single() {
-        matches!(
-            primary_window.cursor.grab_mode,
-            bevy::window::CursorGrabMode::None
-        )
-    } else {
-        true
-    }
-}
-
 fn mouse_intersect_gat(
     gats: Query<&components::Tiles>,
     rsws: Query<&rsw::World>,
+    ray_cast: Res<TileRayCast>,
     mut hovered_tile: ResMut<resources::HoveredTile>,
-    primary_windows: Query<&Window, With<PrimaryWindow>>,
-    cameras: Query<(&Camera, &GlobalTransform)>,
     world_transform: Res<WorldTransform>,
 ) {
-    let Ok(primary_window) = primary_windows.get_single() else {
-        bevy::log::error!("There are none or more than one PrimaryWindow spawned.");
-        return;
-    };
-
-    let Ok((camera, camera_transform)) = cameras.get_single() else {
-        bevy::log::error!("There are none or more than one PrimCameraaryWindow spawned.");
-        return;
-    };
-
     let Ok(tiles) = gats.get_single() else {
         bevy::log::error!("There are none or more than one Gat spawned.");
         return;
@@ -80,17 +70,6 @@ fn mouse_intersect_gat(
         bevy::log::error!("There are none or more than one Rsw spawned.");
         return;
     };
-
-    let Some(cursor_position) = primary_window.cursor_position() else {
-        return;
-    };
-
-    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
-        return;
-    };
-
-    // Ray is in world space
-    let ray_cast = RayCast3d::from_ray(ray, 100.);
 
     let mut stack = vec![rsw::QuadTreeIndex::default()];
     let mut intersections = vec![];
@@ -170,4 +149,8 @@ fn mouse_intersect_gat(
         .flatten()
         .min_by(|(_, _, a), (_, _, b)| a.total_cmp(b))
         .map(|(tile, _, _)| tile);
+}
+
+fn clear_hovered_tile(mut hovered_tile: ResMut<resources::HoveredTile>) {
+    **hovered_tile = None;
 }
