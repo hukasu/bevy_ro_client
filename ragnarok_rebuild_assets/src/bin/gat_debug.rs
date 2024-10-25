@@ -1,9 +1,9 @@
 use std::{fmt::Write, io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::{gat, grf::GRF};
+use ragnarok_rebuild_assets::{gat, grf::Grf};
 
 fn main() {
-    let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
+    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
         return;
     };
 

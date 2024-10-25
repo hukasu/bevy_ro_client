@@ -2,11 +2,11 @@ use std::{fmt::Write, io::Cursor, path::Path};
 
 use ragnarok_rebuild_assets::{
     act::{Act, AnimationClip, AnimationFrame, SpriteLayer},
-    grf::GRF,
+    grf::Grf,
 };
 
 fn main() {
-    let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
+    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
         return;
     };
 

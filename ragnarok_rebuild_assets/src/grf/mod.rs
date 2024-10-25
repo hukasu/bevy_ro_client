@@ -25,13 +25,13 @@ use crate::grf::{
 
 pub use self::error::Error;
 
-pub struct GRF {
+pub struct Grf {
     reader: Mutex<BufReader<File>>,
     header: Header,
     file_table: Box<[Entry]>,
 }
 
-impl Display for GRF {
+impl Display for Grf {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "GRF {{")?;
         writeln!(f, "Header {{ {:?} }},", self.header)?;
@@ -40,7 +40,7 @@ impl Display for GRF {
     }
 }
 
-impl GRF {
+impl Grf {
     pub fn new(path: &Path) -> Result<Self, error::Error> {
         let file = File::open(path)?;
         let mut reader = BufReader::new(file);
@@ -54,7 +54,7 @@ impl GRF {
         )?;
         file_table.sort_by_cached_key(|file_entry| file_entry.filename.clone());
 
-        Ok(GRF {
+        Ok(Grf {
             reader: reader.into(),
             header,
             file_table: file_table.into(),

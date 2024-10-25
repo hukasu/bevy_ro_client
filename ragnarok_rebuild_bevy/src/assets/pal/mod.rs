@@ -21,7 +21,7 @@ impl bevy::app::Plugin for Plugin {
     }
 }
 
-pub fn palette_to_image(palette: &pal::Palette) -> Image {
+pub fn palette_to_image(palette: &pal::Pal) -> Image {
     let transparency_color = palette.colors[0];
 
     Image {

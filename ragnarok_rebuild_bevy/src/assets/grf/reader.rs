@@ -8,13 +8,13 @@ use bevy::asset::io::{
 };
 
 pub struct AssetReader {
-    grf: super::GRF,
+    grf: super::Grf,
 }
 
 impl AssetReader {
     pub fn new(path: &Path) -> Result<Self, super::Error> {
         Ok(Self {
-            grf: super::GRF::new(path)?,
+            grf: super::Grf::new(path)?,
         })
     }
 }

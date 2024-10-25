@@ -1,12 +1,12 @@
 use std::{fmt::Write, io::Cursor, path::Path};
 
 use ragnarok_rebuild_assets::{
-    grf::GRF,
+    grf::Grf,
     imf::{self, Imf},
 };
 
 fn main() {
-    let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
+    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
         return;
     };
 

@@ -9,11 +9,11 @@ use crate::common::Color;
 pub use self::error::Error;
 
 #[derive(Debug)]
-pub struct Palette {
+pub struct Pal {
     pub colors: [Color; 256],
 }
 
-impl Palette {
+impl Pal {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, Error> {
         let palette_contents: [u8; 1024] = reader.read_array()?;
         Ok(Self::from_bytes(&palette_contents))

@@ -20,7 +20,7 @@ pub enum ShadeType {
 }
 
 #[derive(Debug)]
-pub struct RSM {
+pub struct Rsm {
     pub signature: Box<str>,
     pub version: Version,
     pub animation_length: i32,
@@ -34,7 +34,7 @@ pub struct RSM {
     pub volume_boxes: Box<[VolumeBox]>,
 }
 
-impl RSM {
+impl Rsm {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, self::Error> {
         let signature = Self::read_signature(reader)?;
         let version = Version::rsm_version_from_reader(reader)?;

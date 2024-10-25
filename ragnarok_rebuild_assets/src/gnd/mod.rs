@@ -16,7 +16,7 @@ pub use self::{
 };
 
 #[derive(Debug)]
-pub struct GND {
+pub struct Gnd {
     pub signature: Box<str>,
     pub version: Version,
     pub width: u32,
@@ -29,7 +29,7 @@ pub struct GND {
     pub water_planes: Box<[WaterPlane]>,
 }
 
-impl GND {
+impl Gnd {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, Error> {
         let signature = Self::read_signature(reader)?;
         let version = Version::gnd_version_from_reader(reader)?;

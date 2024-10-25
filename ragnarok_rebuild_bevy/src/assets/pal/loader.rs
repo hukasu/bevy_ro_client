@@ -17,7 +17,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
         Box::pin(async {
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
-            let palette = pal::Palette::from_reader(&mut data.as_slice())?;
+            let palette = pal::Pal::from_reader(&mut data.as_slice())?;
 
             Ok(super::palette_to_image(&palette))
         })

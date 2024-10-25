@@ -19,7 +19,7 @@ pub struct Spr {
     /// Images storing ABGR bitmaps
     pub true_color_images: Box<[TrueColorSprite]>,
     /// 256 RGBA colors
-    pub palette: Option<pal::Palette>,
+    pub palette: Option<pal::Pal>,
 }
 
 impl Spr {
@@ -107,8 +107,8 @@ impl Spr {
         }
     }
 
-    fn load_palette(reader: &mut dyn Read) -> Result<Option<pal::Palette>, Error> {
-        match pal::Palette::from_reader(reader) {
+    fn load_palette(reader: &mut dyn Read) -> Result<Option<pal::Pal>, Error> {
+        match pal::Pal::from_reader(reader) {
             Ok(palette) => Ok(Some(palette)),
             Err(pal::Error::Io(io)) => {
                 if io.kind() == std::io::ErrorKind::UnexpectedEof {

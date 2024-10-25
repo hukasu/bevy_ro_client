@@ -31,7 +31,7 @@ pub struct AssetLoader;
 struct AssetLoaderContext<'a, 'b, 'c> {
     world: World,
     load_context: &'a mut LoadContext<'b>,
-    rsm: &'c rsm::RSM,
+    rsm: &'c rsm::Rsm,
 }
 
 #[derive(Debug, Clone)]
@@ -60,7 +60,7 @@ impl BevyAssetLoader for AssetLoader {
         Box::pin(async {
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
-            let rsm = rsm::RSM::from_reader(&mut data.as_slice())?;
+            let rsm = rsm::Rsm::from_reader(&mut data.as_slice())?;
 
             let context = AssetLoaderContext {
                 world: World::new(),

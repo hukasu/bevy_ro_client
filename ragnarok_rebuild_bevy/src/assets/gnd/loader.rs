@@ -54,7 +54,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
 
             let mut data: Vec<u8> = vec![];
             reader.read_to_end(&mut data).await?;
-            let gnd = gnd::GND::from_reader(&mut data.as_slice())?;
+            let gnd = gnd::Gnd::from_reader(&mut data.as_slice())?;
 
             Ok(Self::generate_ground(&gnd, settings, load_context).await)
         })
@@ -67,7 +67,7 @@ impl bevy::asset::AssetLoader for AssetLoader {
 
 impl AssetLoader {
     async fn generate_ground<'a>(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         settings: &AssetLoaderSettings,
         load_context: &mut LoadContext<'a>,
     ) -> Scene {
@@ -82,7 +82,7 @@ impl AssetLoader {
     }
 
     async fn generate_ground_mesh<'a>(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         world: &mut World,
         load_context: &mut LoadContext<'a>,
     ) {
@@ -91,7 +91,7 @@ impl AssetLoader {
     }
 
     fn generate_water_planes(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         settings: &AssetLoaderSettings,
         world: &mut World,
         load_context: &mut LoadContext,
@@ -117,7 +117,7 @@ impl AssetLoader {
     }
 
     fn build_cubes(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         material: Handle<GndMaterial>,
         world: &mut World,
         load_context: &mut LoadContext,
@@ -187,7 +187,7 @@ impl AssetLoader {
     }
 
     fn build_up_face(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         cube: &gnd::GroundMeshCube,
         vertices: &mut Vec<Vec3>,
         uvs: &mut Vec<Vec2>,
@@ -246,7 +246,7 @@ impl AssetLoader {
     }
 
     fn build_east_face(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         cube: &gnd::GroundMeshCube,
         east_cube: &gnd::GroundMeshCube,
         vertices: &mut Vec<Vec3>,
@@ -307,7 +307,7 @@ impl AssetLoader {
     }
 
     fn build_north_face(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         cube: &gnd::GroundMeshCube,
         north_cube: &gnd::GroundMeshCube,
         vertices: &mut Vec<Vec3>,
@@ -366,7 +366,7 @@ impl AssetLoader {
 
     #[must_use]
     fn build_water_plane(
-        gnd: &gnd::GND,
+        gnd: &gnd::Gnd,
         water_plane: &common::WaterPlane,
         name: &str,
         world: &mut World,
@@ -468,7 +468,7 @@ impl AssetLoader {
     }
 
     #[must_use]
-    fn water_plane_mesh(gnd: &gnd::GND, water_plane: &common::WaterPlane) -> Mesh {
+    fn water_plane_mesh(gnd: &gnd::Gnd, water_plane: &common::WaterPlane) -> Mesh {
         let mut vertices: Vec<Vec3> = vec![];
         let mut normals: Vec<Vec3> = vec![];
         let mut uvs: Vec<Vec2> = vec![];

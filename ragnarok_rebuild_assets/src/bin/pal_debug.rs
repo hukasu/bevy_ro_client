@@ -1,9 +1,9 @@
 use std::{fmt::Write, io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::{grf::GRF, pal};
+use ragnarok_rebuild_assets::{grf::Grf, pal};
 
 fn main() {
-    let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
+    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
         return;
     };
 
@@ -22,7 +22,7 @@ fn main() {
         else {
             continue;
         };
-        let Ok(_pal) = pal::Palette::from_reader(&mut Cursor::new(pal_content))
+        let Ok(_pal) = pal::Pal::from_reader(&mut Cursor::new(pal_content))
             .inspect_err(|err| println!("{pal_filename:?}: {err}"))
         else {
             continue;
@@ -35,7 +35,7 @@ fn main() {
     }
 }
 
-fn debug_palette(pal: &pal::Palette) -> Option<String> {
+fn debug_palette(pal: &pal::Pal) -> Option<String> {
     let header = String::new;
     let mut debug = None;
 

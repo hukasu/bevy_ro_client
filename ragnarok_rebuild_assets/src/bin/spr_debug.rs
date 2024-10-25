@@ -1,9 +1,9 @@
 use std::{fmt::Write, io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::{grf::GRF, pal, spr::Spr};
+use ragnarok_rebuild_assets::{grf::Grf, pal, spr::Spr};
 
 fn main() {
-    let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
+    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
         return;
     };
 
@@ -52,7 +52,7 @@ fn debug_spr(spr: &Spr) -> Option<String> {
     debug
 }
 
-fn debug_palette(pal: &pal::Palette) -> Option<String> {
+fn debug_palette(pal: &pal::Pal) -> Option<String> {
     let header = String::new;
     let mut debug = None;
 

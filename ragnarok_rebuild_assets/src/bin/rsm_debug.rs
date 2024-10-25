@@ -1,15 +1,15 @@
 use std::{collections::BTreeSet, fmt::Write, io::Cursor, path::Path};
 
 use ragnarok_rebuild_assets::{
-    grf::GRF,
+    grf::Grf,
     rsm::{
         mesh::{Face, Mesh},
-        RSM,
+        Rsm,
     },
 };
 
 fn main() {
-    let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
+    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
         return;
     };
 
@@ -28,7 +28,7 @@ fn main() {
         else {
             continue;
         };
-        let Ok(rsm) = RSM::from_reader(&mut Cursor::new(rsm_content))
+        let Ok(rsm) = Rsm::from_reader(&mut Cursor::new(rsm_content))
             .inspect_err(|err| println!("{rsm_filename:?}: {err}"))
         else {
             continue;
@@ -41,7 +41,7 @@ fn main() {
     }
 }
 
-fn debug_rsm(rsm: &RSM) -> Option<String> {
+fn debug_rsm(rsm: &Rsm) -> Option<String> {
     let header = || format!("\t{:?}\n", rsm.version);
     let mut debug = None;
 
@@ -71,7 +71,7 @@ fn debug_rsm(rsm: &RSM) -> Option<String> {
 }
 
 #[allow(dead_code)]
-fn debug_texture_count(rsm: &RSM) -> Option<String> {
+fn debug_texture_count(rsm: &Rsm) -> Option<String> {
     let header = String::new;
     let mut debug = None;
 
