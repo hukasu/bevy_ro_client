@@ -19,14 +19,28 @@ pub trait ReaderExt: Read {
 impl<T: Read> ReaderExt for T {
     fn read_array<const N: usize>(&mut self) -> Result<[u8; N], Error> {
         let mut bytes = [0u8; N];
-        self.read_exact(&mut bytes)?;
-        Ok(bytes)
+        let read = self.read(&mut bytes)?;
+        if read != N {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!("Failed to fill buffer of size {N}, read only {read}."),
+            ))
+        } else {
+            Ok(bytes)
+        }
     }
 
     fn read_vec(&mut self, len: usize) -> Result<Vec<u8>, Error> {
         let mut bytes = vec![0u8; len];
-        self.read_exact(&mut bytes)?;
-        Ok(bytes)
+        let read = self.read(&mut bytes)?;
+        if read != len {
+            Err(std::io::Error::new(
+                std::io::ErrorKind::UnexpectedEof,
+                format!("Failed to fill buffer of size {len}, read only {read}."),
+            ))
+        } else {
+            Ok(bytes)
+        }
     }
 
     fn read_le_f64(&mut self) -> Result<f64, Error> {
