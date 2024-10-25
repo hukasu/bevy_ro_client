@@ -20,20 +20,20 @@ impl From<std::io::Error> for Error {
 impl Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let msg = match self {
-            Self::WrongSignature => "Sprite had wrong signature.".to_owned(),
+            Self::WrongSignature => "Spr had wrong signature.".to_owned(),
             Self::UnsupportedVersion(version) => {
-                format!("Sprite had unsupported version {}.", version)
+                format!("Spr had unsupported version {}.", version)
             }
             Self::RLE => {
                 "Size of image after RLE decompression does not match image dimensions".to_owned()
             }
             Self::IncompleteRead(len) => {
                 format!(
-                    "Sprite finished loading but there was still {} bytes on the buffer.",
+                    "Spr finished loading but there was still {} bytes on the buffer.",
                     len
                 )
             }
-            Self::Io(io) => format!("An IO error occurred while reading a Sprite. '{io}'"),
+            Self::Io(io) => format!("An IO error occurred while reading a Spr. '{io}'"),
         };
         write!(f, "{msg}")
     }

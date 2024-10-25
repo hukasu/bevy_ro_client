@@ -1,29 +1,14 @@
 mod error;
+mod indexed;
+mod true_color;
 
 use std::io::Read;
 
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
-use crate::{
-    common::{Color, Version},
-    pal,
-};
+use crate::{common::Version, pal};
 
-pub use self::error::Error;
-
-#[derive(Debug)]
-pub struct TrueColorSprite {
-    pub width: u16,
-    pub height: u16,
-    pub pixels: Box<[Color]>,
-}
-
-#[derive(Debug)]
-pub struct IndexedSprite {
-    pub width: u16,
-    pub height: u16,
-    pub indexes: Box<[u8]>,
-}
+pub use self::{error::Error, indexed::IndexedSprite, true_color::TrueColorSprite};
 
 #[derive(Debug)]
 pub struct Spr {
@@ -103,15 +88,9 @@ impl Spr {
         version: &Version,
         bitmap_image_count: u16,
     ) -> Result<Box<[IndexedSprite]>, Error> {
-        match version {
-            Version(1, 1, 0) | Version(2, 0, 0) => (0..bitmap_image_count)
-                .map(|_| Self::load_uncompressed_bitmap(&mut reader))
-                .collect::<Result<_, _>>(),
-            Version(2, 1, 0) => (0..bitmap_image_count)
-                .map(|_| Self::load_compressed_bitmap(&mut reader))
-                .collect::<Result<_, _>>(),
-            version => Err(Error::UnsupportedVersion(*version))?,
-        }
+        (0..bitmap_image_count)
+            .map(|_| IndexedSprite::from_reader(&mut reader, version))
+            .collect::<Result<_, _>>()
     }
 
     fn load_true_color_images(
@@ -122,83 +101,10 @@ impl Spr {
         match version {
             Version(1, 1, 0) => Ok(Box::new([])),
             Version(2, 0, 0) | Version(2, 1, 0) => (0..true_color_image_count)
-                .map(|_| Self::load_truecolor_bitmap(&mut reader))
+                .map(|_| TrueColorSprite::from_reader(&mut reader))
                 .collect::<Result<_, _>>(),
             version => Err(Error::UnsupportedVersion(*version))?,
         }
-    }
-
-    fn load_uncompressed_bitmap(mut reader: &mut dyn Read) -> Result<IndexedSprite, Error> {
-        let width = reader.read_le_u16()?;
-        let height = reader.read_le_u16()?;
-
-        let pixels = reader
-            .read_vec(usize::from(width) * usize::from(height))?
-            .into_boxed_slice();
-
-        Ok(IndexedSprite {
-            width,
-            height,
-            indexes: pixels,
-        })
-    }
-
-    fn load_compressed_bitmap(mut reader: &mut dyn Read) -> Result<IndexedSprite, Error> {
-        let width = reader.read_le_u16()?;
-        let height = reader.read_le_u16()?;
-        let compressed_buffer_size = reader.read_le_u16()?;
-
-        let buffer = reader.read_vec(compressed_buffer_size as usize)?;
-
-        let pixels = buffer
-            .into_iter()
-            .scan(false, |seen_zero, cur| match seen_zero {
-                true => {
-                    *seen_zero = false;
-                    Some(vec![0; cur as usize])
-                }
-                false => {
-                    if cur == 0 {
-                        *seen_zero = true;
-                        Some(vec![])
-                    } else {
-                        Some(vec![cur])
-                    }
-                }
-            })
-            .flatten()
-            .collect::<Box<_>>();
-        if pixels.len().ne(&(usize::from(width) * usize::from(height))) {
-            Err(Error::RLE)?
-        }
-
-        Ok(IndexedSprite {
-            width,
-            height,
-            indexes: pixels,
-        })
-    }
-
-    fn load_truecolor_bitmap(mut reader: &mut dyn Read) -> Result<TrueColorSprite, Error> {
-        let width = reader.read_le_u16()?;
-        let height = reader.read_le_u16()?;
-
-        let pixels = reader
-            .read_vec(usize::from(width) * usize::from(height) * 4)?
-            .chunks(4)
-            .map(|chunk| Color {
-                red: chunk[3],
-                green: chunk[2],
-                blue: chunk[1],
-                alpha: chunk[0],
-            })
-            .collect();
-
-        Ok(TrueColorSprite {
-            width,
-            height,
-            pixels,
-        })
     }
 
     fn load_palette(reader: &mut dyn Read) -> Result<Option<pal::Palette>, Error> {
