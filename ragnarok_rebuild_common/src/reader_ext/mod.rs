@@ -19,27 +19,69 @@ pub trait ReaderExt: Read {
 impl<T: Read> ReaderExt for T {
     fn read_array<const N: usize>(&mut self) -> Result<[u8; N], Error> {
         let mut bytes = [0u8; N];
-        let read = self.read(&mut bytes)?;
-        if read != N {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::UnexpectedEof,
-                format!("Failed to fill buffer of size {N}, read only {read}."),
-            ))
-        } else {
-            Ok(bytes)
+        let mut read_bytes = 0;
+        loop {
+            if read_bytes == N {
+                return Ok(bytes);
+            }
+
+            let read = self.read(&mut bytes[read_bytes..]);
+            match read {
+                Ok(n) => {
+                    if n == 0 {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::UnexpectedEof,
+                            format!("Failed to fill buffer of size {N}, read only {read_bytes}."),
+                        ));
+                    } else {
+                        read_bytes += n
+                    }
+                }
+                Err(err) => {
+                    if matches!(err.kind(), std::io::ErrorKind::UnexpectedEof) {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::UnexpectedEof,
+                            format!("Failed to fill buffer of size {N}, read only {read_bytes}."),
+                        ));
+                    } else {
+                        return Err(err);
+                    }
+                }
+            }
         }
     }
 
     fn read_vec(&mut self, len: usize) -> Result<Vec<u8>, Error> {
         let mut bytes = vec![0u8; len];
-        let read = self.read(&mut bytes)?;
-        if read != len {
-            Err(std::io::Error::new(
-                std::io::ErrorKind::UnexpectedEof,
-                format!("Failed to fill buffer of size {len}, read only {read}."),
-            ))
-        } else {
-            Ok(bytes)
+        let mut read_bytes = 0;
+        loop {
+            if read_bytes == len {
+                return Ok(bytes);
+            }
+
+            let read = self.read(&mut bytes[read_bytes..]);
+            match read {
+                Ok(n) => {
+                    if n == 0 {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::UnexpectedEof,
+                            format!("Failed to fill buffer of size {len}, read only {read_bytes}."),
+                        ));
+                    } else {
+                        read_bytes += n
+                    }
+                }
+                Err(err) => {
+                    if matches!(err.kind(), std::io::ErrorKind::UnexpectedEof) {
+                        return Err(std::io::Error::new(
+                            std::io::ErrorKind::UnexpectedEof,
+                            format!("Failed to fill buffer of size {len}, read only {read_bytes}."),
+                        ));
+                    } else {
+                        return Err(err);
+                    }
+                }
+            }
         }
     }
 
