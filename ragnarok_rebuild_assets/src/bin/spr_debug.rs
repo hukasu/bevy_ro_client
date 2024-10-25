@@ -1,6 +1,6 @@
-use std::{io::Cursor, path::Path};
+use std::{fmt::Write, io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::{grf::GRF, spr::Spr};
+use ragnarok_rebuild_assets::{grf::GRF, pal, spr::Spr};
 
 fn main() {
     let Ok(grf) = GRF::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
@@ -18,14 +18,51 @@ fn main() {
     {
         let Ok(spr_content) = grf
             .read_file(spr_filename)
-            .inspect_err(|err| eprintln!("{spr_filename:?}: {err}"))
+            .inspect_err(|err| println!("{spr_filename:?}: {err}"))
         else {
             continue;
         };
-        let Ok(_spr) = Spr::from_reader(&mut Cursor::new(spr_content))
-            .inspect_err(|err| eprintln!("{spr_filename:?}: {err}"))
+        let Ok(spr) = Spr::from_reader(&mut Cursor::new(spr_content))
+            .inspect_err(|err| println!("{spr_filename:?}: {err}"))
         else {
             continue;
         };
+
+        if let Some(spr_debug) = debug_spr(&spr) {
+            println!("{:?}", spr_filename);
+            println!("{}", spr_debug);
+        }
     }
+}
+
+fn debug_spr(spr: &Spr) -> Option<String> {
+    let header = || format!("\t{:?}\n", spr.version);
+    let mut debug = None;
+
+    if let Some(palette) = &spr.palette {
+        if let Some(spr_debug) = debug_palette(palette) {
+            let debug_ref = debug.get_or_insert_with(header);
+            write!(debug_ref, "{}", spr_debug).unwrap();
+        }
+    } else {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\thas no palette.").unwrap();
+    }
+
+    debug
+}
+
+fn debug_palette(pal: &pal::Palette) -> Option<String> {
+    let header = String::new;
+    let mut debug = None;
+
+    if pal.colors[1..]
+        .iter()
+        .any(|color| color.alpha > 0 && color.alpha < 255)
+    {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\thas palette color with alpha.").unwrap();
+    }
+
+    debug
 }
