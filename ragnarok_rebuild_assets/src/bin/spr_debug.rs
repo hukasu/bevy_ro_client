@@ -56,6 +56,15 @@ fn debug_palette(pal: &pal::Palette) -> Option<String> {
     let header = String::new;
     let mut debug = None;
 
+    if pal.colors[0].alpha != 0 {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(
+            debug_ref,
+            "\t\thas palette key with alpha different from 0."
+        )
+        .unwrap();
+    }
+
     if pal.colors[1..]
         .iter()
         .any(|color| color.alpha > 0 && color.alpha < 255)
