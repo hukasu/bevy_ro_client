@@ -3,7 +3,6 @@ let
   rust-overlay = (import (builtins.fetchGit {
     url = "https://github.com/oxalica/rust-overlay";
     ref = "master";
-    rev = "4ee3d9e9569f70d7bb40f28804d6fe950c81eab3";
   }));
   pkgs = import nixpkgs { config = {}; overlays = [ rust-overlay ]; };
   system = builtins.currentSystem;
