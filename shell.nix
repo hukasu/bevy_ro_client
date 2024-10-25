@@ -18,6 +18,7 @@ let
       usernamehw.errorlens
       serayuzgur.crates
       vadimcn.vscode-lldb
+      ms-vscode.hexeditor
   ];
   buildInputs = with pkgs; [
     udev
