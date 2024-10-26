@@ -40,6 +40,28 @@ fn debug_spr(spr: &Spr) -> Option<String> {
     let mut debug = None;
 
     if let Some(palette) = &spr.palette {
+        let magenta = magenta_palette(palette).collect::<Vec<_>>();
+
+        if spr
+            .bitmap_images
+            .iter()
+            .any(|sprite| sprite.indexes.iter().any(|index| magenta.contains(index)))
+        {
+            let debug_ref = debug.get_or_insert_with(header);
+            writeln!(debug_ref, "\t\tuses magenta.").unwrap();
+        }
+
+        let non_zero_transparency = non_zero_transparency_palette(palette).collect::<Vec<_>>();
+        if spr.bitmap_images.iter().any(|sprite| {
+            sprite
+                .indexes
+                .iter()
+                .any(|index| non_zero_transparency.contains(index))
+        }) {
+            let debug_ref = debug.get_or_insert_with(header);
+            writeln!(debug_ref, "\t\tuses transparency.").unwrap();
+        }
+
         if let Some(spr_debug) = debug_palette(palette) {
             let debug_ref = debug.get_or_insert_with(header);
             write!(debug_ref, "{}", spr_debug).unwrap();
@@ -65,13 +87,33 @@ fn debug_palette(pal: &pal::Pal) -> Option<String> {
         .unwrap();
     }
 
-    if pal.colors[1..]
-        .iter()
-        .any(|color| color.alpha > 0 && color.alpha < 255)
-    {
-        let debug_ref = debug.get_or_insert_with(header);
-        writeln!(debug_ref, "\t\thas palette color with alpha.").unwrap();
-    }
-
     debug
+}
+
+/// Collects all indexes that are not opaque or fully transparent
+fn non_zero_transparency_palette(palette: &pal::Pal) -> impl Iterator<Item = u8> + '_ {
+    palette.colors[1..]
+        .iter()
+        .enumerate()
+        .filter_map(|(i, color)| {
+            if color.alpha > 0 && color.alpha < 255 {
+                Some((i + 1) as u8)
+            } else {
+                None
+            }
+        })
+}
+
+/// Collects all indexes that are magenta and not fully transparent
+fn magenta_palette(palette: &pal::Pal) -> impl Iterator<Item = u8> + '_ {
+    palette.colors[1..]
+        .iter()
+        .enumerate()
+        .filter_map(|(i, color)| {
+            if color.red >= 0xfe && color.green < 0x04 && color.blue >= 0xfe && color.alpha > 0 {
+                Some((i + 1) as u8)
+            } else {
+                None
+            }
+        })
 }
