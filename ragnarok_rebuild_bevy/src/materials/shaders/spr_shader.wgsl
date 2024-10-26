@@ -83,12 +83,19 @@ fn fragment(
     let index = textureLoad(spr_texture, index_texture_coords, 0).x;
 
     pbr_input.material.base_color = textureLoad(spr_palette, index, 0) * spr_uniform.tint;
+
+    if index == 0 {
+        pbr_input.material.base_color.a = 0.;
+    } else {
+        pbr_input.material.base_color.a = 1.;
+    }
 #else ifdef SPR_TRUE_COLOR_PIPELINE
     pbr_input.material.base_color = textureSample(spr_texture, spr_sampler, in.uv) * spr_uniform.tint;
 #endif
 
-    // alpha discard
-    pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
+    if pbr_input.material.base_color.a <= 0. {
+        discard;
+    }
 
 #ifdef PREPASS_PIPELINE
     // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.
