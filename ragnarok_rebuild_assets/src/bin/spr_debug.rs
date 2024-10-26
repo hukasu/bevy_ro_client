@@ -41,33 +41,38 @@ fn debug_spr(spr: &Spr) -> Option<String> {
 
     if let Some(palette) = &spr.palette {
         let magenta = magenta_palette(palette).collect::<Vec<_>>();
-        if spr
-            .bitmap_images
-            .iter()
-            .any(|sprite| sprite.indexes.iter().any(|index| magenta.contains(index)))
+        if !magenta.is_empty()
+            && spr
+                .bitmap_images
+                .iter()
+                .any(|sprite| sprite.indexes.iter().any(|index| magenta.contains(index)))
         {
             let debug_ref = debug.get_or_insert_with(header);
             writeln!(debug_ref, "\t\tuses magenta.").unwrap();
         }
 
         let non_zero_transparency = non_zero_transparency_palette(palette).collect::<Vec<_>>();
-        if spr.bitmap_images.iter().any(|sprite| {
-            sprite
-                .indexes
-                .iter()
-                .any(|index| non_zero_transparency.contains(index))
-        }) {
+        if !non_zero_transparency.is_empty()
+            && spr.bitmap_images.iter().any(|sprite| {
+                sprite
+                    .indexes
+                    .iter()
+                    .any(|index| non_zero_transparency.contains(index))
+            })
+        {
             let debug_ref = debug.get_or_insert_with(header);
             writeln!(debug_ref, "\t\tuses transparency.").unwrap();
         }
 
         let close_to_key = close_to_key_palette(palette).collect::<Vec<_>>();
-        if spr.bitmap_images.iter().any(|sprite| {
-            sprite
-                .indexes
-                .iter()
-                .any(|index| close_to_key.contains(index))
-        }) {
+        if !close_to_key.is_empty()
+            && spr.bitmap_images.iter().any(|sprite| {
+                sprite
+                    .indexes
+                    .iter()
+                    .any(|index| close_to_key.contains(index))
+            })
+        {
             let debug_ref = debug.get_or_insert_with(header);
             writeln!(debug_ref, "\t\tuses colors close to key.").unwrap();
         }
