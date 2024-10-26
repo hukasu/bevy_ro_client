@@ -22,23 +22,11 @@ impl bevy::app::Plugin for Plugin {
 }
 
 pub fn palette_to_image(palette: &pal::Pal) -> Image {
-    let transparency_color = palette.colors[0];
-
     Image {
         data: palette
             .colors
             .iter()
-            .flat_map(|color| {
-                if color.alpha > 0
-                    || (color.red == transparency_color.red
-                        && color.green == transparency_color.green
-                        && color.blue == transparency_color.blue)
-                {
-                    [color.red, color.green, color.blue, color.alpha]
-                } else {
-                    [color.red, color.green, color.blue, 255]
-                }
-            })
+            .flat_map(|color| [color.red, color.green, color.blue, color.alpha])
             .collect(),
         texture_descriptor: TextureDescriptor {
             label: Some("palette"),
