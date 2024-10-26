@@ -427,7 +427,7 @@ impl AssetLoader {
         }
 
         let (color_texture_image, texture_uvs) =
-            helper::build_texture_atlas_from_list_of_images(&images);
+            helper::build_texture_atlas_from_list_of_images(&images, TextureFormat::Rgba8UnormSrgb);
 
         let color_texture =
             load_context.add_labeled_asset("TextureAtlas/Image".to_string(), color_texture_image);

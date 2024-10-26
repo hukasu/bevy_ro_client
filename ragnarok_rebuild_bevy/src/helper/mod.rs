@@ -12,8 +12,13 @@ use bevy::{
 
 pub use self::aabb_ext::AabbExt;
 
-pub fn build_texture_atlas_from_list_of_images(images: &[Image]) -> (Image, Vec<Vec2>) {
+pub fn build_texture_atlas_from_list_of_images(
+    images: &[Image],
+    format: TextureFormat,
+) -> (Image, Vec<Vec2>) {
     let mut texture_atlas_builder = TextureAtlasBuilder::default();
+    texture_atlas_builder.format(format);
+
     for image in images.iter() {
         texture_atlas_builder.add_texture(None, image);
     }
@@ -28,7 +33,7 @@ pub fn build_texture_atlas_from_list_of_images(images: &[Image]) -> (Image, Vec<
             },
             TextureDimension::D2,
             &[255, 0, 255, 255],
-            TextureFormat::Rgba8UnormSrgb,
+            format,
             RenderAssetUsages::RENDER_WORLD,
         ),
     ));
