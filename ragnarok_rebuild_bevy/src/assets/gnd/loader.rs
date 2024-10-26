@@ -5,7 +5,7 @@ use bevy::{
     core::Name,
     ecs::world::World,
     hierarchy::BuildWorldChildren,
-    math::{UVec2, Vec2, Vec3},
+    math::{Vec2, Vec3},
     pbr::{MaterialMeshBundle, NotShadowCaster, NotShadowReceiver},
     prelude::{Entity, SpatialBundle},
     render::{
@@ -18,7 +18,6 @@ use bevy::{
         },
     },
     scene::Scene,
-    sprite::{TextureAtlasBuilder, TextureAtlasLayout},
 };
 
 use ragnarok_rebuild_assets::{common, gnd};
@@ -26,6 +25,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     assets::{paths, water_plane},
+    helper,
     materials::{GndMaterial, WaterPlaneMaterial},
 };
 
@@ -398,7 +398,6 @@ impl AssetLoader {
         texture_paths: &'b [Box<str>],
     ) -> Handle<GndMaterial> {
         let mut images = Vec::with_capacity(texture_paths.len());
-        let mut texture_atlas_builder = TextureAtlasBuilder::default();
 
         for path in texture_paths.iter() {
             let direct_image = load_context
@@ -427,37 +426,11 @@ impl AssetLoader {
             }
         }
 
-        for image in images.iter() {
-            texture_atlas_builder.add_texture(None, image);
-        }
+        let (color_texture_image, texture_uvs) =
+            helper::build_texture_atlas_from_list_of_images(&images);
 
-        let (layout, color_texture_image) = texture_atlas_builder.build().unwrap_or((
-            TextureAtlasLayout::new_empty(UVec2::splat(0)),
-            Image::new_fill(
-                Extent3d {
-                    width: 8,
-                    height: 8,
-                    depth_or_array_layers: 1,
-                },
-                TextureDimension::D2,
-                &[255, 0, 255, 255],
-                TextureFormat::Rgba8UnormSrgb,
-                RenderAssetUsages::RENDER_WORLD,
-            ),
-        ));
         let color_texture =
             load_context.add_labeled_asset("TextureAtlas/Image".to_string(), color_texture_image);
-
-        let layout_size = layout.size.as_vec2();
-        let texture_uvs = layout
-            .textures
-            .iter()
-            .flat_map(|texture_rect| {
-                let rect = texture_rect.as_rect();
-                [rect.min / layout_size, (rect.max - rect.min) / layout_size]
-            })
-            .collect();
-
         load_context.add_labeled_asset(
             "TextureAtlas".to_string(),
             GndMaterial {
