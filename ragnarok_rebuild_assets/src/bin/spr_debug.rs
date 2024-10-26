@@ -41,7 +41,6 @@ fn debug_spr(spr: &Spr) -> Option<String> {
 
     if let Some(palette) = &spr.palette {
         let magenta = magenta_palette(palette).collect::<Vec<_>>();
-
         if spr
             .bitmap_images
             .iter()
@@ -60,6 +59,17 @@ fn debug_spr(spr: &Spr) -> Option<String> {
         }) {
             let debug_ref = debug.get_or_insert_with(header);
             writeln!(debug_ref, "\t\tuses transparency.").unwrap();
+        }
+
+        let close_to_key = close_to_key_palette(palette).collect::<Vec<_>>();
+        if spr.bitmap_images.iter().any(|sprite| {
+            sprite
+                .indexes
+                .iter()
+                .any(|index| close_to_key.contains(index))
+        }) {
+            let debug_ref = debug.get_or_insert_with(header);
+            writeln!(debug_ref, "\t\tuses colors close to key.").unwrap();
         }
 
         if let Some(spr_debug) = debug_palette(palette) {
@@ -97,6 +107,25 @@ fn non_zero_transparency_palette(palette: &pal::Pal) -> impl Iterator<Item = u8>
         .enumerate()
         .filter_map(|(i, color)| {
             if color.alpha > 0 && color.alpha < 255 {
+                Some((i + 1) as u8)
+            } else {
+                None
+            }
+        })
+}
+
+/// Collects all indexes that are not opaque or fully transparent
+fn close_to_key_palette(palette: &pal::Pal) -> impl Iterator<Item = u8> + '_ {
+    let key = &palette.colors[0];
+    palette.colors[1..]
+        .iter()
+        .enumerate()
+        .filter_map(|(i, color)| {
+            if color.alpha > 0
+                && color.red.abs_diff(key.red) < 4
+                && color.green.abs_diff(key.green) < 4
+                && color.blue.abs_diff(key.blue) < 4
+            {
                 Some((i + 1) as u8)
             } else {
                 None
