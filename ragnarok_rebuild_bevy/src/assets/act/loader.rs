@@ -11,10 +11,7 @@ use bevy::{
 use ragnarok_rebuild_assets::act;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    assets::paths,
-    materials::{SprIndexedMaterial, SprTrueColorMaterial, SprUniform},
-};
+use crate::assets::{paths, spr};
 
 use super::{
     assets::AnimationLayerSprite, Animation, AnimationClip, AnimationEvent, AnimationFrame,
@@ -173,8 +170,8 @@ impl AssetLoader {
                         let palette = load_context.load(&settings.palette);
                         AnimationLayerSprite::Indexed(load_context.add_labeled_asset(
                             format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
-                            SprIndexedMaterial {
-                                uniform: SprUniform {
+                            spr::SprIndexedMaterial {
+                                uniform: spr::SprUniform {
                                     uv_flip: if is_flipped { 1 } else { 0 },
                                     tint: tint.into(),
                                 },
@@ -190,8 +187,8 @@ impl AssetLoader {
                         ));
                         AnimationLayerSprite::TrueColor(load_context.add_labeled_asset(
                             format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
-                            SprTrueColorMaterial {
-                                uniform: SprUniform {
+                            spr::SprTrueColorMaterial {
+                                uniform: spr::SprUniform {
                                     uv_flip: if is_flipped { 1 } else { 0 },
                                     tint: tint.into(),
                                 },

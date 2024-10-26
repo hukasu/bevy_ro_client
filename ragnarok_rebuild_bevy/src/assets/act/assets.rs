@@ -7,10 +7,7 @@ use bevy::{
     reflect::TypePath,
 };
 
-use crate::{
-    assets::spr,
-    materials::{SprIndexedMaterial, SprTrueColorMaterial},
-};
+use crate::assets::spr;
 
 #[derive(Debug, Asset, TypePath)]
 pub struct Animation {
@@ -46,8 +43,8 @@ pub struct AnimationLayer {
 
 #[derive(Debug)]
 pub enum AnimationLayerSprite {
-    Indexed(Handle<SprIndexedMaterial>),
-    TrueColor(Handle<SprTrueColorMaterial>),
+    Indexed(Handle<spr::SprIndexedMaterial>),
+    TrueColor(Handle<spr::SprTrueColorMaterial>),
 }
 
 #[derive(Debug)]
