@@ -19,7 +19,7 @@ use crate::assets::pal;
 pub struct Sprite {
     pub indexed_sprites: Vec<Handle<Image>>,
     pub true_color_sprites: Vec<Handle<Image>>,
-    pub palette: Option<Handle<Image>>,
+    pub palette: Handle<Image>,
 }
 
 pub struct AssetLoader;
@@ -54,13 +54,8 @@ impl AssetLoader {
         let indexed_sprites = Self::load_indexed_sprites(load_context, &sprite.bitmap_images);
         let true_color_sprites =
             Self::load_true_color_sprites(load_context, &sprite.true_color_images);
-        let palette = if let Some(palette) = sprite.palette {
-            let handle = load_context
-                .add_labeled_asset("Palette".to_owned(), pal::palette_to_image(&palette));
-            Some(handle)
-        } else {
-            None
-        };
+        let palette = load_context
+            .add_labeled_asset("Palette".to_owned(), pal::palette_to_image(&sprite.palette));
 
         Sprite {
             indexed_sprites,
