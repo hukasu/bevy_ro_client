@@ -7,6 +7,7 @@ pub enum Error {
     WrongSignature,
     UnsupportedVersion(Version),
     RLE,
+    BrokenPalette,
     IncompleteRead(usize),
     Io(std::io::Error),
 }
@@ -27,6 +28,7 @@ impl Display for Error {
             Self::RLE => {
                 "Size of image after RLE decompression does not match image dimensions".to_owned()
             }
+            Self::BrokenPalette => "Spr has missing or broken palette.".to_owned(),
             Self::IncompleteRead(len) => {
                 format!(
                     "Spr finished loading but there was still {} bytes on the buffer.",

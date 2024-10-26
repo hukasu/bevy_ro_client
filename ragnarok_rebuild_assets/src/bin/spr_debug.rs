@@ -39,51 +39,46 @@ fn debug_spr(spr: &Spr) -> Option<String> {
     let header = || format!("\t{:?}\n", spr.version);
     let mut debug = None;
 
-    if let Some(palette) = &spr.palette {
-        let magenta = magenta_palette(palette).collect::<Vec<_>>();
-        if !magenta.is_empty()
-            && spr
-                .bitmap_images
-                .iter()
-                .any(|sprite| sprite.indexes.iter().any(|index| magenta.contains(index)))
-        {
-            let debug_ref = debug.get_or_insert_with(header);
-            writeln!(debug_ref, "\t\tuses magenta.").unwrap();
-        }
-
-        let non_zero_transparency = non_zero_transparency_palette(palette).collect::<Vec<_>>();
-        if !non_zero_transparency.is_empty()
-            && spr.bitmap_images.iter().any(|sprite| {
-                sprite
-                    .indexes
-                    .iter()
-                    .any(|index| non_zero_transparency.contains(index))
-            })
-        {
-            let debug_ref = debug.get_or_insert_with(header);
-            writeln!(debug_ref, "\t\tuses transparency.").unwrap();
-        }
-
-        let close_to_key = close_to_key_palette(palette).collect::<Vec<_>>();
-        if !close_to_key.is_empty()
-            && spr.bitmap_images.iter().any(|sprite| {
-                sprite
-                    .indexes
-                    .iter()
-                    .any(|index| close_to_key.contains(index))
-            })
-        {
-            let debug_ref = debug.get_or_insert_with(header);
-            writeln!(debug_ref, "\t\tuses colors close to key.").unwrap();
-        }
-
-        if let Some(spr_debug) = debug_palette(palette) {
-            let debug_ref = debug.get_or_insert_with(header);
-            write!(debug_ref, "{}", spr_debug).unwrap();
-        }
-    } else {
+    let magenta = magenta_palette(&spr.palette).collect::<Vec<_>>();
+    if !magenta.is_empty()
+        && spr
+            .bitmap_images
+            .iter()
+            .any(|sprite| sprite.indexes.iter().any(|index| magenta.contains(index)))
+    {
         let debug_ref = debug.get_or_insert_with(header);
-        writeln!(debug_ref, "\t\thas no palette.").unwrap();
+        writeln!(debug_ref, "\t\tuses magenta.").unwrap();
+    }
+
+    let non_zero_transparency = non_zero_transparency_palette(&spr.palette).collect::<Vec<_>>();
+    if !non_zero_transparency.is_empty()
+        && spr.bitmap_images.iter().any(|sprite| {
+            sprite
+                .indexes
+                .iter()
+                .any(|index| non_zero_transparency.contains(index))
+        })
+    {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\tuses transparency.").unwrap();
+    }
+
+    let close_to_key = close_to_key_palette(&spr.palette).collect::<Vec<_>>();
+    if !close_to_key.is_empty()
+        && spr.bitmap_images.iter().any(|sprite| {
+            sprite
+                .indexes
+                .iter()
+                .any(|index| close_to_key.contains(index))
+        })
+    {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\t\tuses colors close to key.").unwrap();
+    }
+
+    if let Some(spr_debug) = debug_palette(&spr.palette) {
+        let debug_ref = debug.get_or_insert_with(header);
+        write!(debug_ref, "{}", spr_debug).unwrap();
     }
 
     debug
