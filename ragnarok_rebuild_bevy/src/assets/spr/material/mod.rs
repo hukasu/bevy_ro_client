@@ -7,9 +7,8 @@ use bevy::{
     render::render_resource::{AsBindGroup, ShaderType},
 };
 
-const SPR_SHADER_HANDLE: Handle<Shader> = Handle::weak_from_u128(u128::from_le_bytes([
-    0x0e, 0xd8, 0xf3, 0xb1, 0x37, 0xfa, 0x41, 0xad, 0x96, 0x52, 0xe2, 0xd3, 0x2b, 0x3e, 0xee, 0xd5,
-]));
+pub const SPR_SHADER_HANDLE: Handle<Shader> =
+    Handle::weak_from_u128(0x0ed8f3b137fa41ad9652e2d32b3eeed5);
 
 pub struct Plugin;
 
