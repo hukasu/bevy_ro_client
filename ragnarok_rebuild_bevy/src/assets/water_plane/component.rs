@@ -5,7 +5,7 @@ use bevy::{
     time::Timer,
 };
 
-use crate::materials::WaterPlaneMaterial;
+use super::WaterPlaneMaterial;
 
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]

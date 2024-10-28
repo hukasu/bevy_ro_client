@@ -1,4 +1,5 @@
 mod component;
+mod material;
 
 use bevy::{
     app::{App, Plugin as BevyPlugin, Update},
@@ -6,7 +7,7 @@ use bevy::{
     time::Time,
 };
 
-pub use component::WaterPlane;
+pub use self::{component::WaterPlane, material::WaterPlaneMaterial};
 
 pub struct Plugin;
 
@@ -16,7 +17,9 @@ impl BevyPlugin for Plugin {
             // Register Types
             .register_type::<WaterPlane>()
             // Systems
-            .add_systems(Update, update_texture);
+            .add_systems(Update, update_texture)
+            // Material
+            .add_plugins(material::Plugin);
     }
 }
 

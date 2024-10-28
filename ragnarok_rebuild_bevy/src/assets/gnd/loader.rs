@@ -26,7 +26,6 @@ use serde::{Deserialize, Serialize};
 use crate::{
     assets::{paths, water_plane},
     helper,
-    materials::WaterPlaneMaterial,
 };
 
 use super::{components::Ground, material::GndMaterial, GroundScale};
@@ -377,7 +376,7 @@ impl AssetLoader {
             format!("{}Mesh", name),
             Self::water_plane_mesh(gnd, water_plane),
         );
-        let material: [Handle<WaterPlaneMaterial>; 32] = std::array::from_fn(|i| {
+        let material: [Handle<water_plane::WaterPlaneMaterial>; 32] = std::array::from_fn(|i| {
             Self::water_plane_material(load_context, name, i, water_plane.water_type)
         });
 
@@ -540,7 +539,7 @@ impl AssetLoader {
         name: &str,
         frame: usize,
         water_type: i32,
-    ) -> Handle<WaterPlaneMaterial> {
+    ) -> Handle<water_plane::WaterPlaneMaterial> {
         load_context.labeled_asset_scope(
             format!("{}Material/Frame{}", name, frame),
             |load_context| {
@@ -563,7 +562,7 @@ impl AssetLoader {
                         water_type,
                         frame
                     ));
-                WaterPlaneMaterial { texture: image }
+                water_plane::WaterPlaneMaterial { texture: image }
             },
         )
     }
