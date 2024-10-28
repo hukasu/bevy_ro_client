@@ -11,7 +11,9 @@ use bevy::{
 use ragnarok_rebuild_assets::act;
 use serde::{Deserialize, Serialize};
 
-use crate::assets::{paths, spr};
+#[cfg(feature = "audio")]
+use crate::assets::paths;
+use crate::assets::spr;
 
 use super::{
     assets::AnimationLayerSprite, Animation, AnimationClip, AnimationEvent, AnimationFrame,
@@ -116,9 +118,12 @@ impl AssetLoader {
                                 "atk" => {
                                     Some(AnimationEvent::Attack)
                                 }
+                                #[cfg(feature = "audio")]
                                 sound => {
                                     Some(AnimationEvent::Sound(load_context.load(format!("{}{}", paths::WAV_FILES_FOLDER, sound))))
                                 }
+                                #[cfg(not(feature = "audio"))]
+                                _ => None,
                             }
                         }
                         None => {

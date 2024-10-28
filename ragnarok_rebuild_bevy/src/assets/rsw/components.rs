@@ -1,10 +1,8 @@
+#[cfg(feature = "audio")]
+use bevy::{asset::Handle, audio::AudioSource, time::Timer, transform::components::Transform};
 use bevy::{
-    asset::Handle,
-    audio::AudioSource,
     ecs::{component::Component, reflect::ReflectComponent},
-    prelude::Transform,
     reflect::Reflect,
-    time::Timer,
 };
 
 #[derive(Debug, Component, Reflect)]
@@ -38,6 +36,7 @@ pub struct EnvironmentalLight {
     pub range: f32,
 }
 
+#[cfg(feature = "audio")]
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
 /// Environmental sound that plays in the [`World`]

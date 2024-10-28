@@ -1,6 +1,7 @@
+#[cfg(feature = "audio")]
+use bevy::audio::AudioSource;
 use bevy::{
     asset::{Asset, Handle},
-    audio::AudioSource,
     color::Color,
     math::{IVec2, Vec2},
     prelude::Image,
@@ -50,5 +51,6 @@ pub enum AnimationLayerSprite {
 #[derive(Debug)]
 pub enum AnimationEvent {
     Attack,
+    #[cfg(feature = "audio")]
     Sound(Handle<AudioSource>),
 }

@@ -21,10 +21,10 @@ pub use ragnarok_rebuild_assets::rsw::Error;
 
 use crate::assets::{paths, rsm};
 
+#[cfg(feature = "audio")]
+pub use self::components::EnvironmentalSound;
 pub use self::{
-    components::{
-        AnimatedProp, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
-    },
+    components::{AnimatedProp, EnvironmentalEffect, EnvironmentalLight, World},
     events::{LoadWorld, WorldLoaded},
     quad_tree::{QuadTree, QuadTreeIndex, QuadTreeIter},
 };
@@ -42,7 +42,6 @@ impl bevy::app::Plugin for Plugin {
             .register_type::<components::DiffuseLight>()
             .register_type::<components::AnimatedProp>()
             .register_type::<components::EnvironmentalLight>()
-            .register_type::<components::EnvironmentalSound>()
             .register_type::<components::EnvironmentalEffect>()
             // Register AssetLoader
             .register_asset_loader(AssetLoader)
@@ -58,7 +57,8 @@ impl bevy::app::Plugin for Plugin {
         app.add_plugins(debug::Plugin);
 
         #[cfg(feature = "audio")]
-        app.add_systems(Update, play_environmental_audio);
+        app.add_systems(Update, play_environmental_audio)
+            .register_type::<components::EnvironmentalSound>();
     }
 }
 

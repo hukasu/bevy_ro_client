@@ -21,7 +21,7 @@ with-inspector = [
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
 
-bevy = { workspace = true }
+bevy = { workspace = true, default-features = false }
 bevy-inspector-egui = { workspace = true, optional = true }
 bevy_flycam = { workspace = true, optional = true }
 iyes_perf_ui = { workspace = true, optional = true }

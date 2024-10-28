@@ -8,8 +8,8 @@ publish = false
 
 [features]
 default = ["audio"]
-audio = []
-debug = []
+audio = ["bevy/bevy_audio"]
+debug = ["bevy/bevy_gizmos"]
 
 [lints]
 workspace = true
@@ -18,7 +18,20 @@ workspace = true
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_assets = { path = "../ragnarok_rebuild_assets" }
 
-bevy = { workspace = true }
+bevy = { workspace = true, features = [
+    "bevy_animation",
+    "bevy_asset",
+    "bevy_pbr",
+    "bevy_render",
+    "bevy_scene",
+    "bevy_sprite",
+    "jpeg",
+    "bmp",
+    "tga",
+    "wav",
+    "mp3",
+    "tonemapping_luts",
+] }
 futures = { workspace = true }
 
 tungstenite = { workspace = true }
@@ -40,6 +53,7 @@ criterion = { workspace = true }
 [[bench]]
 name = "load_map_from_cold_start"
 harness = false
+required-features = ["assets"]
 
 [[bench]]
 name = "create_render_device"

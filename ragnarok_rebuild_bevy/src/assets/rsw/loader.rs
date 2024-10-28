@@ -1,8 +1,10 @@
+#[cfg(feature = "audio")]
 use std::time::Duration;
 
+#[cfg(feature = "audio")]
+use bevy::{asset::Handle, audio::AudioSource, time::Timer};
 use bevy::{
-    asset::{io::Reader, AsyncReadExt, Handle, LoadContext},
-    audio::AudioSource,
+    asset::{io::Reader, AsyncReadExt, LoadContext},
     color::{Color, Luminance},
     core::Name,
     hierarchy::BuildWorldChildren,
@@ -11,17 +13,18 @@ use bevy::{
     prelude::{Entity, SpatialBundle, TransformBundle},
     render::primitives::Aabb,
     scene::{Scene, SceneBundle},
-    time::Timer,
     transform::components::Transform,
 };
+
 use ragnarok_rebuild_assets::rsw;
 
-use crate::assets::{
-    gnd, paths,
-    rsw::{
-        components::{AnimatedProp, DiffuseLight, EnvironmentalLight, EnvironmentalSound, World},
-        EnvironmentalEffect,
-    },
+use crate::assets::{gnd, paths};
+
+#[cfg(feature = "audio")]
+use super::components::EnvironmentalSound;
+use super::{
+    components::{AnimatedProp, DiffuseLight, EnvironmentalLight, World},
+    EnvironmentalEffect,
 };
 
 pub struct AssetLoader;
@@ -66,6 +69,7 @@ impl AssetLoader {
         let tiles = Self::spawn_tiles(rsw, &mut world, load_context);
         let animated_props = Self::spawn_animated_props(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
+        #[cfg(feature = "audio")]
         let environmental_sounds = Self::spawn_environmental_sounds(rsw, &mut world, load_context);
         let environmental_effects =
             Self::spawn_environmental_effects(rsw, &mut world, load_context);
@@ -92,6 +96,7 @@ impl AssetLoader {
                 tiles,
                 animated_props,
                 environmental_lights,
+                #[cfg(feature = "audio")]
                 environmental_sounds,
                 environmental_effects,
             ]);
@@ -283,6 +288,7 @@ impl AssetLoader {
             .id()
     }
 
+    #[cfg(feature = "audio")]
     fn spawn_environmental_sounds(
         rsw: &rsw::Rsw,
         world: &mut bevy::ecs::world::World,

@@ -5,6 +5,8 @@ mod loader;
 
 use std::time::Duration;
 
+#[cfg(feature = "audio")]
+use bevy::hierarchy::Parent;
 use bevy::{
     app::{FixedUpdate, Update},
     asset::{AssetApp, AssetServer, Assets, Handle, LoadState},
@@ -12,13 +14,15 @@ use bevy::{
     math::{Quat, Vec2, Vec3},
     prelude::{
         BuildChildren, Camera3d, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter,
-        IntoSystemConfigs, Mesh, Parent, Plane3d, Query, Res, SpatialBundle, Transform, Trigger,
-        With, Without,
+        IntoSystemConfigs, Mesh, Plane3d, Query, Res, SpatialBundle, Transform, Trigger, With,
+        Without,
     },
     time::{Time, Timer},
 };
 
-use crate::{assets::paths, audio::PlaySound, resources::WorldTransform};
+#[cfg(feature = "audio")]
+use crate::audio::PlaySound;
+use crate::{assets::paths, resources::WorldTransform};
 
 pub use self::{
     assets::Animation,
@@ -208,12 +212,13 @@ fn actor_look_at_camera(
 fn swap_animations(
     mut commands: Commands,
     mut event_reader: EventReader<ActorTimerTick>,
-    actors: Query<(&Actor, &Parent), Without<LoadingActor>>,
-    transforms: Query<&Transform>,
+    actors: Query<&Actor, Without<LoadingActor>>,
+    #[cfg(feature = "audio")] parents: Query<&Parent, Without<LoadingActor>>,
+    #[cfg(feature = "audio")] transforms: Query<&Transform>,
     animations: Res<Assets<Animation>>,
 ) {
     for actor_id in event_reader.read() {
-        let Ok((actor, actor_parent)) = actors.get(actor_id.entity) else {
+        let Ok(actor) = actors.get(actor_id.entity) else {
             bevy::log::error!("An event to swap Actor's sprites had an inexistent Entity.");
             continue;
         };
@@ -251,25 +256,31 @@ fn swap_animations(
             }
         });
 
-        let Ok(actor_transform) = transforms.get(actor_parent.get()) else {
-            return;
-        };
-        if let Some(AnimationEvent::Sound(sound)) = &frame.event {
-            let sound_path = sound
-                .path()
-                .map(|path| {
-                    path.to_string()
-                        .trim_start_matches(paths::WAV_FILES_FOLDER)
-                        .to_owned()
-                })
-                .unwrap_or("sound".to_owned());
-            commands.trigger(PlaySound {
-                name: sound_path,
-                track: sound.clone(),
-                position: *actor_transform,
-                volume: 1.,
-                range: 50.,
-            });
+        #[cfg(feature = "audio")]
+        {
+            let Ok(actor_parent) = parents.get(actor_id.entity) else {
+                return;
+            };
+            let Ok(actor_transform) = transforms.get(actor_parent.get()) else {
+                return;
+            };
+            if let Some(AnimationEvent::Sound(sound)) = &frame.event {
+                let sound_path = sound
+                    .path()
+                    .map(|path| {
+                        path.to_string()
+                            .trim_start_matches(paths::WAV_FILES_FOLDER)
+                            .to_owned()
+                    })
+                    .unwrap_or("sound".to_owned());
+                commands.trigger(PlaySound {
+                    name: sound_path,
+                    track: sound.clone(),
+                    position: *actor_transform,
+                    volume: 1.,
+                    range: 50.,
+                });
+            }
         }
     }
 }

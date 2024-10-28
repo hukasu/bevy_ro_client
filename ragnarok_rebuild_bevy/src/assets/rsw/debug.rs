@@ -38,7 +38,6 @@ impl bevy::app::Plugin for Plugin {
                 (
                     directional_light_debug.run_if(directional_light_debug_condition),
                     point_light_debug.run_if(point_light_debug_condition),
-                    sound_debug.run_if(sound_debug_condition),
                     effect_debug.run_if(effect_debug_condition),
                 ),
             )
@@ -48,6 +47,9 @@ impl bevy::app::Plugin for Plugin {
                     .run_if(show_rsw_aabb_condition)
                     .after(VisibilitySystems::CheckVisibility),
             );
+
+        #[cfg(feature = "audio")]
+        app.add_systems(Update, sound_debug.run_if(sound_debug_condition));
     }
 }
 
@@ -196,10 +198,12 @@ fn point_light_debug(
     }
 }
 
+#[cfg(feature = "audio")]
 fn sound_debug_condition(rsw_debug: Res<RswDebug>) -> bool {
     rsw_debug.show_sounds
 }
 
+#[cfg(feature = "audio")]
 fn sound_debug(
     mut gizmos: Gizmos,
     worlds: Query<(Entity, &rsw::World)>,
