@@ -26,10 +26,10 @@ use serde::{Deserialize, Serialize};
 use crate::{
     assets::{paths, water_plane},
     helper,
-    materials::{GndMaterial, WaterPlaneMaterial},
+    materials::WaterPlaneMaterial,
 };
 
-use super::{components::Ground, GroundScale};
+use super::{components::Ground, material::GndMaterial, GroundScale};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct AssetLoaderSettings {

@@ -1,5 +1,6 @@
 mod components;
 mod loader;
+mod material;
 mod resources;
 
 use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
@@ -21,6 +22,8 @@ impl BevyPlugin for Plugin {
             // Resources
             .init_resource::<GroundScale>()
             // Asset Loader
-            .register_asset_loader(AssetLoader);
+            .register_asset_loader(AssetLoader)
+            // Material
+            .add_plugins(material::Plugin);
     }
 }
