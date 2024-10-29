@@ -12,7 +12,6 @@ use bevy::{
         RenderPlugin,
     },
     window::WindowPlugin,
-    winit::WinitPlugin,
     DefaultPlugins,
 };
 use futures::executor::block_on;
@@ -94,8 +93,7 @@ fn start_app_and_load_map(map: &str, render_creation: RenderCreation) {
                     primary_window: None,
                     exit_condition: bevy::window::ExitCondition::DontExit,
                     close_when_requested: true,
-                })
-                .disable::<WinitPlugin>(),
+                }),
             ScheduleRunnerPlugin::default(),
         ))
         .add_plugins(RagnarokPlugin)

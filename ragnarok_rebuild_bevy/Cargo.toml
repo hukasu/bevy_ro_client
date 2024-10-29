@@ -53,7 +53,6 @@ criterion = { workspace = true }
 [[bench]]
 name = "load_map_from_cold_start"
 harness = false
-required-features = ["assets"]
 
 [[bench]]
 name = "create_render_device"
