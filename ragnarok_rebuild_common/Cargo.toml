@@ -9,7 +9,7 @@ edition = "2021"
 workspace = true
 
 [dependencies]
-log = "0.4.20"
+log = { workspace = true }
 
 tungstenite = { workspace = true }
 url = { workspace = true }
