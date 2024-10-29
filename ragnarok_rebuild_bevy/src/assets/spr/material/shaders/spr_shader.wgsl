@@ -82,7 +82,7 @@ fn fragment(
     let index_texture_coords = vec2<u32>(vec2<f32>(index_texture_dimensions) * in.uv);
     let index = textureLoad(spr_texture, index_texture_coords, 0).x;
 
-    pbr_input.material.base_color = textureLoad(spr_palette, index, 0) * spr_uniform.tint;
+    pbr_input.material.base_color = textureLoad(spr_palette, index, 0);
 
     if index == 0 {
         pbr_input.material.base_color.a = 0.;
@@ -90,9 +90,10 @@ fn fragment(
         pbr_input.material.base_color.a = 1.;
     }
 #else ifdef SPR_TRUE_COLOR_PIPELINE
-    pbr_input.material.base_color = textureSample(spr_texture, spr_sampler, in.uv) * spr_uniform.tint;
+    pbr_input.material.base_color = textureSample(spr_texture, spr_sampler, in.uv);
 #endif
 
+    pbr_input.material.base_color = pbr_input.material.base_color * spr_uniform.tint;
     if pbr_input.material.base_color.a <= 0. {
         discard;
     }
