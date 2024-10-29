@@ -2,6 +2,7 @@ mod assets;
 mod components;
 #[cfg(feature = "debug")]
 mod debug;
+mod ext;
 mod loader;
 mod resources;
 
@@ -16,11 +17,13 @@ use bevy::{
         system::{Query, Res, ResMut},
     },
     math::{bounding::Aabb3d, Quat, Vec3},
+    prelude::Triangle3d,
     render::primitives::Aabb,
 };
 
 use crate::{assets::rsw, helper::AabbExt, WorldTransform};
 
+use self::ext::RaycastExt;
 pub use self::resources::TileRayCast;
 
 pub struct Plugin;
@@ -94,18 +97,18 @@ fn mouse_intersect_gat(
                         let x = tile_ref.x as f32 - (tiles.width / 2) as f32;
                         let z = tile_ref.z as f32 - (tiles.height / 2) as f32;
                         let Some(tile_aabb) = Aabb::enclosing([
-                            Vec3::new(x, tile_ref.tile.bottom_left * world_transform.scale.y, z),
+                            Vec3::new(
+                                x,
+                                tile_ref.tile.bottom_left * world_transform.scale.y,
+                                z + 1.,
+                            ),
                             Vec3::new(
                                 x + 1.,
                                 tile_ref.tile.bottom_right * world_transform.scale.y,
-                                z,
-                            ),
-                            Vec3::new(x, tile_ref.tile.top_left * world_transform.scale.y, z + 1.),
-                            Vec3::new(
-                                x + 1.,
-                                tile_ref.tile.top_right * world_transform.scale.y,
                                 z + 1.,
                             ),
+                            Vec3::new(x, tile_ref.tile.top_left * world_transform.scale.y, z),
+                            Vec3::new(x + 1., tile_ref.tile.top_right * world_transform.scale.y, z),
                         ]) else {
                             unreachable!("Aabb is created from enclosing point.")
                         };
@@ -119,6 +122,67 @@ fn mouse_intersect_gat(
                         ray_cast
                             .aabb_intersection_at(&aabb)
                             .map(|distance| (tile_ref, aabb, distance))
+                    })
+                    .filter(|(tile_ref, _, _)| {
+                        let x = tile_ref.x as f32 - (tiles.width / 2) as f32;
+                        let z = tile_ref.z as f32 - (tiles.height / 2) as f32;
+                        ray_cast
+                            .intersect_triangle(
+                                Triangle3d::new(
+                                    world_transform.with_scale(Vec3::splat(1.)).transform_point(
+                                        Vec3::new(
+                                            x,
+                                            tile_ref.tile.bottom_left * world_transform.scale.y,
+                                            z + 1.,
+                                        ),
+                                    ),
+                                    world_transform.with_scale(Vec3::splat(1.)).transform_point(
+                                        Vec3::new(
+                                            x,
+                                            tile_ref.tile.top_left * world_transform.scale.y,
+                                            z,
+                                        ),
+                                    ),
+                                    world_transform.with_scale(Vec3::splat(1.)).transform_point(
+                                        Vec3::new(
+                                            x + 1.,
+                                            tile_ref.tile.bottom_right * world_transform.scale.y,
+                                            z + 1.,
+                                        ),
+                                    ),
+                                )
+                                .reversed(),
+                            )
+                            .is_some()
+                            || ray_cast
+                                .intersect_triangle(
+                                    Triangle3d::new(
+                                        world_transform
+                                            .with_scale(Vec3::splat(1.))
+                                            .transform_point(Vec3::new(
+                                                x + 1.,
+                                                tile_ref.tile.bottom_right
+                                                    * world_transform.scale.y,
+                                                z + 1.,
+                                            )),
+                                        world_transform
+                                            .with_scale(Vec3::splat(1.))
+                                            .transform_point(Vec3::new(
+                                                x,
+                                                tile_ref.tile.top_left * world_transform.scale.y,
+                                                z,
+                                            )),
+                                        world_transform
+                                            .with_scale(Vec3::splat(1.))
+                                            .transform_point(Vec3::new(
+                                                x + 1.,
+                                                tile_ref.tile.top_right * world_transform.scale.y,
+                                                z,
+                                            )),
+                                    )
+                                    .reversed(),
+                                )
+                                .is_some()
                     })
                     .min_by(|(_, _, a), (_, _, b)| a.total_cmp(b));
 
