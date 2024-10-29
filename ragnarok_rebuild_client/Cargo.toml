@@ -15,6 +15,7 @@ with-inspector = [
     "iyes_perf_ui",
     "ragnarok_rebuild_bevy/debug",
     "ab_glyph",
+    "bevy/default_font",
 ]
 
 [dependencies]
