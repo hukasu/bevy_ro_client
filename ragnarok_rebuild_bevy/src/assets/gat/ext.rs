@@ -23,7 +23,7 @@ impl RaycastExt for RayCast3d {
         let inv_det = 1.0 / det;
         let s = self.origin - Vec3A::from(triangle.vertices[0]);
         let u = inv_det * s.dot(ray_cross_e2);
-        if u < 0.0 || u > 1.0 {
+        if !(0.0..=1.0).contains(&u) {
             return None;
         }
 
@@ -38,10 +38,10 @@ impl RaycastExt for RayCast3d {
         if t > f32::EPSILON {
             // ray intersection
             let intersection_point = self.origin + self.direction * t;
-            return Some(intersection_point);
+            Some(intersection_point)
         } else {
             // This means that there is a line intersection but not a ray intersection.
-            return None;
+            None
         }
     }
 }
