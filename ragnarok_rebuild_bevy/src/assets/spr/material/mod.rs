@@ -1,6 +1,7 @@
 use bevy::{
     asset::{load_internal_asset, Asset, AssetApp, Handle},
     color::LinearRgba,
+    math::Mat4,
     pbr::{Material, MaterialPlugin},
     prelude::{Image, Shader},
     reflect::Reflect,
@@ -36,6 +37,7 @@ impl bevy::app::Plugin for Plugin {
 
 #[derive(Debug, Clone, Reflect, ShaderType)]
 pub struct SprUniform {
+    pub transform: Mat4,
     pub uv_flip: u32,
     pub tint: LinearRgba,
 }

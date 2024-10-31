@@ -3,7 +3,8 @@ use std::fmt::Display;
 use bevy::{
     asset::{io::Reader, AsyncReadExt, LoadContext},
     color::Color,
-    math::{IVec2, Vec2},
+    math::{IVec2, Quat, Vec2},
+    prelude::Transform,
     reflect::TypePath,
     utils::ConditionalSendFuture,
 };
@@ -173,33 +174,53 @@ impl AssetLoader {
                             settings.sprite, layer.spritesheet_cell_index
                         ));
                         let palette = load_context.load(&settings.palette);
-                        AnimationLayerSprite::Indexed(load_context.add_labeled_asset(
-                            format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
-                            spr::SprIndexedMaterial {
-                                uniform: spr::SprUniform {
-                                    uv_flip: if is_flipped { 1 } else { 0 },
-                                    tint: tint.into(),
+                        AnimationLayerSprite::Indexed(
+                            load_context.add_labeled_asset(
+                                format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
+                                spr::SprIndexedMaterial {
+                                    uniform: spr::SprUniform {
+                                        transform: Transform::from_xyz(
+                                            origin.x as f32,
+                                            origin.y as f32,
+                                            0.,
+                                        )
+                                        .with_rotation(Quat::from_rotation_z(rotation))
+                                        .with_scale(scale.extend(1.))
+                                        .compute_matrix(),
+                                        uv_flip: if is_flipped { 1 } else { 0 },
+                                        tint: tint.into(),
+                                    },
+                                    index_image,
+                                    palette,
                                 },
-                                index_image,
-                                palette,
-                            },
-                        ))
+                            ),
+                        )
                     }
                     1 => {
                         let color = load_context.load(format!(
                             "{}#TrueColorSprite{}",
                             settings.sprite, layer.spritesheet_cell_index
                         ));
-                        AnimationLayerSprite::TrueColor(load_context.add_labeled_asset(
-                            format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
-                            spr::SprTrueColorMaterial {
-                                uniform: spr::SprUniform {
-                                    uv_flip: if is_flipped { 1 } else { 0 },
-                                    tint: tint.into(),
+                        AnimationLayerSprite::TrueColor(
+                            load_context.add_labeled_asset(
+                                format!("Clip{}/Frame{}/Layer{}", clip_id, frame_id, i),
+                                spr::SprTrueColorMaterial {
+                                    uniform: spr::SprUniform {
+                                        transform: Transform::from_xyz(
+                                            origin.x as f32,
+                                            origin.y as f32,
+                                            0.,
+                                        )
+                                        .with_rotation(Quat::from_rotation_z(rotation))
+                                        .with_scale(scale.extend(1.))
+                                        .compute_matrix(),
+                                        uv_flip: if is_flipped { 1 } else { 0 },
+                                        tint: tint.into(),
+                                    },
+                                    color,
                                 },
-                                color,
-                            },
-                        ))
+                            ),
+                        )
                     }
                     _ => unreachable!(
                         "Act file should not be loaded if it has a value different from this"
