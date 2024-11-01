@@ -7,7 +7,10 @@ use bevy::{
     time::Time,
 };
 
-pub use self::{component::WaterPlane, material::WaterPlaneMaterial};
+pub use self::{
+    component::WaterPlane,
+    material::{WaterPlaneMaterial, Wave},
+};
 
 pub struct Plugin;
 

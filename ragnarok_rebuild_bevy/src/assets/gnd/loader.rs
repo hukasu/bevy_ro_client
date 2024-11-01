@@ -377,7 +377,7 @@ impl AssetLoader {
             Self::water_plane_mesh(gnd, water_plane),
         );
         let material: [Handle<water_plane::WaterPlaneMaterial>; 32] = std::array::from_fn(|i| {
-            Self::water_plane_material(load_context, name, i, water_plane.water_type)
+            Self::water_plane_material(load_context, water_plane, name, i, water_plane.water_type)
         });
 
         world
@@ -536,6 +536,7 @@ impl AssetLoader {
     #[must_use]
     fn water_plane_material(
         load_context: &mut LoadContext,
+        water_plane: &common::WaterPlane,
         name: &str,
         frame: usize,
         water_type: i32,
@@ -547,7 +548,7 @@ impl AssetLoader {
                     .loader()
                     .with_settings(|m: &mut ImageLoaderSettings| {
                         m.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                            label: Some("WaterSample".to_owned()),
+                            label: Some("WaterSampler".to_owned()),
                             address_mode_u: ImageAddressMode::Repeat,
                             address_mode_v: ImageAddressMode::Repeat,
                             address_mode_w: ImageAddressMode::Repeat,
@@ -562,7 +563,14 @@ impl AssetLoader {
                         water_type,
                         frame
                     ));
-                water_plane::WaterPlaneMaterial { texture: image }
+                water_plane::WaterPlaneMaterial {
+                    texture: image,
+                    wave: water_plane::Wave {
+                        wave_height: water_plane.wave_height,
+                        wave_speed: water_plane.wave_speed,
+                        wave_pitch: water_plane.wave_pitch.to_radians(),
+                    },
+                }
             },
         )
     }

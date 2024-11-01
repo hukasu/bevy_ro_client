@@ -3,7 +3,7 @@ use bevy::{
     pbr::{Material, MaterialPlugin},
     prelude::{AlphaMode, Image, Shader},
     reflect::Reflect,
-    render::render_resource::AsBindGroup,
+    render::render_resource::{AsBindGroup, ShaderType},
 };
 
 const WATER_PLANE_SHADER_HANDLE: Handle<Shader> =
@@ -30,11 +30,13 @@ impl bevy::app::Plugin for Plugin {
     }
 }
 
-#[derive(Clone, Asset, Reflect, AsBindGroup)]
+#[derive(Debug, Clone, Asset, Reflect, AsBindGroup)]
 pub struct WaterPlaneMaterial {
     #[texture(0)]
     #[sampler(1)]
     pub texture: Handle<Image>,
+    #[uniform(2)]
+    pub wave: Wave,
 }
 
 impl Material for WaterPlaneMaterial {
@@ -57,4 +59,11 @@ impl Material for WaterPlaneMaterial {
     fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
         WATER_PLANE_SHADER_HANDLE.into()
     }
+}
+
+#[derive(Debug, Clone, Reflect, ShaderType)]
+pub struct Wave {
+    pub wave_height: f32,
+    pub wave_speed: f32,
+    pub wave_pitch: f32,
 }

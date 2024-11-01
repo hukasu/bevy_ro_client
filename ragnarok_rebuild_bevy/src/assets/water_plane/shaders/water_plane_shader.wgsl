@@ -4,6 +4,7 @@
     pbr_functions::alpha_discard,
     pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND},
     view_transformations::position_world_to_clip,
+    mesh_view_bindings::globals,
 }
 
 #ifdef PREPASS_PIPELINE
@@ -18,8 +19,15 @@
 }
 #endif
 
+struct Wave {
+    wave_height: f32,
+    wave_speed: f32,
+    wave_pitch: f32,
+}
+
 @group(2) @binding(0) var water_texture: texture_2d<f32>;
 @group(2) @binding(1) var water_sample: sampler;
+@group(2) @binding(2) var<uniform> wave: Wave;
 
 fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
@@ -34,7 +42,12 @@ fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
 fn vertex(in: Vertex) -> VertexOutput {
     var vertex_output: VertexOutput;
     
-    var position = vec4(in.position, 1.);
+    var position = vec4(
+        in.position + vec3(
+            0.,
+            wave.wave_height * sin((in.position.x + in.position.z) * wave.wave_pitch + globals.time * wave.wave_speed),
+            0.),
+        1.);
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
