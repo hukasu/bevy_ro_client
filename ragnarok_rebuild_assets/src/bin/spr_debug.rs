@@ -139,7 +139,7 @@ fn magenta_palette(palette: &pal::Pal) -> impl Iterator<Item = u8> + '_ {
         .iter()
         .enumerate()
         .filter_map(|(i, color)| {
-            if color.red >= 0xfe && color.green < 0x04 && color.blue >= 0xfe && color.alpha > 0 {
+            if color.red == 0xff && color.green == 0x00 && color.blue == 0xff {
                 Some((i + 1) as u8)
             } else {
                 None
