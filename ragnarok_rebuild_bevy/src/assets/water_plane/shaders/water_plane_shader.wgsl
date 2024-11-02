@@ -79,7 +79,7 @@ fn fragment(
     var scaled_uv = in.uv * (64. / vec2<f32>(textureDimensions(water_texture)));
     pbr_input.material.base_color = textureSample(water_texture, water_sample, scaled_uv);
 #ifndef OPAQUE_WATER_PLANE
-    pbr_input.material.base_color.a = 0.5;
+    pbr_input.material.base_color.a = 144. / 255.;
 #endif
 
 #ifdef PREPASS_PIPELINE
