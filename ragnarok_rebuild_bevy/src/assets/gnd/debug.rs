@@ -1,5 +1,5 @@
 use bevy::{
-    app::{Plugin, PostUpdate},
+    app::PostUpdate,
     asset::{Assets, Handle},
     color::{self, Color, Srgba},
     math::Vec3,
@@ -18,9 +18,9 @@ use crate::assets::gnd;
 
 const NORMAL_GIZMOS_LENGHT: f32 = 0.5;
 
-pub struct GndDebugPlugin;
+pub struct Plugin;
 
-impl Plugin for GndDebugPlugin {
+impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             // Resources

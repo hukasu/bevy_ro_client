@@ -1,4 +1,6 @@
 mod components;
+#[cfg(feature = "debug")]
+mod debug;
 mod events;
 mod loader;
 mod materials;
@@ -28,6 +30,9 @@ impl BevyPlugin for Plugin {
 
         // Materials
         app.add_plugins(materials::Plugin);
+
+        #[cfg(feature = "debug")]
+        app.add_plugins(debug::Plugin);
     }
 }
 

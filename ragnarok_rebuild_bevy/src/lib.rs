@@ -1,8 +1,6 @@
 pub mod assets;
 #[cfg(feature = "audio")]
 pub mod audio;
-#[cfg(feature = "debug")]
-pub mod debug;
 pub mod helper;
 mod resources;
 pub mod tables;
@@ -20,9 +18,6 @@ impl Plugin for RagnarokPlugin {
 
         #[cfg(feature = "audio")]
         app.add_plugins(audio::AudioPlugin);
-
-        #[cfg(feature = "debug")]
-        app.add_plugins(debug::DebugPlugin);
 
         app.register_type::<WorldTransform>()
             .init_resource::<WorldTransform>();

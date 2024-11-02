@@ -1,5 +1,5 @@
 use bevy::{
-    app::{Plugin, PostUpdate},
+    app::PostUpdate,
     asset::{Assets, Handle},
     color::{self, Color},
     math::Vec3,
@@ -18,9 +18,9 @@ use crate::assets::rsm;
 
 const NORMAL_GIZMOS_LENGHT: f32 = 0.5;
 
-pub struct RsmDebugPlugin;
+pub struct Plugin;
 
-impl Plugin for RsmDebugPlugin {
+impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             // Resources
