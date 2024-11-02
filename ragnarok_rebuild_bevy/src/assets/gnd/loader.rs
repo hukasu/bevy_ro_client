@@ -450,7 +450,7 @@ impl AssetLoader {
             let vertex_z = (z as i32 - ((gnd.height / 2) as i32)) as f32 * gnd.scale;
             vertices.push(Vec3::new(vertex_x, water_plane.water_level, vertex_z));
             normals.push(Vec3::NEG_Y);
-            uvs.push(Vec2::new(x as f32, (gnd.height - z) as f32));
+            uvs.push(Vec2::new(x as f32, z as f32));
             vertices.len() as u16 - 1
         };
 
