@@ -42,13 +42,19 @@ fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
 fn vertex(in: Vertex) -> VertexOutput {
     var vertex_output: VertexOutput;
     
+    var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
+    var normalized_in = world_from_local * vec4(
+        in.position.x,
+        in.position.y,
+        in.position.z,
+        1.,
+    ) / 2.;
     var position = vec4(
         in.position + vec3(
             0.,
-            wave.wave_height * sin((in.position.x + in.position.z) * wave.wave_pitch + globals.time * wave.wave_speed),
+            wave.wave_height * sin((normalized_in.x - normalized_in.z) * wave.wave_pitch + globals.time * wave.wave_speed),
             0.),
         1.);
-    var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
     
@@ -68,11 +74,9 @@ fn fragment(
 ) -> FragmentOutput {
     var pbr_input = water_plane_default_material(in, is_front);
 
-    pbr_input.material.base_color = textureSample(water_texture, water_sample, in.uv);
+    var scaled_uv = in.uv * (64. / vec2<f32>(textureDimensions(water_texture)));
+    pbr_input.material.base_color = textureSample(water_texture, water_sample, scaled_uv);
     pbr_input.material.base_color.a = 0.5;
-
-    // alpha discard
-    pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
 
 #ifdef PREPASS_PIPELINE
     // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.
