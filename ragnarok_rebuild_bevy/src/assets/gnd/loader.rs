@@ -376,9 +376,8 @@ impl AssetLoader {
             format!("{}Mesh", name),
             Self::water_plane_mesh(gnd, water_plane),
         );
-        let material: [Handle<water_plane::WaterPlaneMaterial>; 32] = std::array::from_fn(|i| {
-            Self::water_plane_material(load_context, water_plane, name, i, water_plane.water_type)
-        });
+        let material: [Handle<water_plane::WaterPlaneMaterial>; 32] =
+            std::array::from_fn(|i| Self::water_plane_material(load_context, water_plane, name, i));
 
         world
             .spawn((
@@ -539,7 +538,6 @@ impl AssetLoader {
         water_plane: &common::WaterPlane,
         name: &str,
         frame: usize,
-        water_type: i32,
     ) -> Handle<water_plane::WaterPlaneMaterial> {
         load_context.labeled_asset_scope(
             format!("{}Material/Frame{}", name, frame),
@@ -560,7 +558,7 @@ impl AssetLoader {
                     .load(format!(
                         "{}water{}{:02}.jpg",
                         paths::WATER_TEXTURE_FILES_FOLDER,
-                        water_type,
+                        water_plane.water_type,
                         frame
                     ));
                 water_plane::WaterPlaneMaterial {
@@ -570,6 +568,7 @@ impl AssetLoader {
                         wave_speed: water_plane.wave_speed,
                         wave_pitch: water_plane.wave_pitch.to_radians(),
                     },
+                    opaque: water_plane.water_type == 4 || water_plane.water_type == 6,
                 }
             },
         )

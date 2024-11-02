@@ -33,7 +33,9 @@ fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
 
     pbr_input.material.reflectance = 0.0;
+#ifndef OPAQUE_WATER_PLANE
     pbr_input.material.flags = STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND;
+#endif
 
     return pbr_input;
 }
@@ -76,7 +78,9 @@ fn fragment(
 
     var scaled_uv = in.uv * (64. / vec2<f32>(textureDimensions(water_texture)));
     pbr_input.material.base_color = textureSample(water_texture, water_sample, scaled_uv);
+#ifndef OPAQUE_WATER_PLANE
     pbr_input.material.base_color.a = 0.5;
+#endif
 
 #ifdef PREPASS_PIPELINE
     // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.

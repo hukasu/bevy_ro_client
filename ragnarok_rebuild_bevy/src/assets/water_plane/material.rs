@@ -31,17 +31,23 @@ impl bevy::app::Plugin for Plugin {
 }
 
 #[derive(Debug, Clone, Asset, Reflect, AsBindGroup)]
+#[bind_group_data(WaterPlaneMaterialKey)]
 pub struct WaterPlaneMaterial {
     #[texture(0)]
     #[sampler(1)]
     pub texture: Handle<Image>,
     #[uniform(2)]
     pub wave: Wave,
+    pub opaque: bool,
 }
 
 impl Material for WaterPlaneMaterial {
     fn alpha_mode(&self) -> AlphaMode {
-        AlphaMode::Blend
+        if self.opaque {
+            AlphaMode::Opaque
+        } else {
+            AlphaMode::Blend
+        }
     }
 
     fn vertex_shader() -> bevy::render::render_resource::ShaderRef {
@@ -59,6 +65,23 @@ impl Material for WaterPlaneMaterial {
     fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
         WATER_PLANE_SHADER_HANDLE.into()
     }
+
+    fn specialize(
+        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
+        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
+        _layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
+        _key: bevy::pbr::MaterialPipelineKey<Self>,
+    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        if let Some(frag_descriptor) = &mut descriptor.fragment {
+            if _key.bind_group_data.opaque {
+                frag_descriptor
+                    .shader_defs
+                    .push("OPAQUE_WATER_PLANE".into());
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Reflect, ShaderType)]
@@ -66,4 +89,17 @@ pub struct Wave {
     pub wave_height: f32,
     pub wave_speed: f32,
     pub wave_pitch: f32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct WaterPlaneMaterialKey {
+    opaque: bool,
+}
+
+impl From<&WaterPlaneMaterial> for WaterPlaneMaterialKey {
+    fn from(value: &WaterPlaneMaterial) -> Self {
+        Self {
+            opaque: value.opaque,
+        }
+    }
 }
