@@ -468,7 +468,8 @@ impl AssetLoader {
                         cube.bottom_right_height,
                     ]
                     .iter()
-                    .any(|height| height >= &water_plane.water_level)
+                    // Ragnarok's weird coordinate system caused this
+                    .any(|height| height >= &(water_plane.water_level - water_plane.wave_height))
             })
         {
             let x = i as u32 % gnd.width;
