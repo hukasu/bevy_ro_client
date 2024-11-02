@@ -212,13 +212,13 @@ fn actor_look_at_camera(
 fn swap_animations(
     mut commands: Commands,
     mut event_reader: EventReader<ActorTimerTick>,
-    actors: Query<&Actor, Without<LoadingActor>>,
+    mut actors: Query<&mut Actor, Without<LoadingActor>>,
     #[cfg(feature = "audio")] parents: Query<&Parent, Without<LoadingActor>>,
     #[cfg(feature = "audio")] transforms: Query<&Transform>,
     animations: Res<Assets<Animation>>,
 ) {
     for actor_id in event_reader.read() {
-        let Ok(actor) = actors.get(actor_id.entity) else {
+        let Ok(mut actor) = actors.get_mut(actor_id.entity) else {
             bevy::log::error!("An event to swap Actor's sprites had an inexistent Entity.");
             continue;
         };
@@ -244,6 +244,10 @@ fn swap_animations(
                     .insert((Name::new(format!("Layer{}", i)), SpatialBundle::default()));
             }
         });
+
+        actor
+            .timer
+            .set_duration(Duration::from_secs_f32(clip.frame_time));
 
         #[cfg(feature = "audio")]
         {
