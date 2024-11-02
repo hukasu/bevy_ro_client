@@ -83,10 +83,14 @@ fn fragment(
     let index_texture_coords = vec2<u32>(vec2<f32>(index_texture_dimensions) * in.uv);
     let index = textureLoad(spr_texture, index_texture_coords, 0).x;
 
+    if index == 0 {
+        discard;
+    }
+
     pbr_input.material.base_color = textureLoad(spr_palette, index, 0);
 
-    if index == 0 {
-        pbr_input.material.base_color.a = 0.;
+    if all(pbr_input.material.base_color.rgb == vec3(1., 0., 1.)) {
+        discard;
     } else {
         pbr_input.material.base_color.a = 1.;
     }
