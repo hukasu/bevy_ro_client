@@ -1,4 +1,4 @@
-use std::{fmt::Write, io::Cursor, path::Path};
+use std::{collections::BTreeSet, fmt::Write, io::Cursor, path::Path};
 
 use ragnarok_rebuild_assets::{grf::Grf, rsw};
 
@@ -46,6 +46,11 @@ fn debug_rsw(rsw: &rsw::Rsw) -> Option<String> {
         }
     }
 
+    if let Some(light_debug) = debug_lights(&rsw.lights) {
+        let debug_ref = debug.get_or_insert_with(header);
+        write!(debug_ref, "{}", light_debug).unwrap();
+    }
+
     debug
 }
 
@@ -62,6 +67,51 @@ fn debug_model(model: &rsw::Model) -> Option<String> {
             model.flag
         )
         .unwrap();
+    }
+
+    debug
+}
+
+fn debug_lights(lights: &[rsw::Light]) -> Option<String> {
+    const THRESHOLD: f32 = 1.;
+    const INDENT: &str = "\t";
+    let header = String::new;
+    let mut debug = None;
+
+    let mut light_positions: Vec<&rsw::Light> = Vec::new();
+    for light in lights.iter() {
+        if let Some(repeated) = light_positions.iter().find(|other| {
+            ((other.position[0] - light.position[0]).powi(2)
+                + (other.position[1] - light.position[1]).powi(2)
+                + (other.position[2] - light.position[2]).powi(2))
+            .sqrt()
+                < THRESHOLD
+        }) {
+            let debug_ref = debug.get_or_insert_with(header);
+            writeln!(
+                debug_ref,
+                "{INDENT}there is a repeated light at {:?}. ({}, {})",
+                light.position, light.name, repeated.name
+            )
+            .unwrap();
+        } else {
+            light_positions.push(light);
+        }
+    }
+
+    let mut light_names = BTreeSet::new();
+    for light in lights.iter() {
+        if light_names.contains(&light.name) {
+            let debug_ref = debug.get_or_insert_with(header);
+            writeln!(
+                debug_ref,
+                "{INDENT}there is a repeated light name. ({})",
+                light.name
+            )
+            .unwrap();
+        } else {
+            light_names.insert(&light.name);
+        }
     }
 
     debug
