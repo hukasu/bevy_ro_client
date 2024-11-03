@@ -281,10 +281,7 @@ impl AssetLoader {
                             },
                             ..Default::default()
                         },
-                        Aabb::from_min_max(
-                            -Vec3::splat(light.range / 2.),
-                            Vec3::splat(light.range / 2.),
-                        ),
+                        Aabb::from_min_max(-Vec3::splat(light.range), Vec3::splat(light.range)),
                         EnvironmentalLight { range: light.range },
                     ));
                 }
