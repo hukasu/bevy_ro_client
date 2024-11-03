@@ -56,7 +56,8 @@ impl bevy::asset::AssetLoader for AssetLoader {
 
 impl AssetLoader {
     const UNNAMED_RSW: &str = "Unnamed Rsw";
-    const DIRECTIONAL_LIGHT_LUX: f32 = 4300.;
+    const LIGHT_LUX: f32 = 2000.;
+    const POINT_LIGHT_LUMEN: f32 = 5_000_000.;
 
     fn generate_world(rsw: &rsw::Rsw, load_context: &mut LoadContext) -> Scene {
         bevy::log::trace!("Generating {:?} world.", load_context.path());
@@ -110,13 +111,15 @@ impl AssetLoader {
         load_context: &mut LoadContext,
     ) {
         bevy::log::trace!("Setting ambient light of {:?}.", load_context.path());
+        let color = Color::srgb(
+            rsw.lighting_parameters.ambient_color[0],
+            rsw.lighting_parameters.ambient_color[1],
+            rsw.lighting_parameters.ambient_color[2],
+        );
         world.insert_resource(AmbientLight {
-            color: Color::linear_rgb(
-                rsw.lighting_parameters.ambient_color[0],
-                rsw.lighting_parameters.ambient_color[1],
-                rsw.lighting_parameters.ambient_color[2],
-            ),
-            ..Default::default()
+            brightness: Self::LIGHT_LUX
+                * (color.luminance() + (1. - rsw.lighting_parameters.shadow_map_alpha)),
+            color,
         });
     }
 
@@ -134,7 +137,7 @@ impl AssetLoader {
         light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_x(longitude_radians));
         light_transform.rotate_around(Vec3::ZERO, Quat::from_rotation_y(latitude_radians));
 
-        let directional_light_color = Color::linear_rgb(
+        let directional_light_color = Color::srgb(
             rsw.lighting_parameters.diffuse_color[0],
             rsw.lighting_parameters.diffuse_color[1],
             rsw.lighting_parameters.diffuse_color[2],
@@ -145,8 +148,9 @@ impl AssetLoader {
                 DirectionalLightBundle {
                     directional_light: DirectionalLight {
                         color: directional_light_color,
-                        illuminance: Self::DIRECTIONAL_LIGHT_LUX
-                            * directional_light_color.luminance(),
+                        illuminance: Self::LIGHT_LUX
+                            * (directional_light_color.luminance()
+                                + rsw.lighting_parameters.shadow_map_alpha),
                         shadows_enabled: true,
                         ..Default::default()
                     },
@@ -259,6 +263,7 @@ impl AssetLoader {
             .spawn((Name::new("Lights"), SpatialBundle::default()))
             .with_children(|parent| {
                 for light in rsw.lights.iter() {
+                    let color = Color::srgb(light.color[0], light.color[1], light.color[2]);
                     parent.spawn((
                         Name::new(light.name.to_string()),
                         PointLightBundle {
@@ -266,11 +271,10 @@ impl AssetLoader {
                                 light.position,
                             )),
                             point_light: PointLight {
-                                color: Color::linear_rgb(
-                                    light.color[0],
-                                    light.color[1],
-                                    light.color[2],
-                                ),
+                                color,
+                                intensity: Self::POINT_LIGHT_LUMEN
+                                    * (color.luminance()
+                                        + (1. - rsw.lighting_parameters.shadow_map_alpha)),
                                 range: light.range / 5.,
                                 shadows_enabled: true,
                                 ..Default::default()
