@@ -3,7 +3,7 @@ use std::{collections::BTreeSet, fmt::Write, io::Cursor, path::Path};
 use ragnarok_rebuild_assets::{grf::Grf, rsw};
 
 fn main() {
-    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| eprintln!("{err}")) else {
+    let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| println!("{err}")) else {
         return;
     };
 
@@ -90,7 +90,7 @@ fn debug_lights(lights: &[rsw::Light]) -> Option<String> {
             let debug_ref = debug.get_or_insert_with(header);
             writeln!(
                 debug_ref,
-                "{INDENT}there is a repeated light at {:?}. ({}, {})",
+                "{INDENT}has a repeated light at {:?}. ({}, {})",
                 light.position, light.name, repeated.name
             )
             .unwrap();
@@ -105,12 +105,28 @@ fn debug_lights(lights: &[rsw::Light]) -> Option<String> {
             let debug_ref = debug.get_or_insert_with(header);
             writeln!(
                 debug_ref,
-                "{INDENT}there is a repeated light name. ({})",
+                "{INDENT}has a repeated light name. ({})",
                 light.name
             )
             .unwrap();
         } else {
             light_names.insert(&light.name);
+        }
+    }
+
+    for light in lights.iter() {
+        if light
+            .color
+            .iter()
+            .any(|channel| *channel < 0. || *channel > 1.)
+        {
+            let debug_ref = debug.get_or_insert_with(header);
+            writeln!(
+                debug_ref,
+                "{INDENT}light {} has unnormalized color {:?}.",
+                light.name, light.color
+            )
+            .unwrap();
         }
     }
 
