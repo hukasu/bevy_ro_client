@@ -59,6 +59,35 @@ fn debug_model(model: &rsw::Model) -> Option<String> {
     let header = || format!("{INDENT}Model \"{}\"\n", model.name);
     let mut debug = None;
 
+    if model.filename.is_empty() {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "{INDENT}\thas empty filename.",).unwrap();
+    }
+    if model.filename.len() >= 75 {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(
+            debug_ref,
+            "{INDENT}\thas long filename. ({})",
+            model.filename.len()
+        )
+        .unwrap();
+    }
+
+    // This error is reported A LOT
+    // if model.node_name.is_empty() {
+    //     let debug_ref = debug.get_or_insert_with(header);
+    //     writeln!(debug_ref, "{INDENT}\thas empty node name.",).unwrap();
+    // }
+    if model.node_name.len() >= 75 {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(
+            debug_ref,
+            "{INDENT}\thas long node name. ({})",
+            model.filename.len()
+        )
+        .unwrap();
+    }
+
     if model.flag != 0 {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(
