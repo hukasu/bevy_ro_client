@@ -16,13 +16,13 @@ fn main() {
             None => false,
         })
     {
-        let Ok(rsm_content) = grf
+        let Ok(rsw_content) = grf
             .read_file(rsw_filename)
             .inspect_err(|err| println!("{rsw_filename:?}: {err}"))
         else {
             continue;
         };
-        let Ok(rsw) = rsw::Rsw::from_reader(&mut Cursor::new(rsm_content))
+        let Ok(rsw) = rsw::Rsw::from_reader(&mut Cursor::new(&rsw_content))
             .inspect_err(|err| println!("{rsw_filename:?}: {err}"))
         else {
             continue;
