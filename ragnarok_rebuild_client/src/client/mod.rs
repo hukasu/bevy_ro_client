@@ -2,19 +2,18 @@ mod components;
 // TODO remove pub after organizing the debug systems
 mod camera;
 pub mod entities;
+mod loading_screen;
 
 use bevy::{
     app::{Plugin, Startup, Update},
     color::Color,
     core::Name,
-    math::{Quat, StableInterpolate, Vec3},
+    math::{Quat, Vec3},
     prelude::{
-        in_state, not, resource_changed, BuildChildren, Camera, Camera3d, ChildBuild, ClearColor,
-        Commands, Entity, IntoSystemConfigs, NextState, OnAdd, Query, Res, ResMut, Transform,
-        Trigger, Visibility, With,
+        in_state, resource_changed, BuildChildren, ChildBuild, ClearColor, Commands, Entity,
+        IntoSystemConfigs, NextState, OnAdd, Query, Res, ResMut, Transform, Trigger, Visibility,
+        With,
     },
-    render::camera::Exposure,
-    time::Time,
 };
 
 use ragnarok_rebuild_bevy::{
@@ -30,8 +29,6 @@ use crate::states::GameState;
 
 use self::components::Game;
 
-const FADE_DECAY: f32 = 2.5;
-
 pub struct ClientPlugin;
 
 impl Plugin for ClientPlugin {
@@ -40,6 +37,7 @@ impl Plugin for ClientPlugin {
             // Plugins
             .add_plugins(entities::Plugin)
             .add_plugins(camera::Plugin)
+            .add_plugins(loading_screen::Plugin)
             // Startup system
             .add_systems(Startup, start_up)
             .add_systems(Update, skip_login.run_if(in_state(GameState::Login)))
@@ -47,8 +45,6 @@ impl Plugin for ClientPlugin {
                 Update,
                 update_world_transform.run_if(resource_changed::<gnd::GroundScale>),
             )
-            .add_systems(Update, fade_out.run_if(in_state(GameState::MapChange)))
-            .add_systems(Update, fade_in.run_if(not(in_state(GameState::MapChange))))
             // Observers
             .add_observer(change_to_game)
             .add_observer(attach_world_to_game)
@@ -94,22 +90,6 @@ fn skip_login(mut commands: Commands, mut next_state: ResMut<NextState<GameState
 
 fn change_to_game(_trigger: Trigger<WorldLoaded>, mut next_state: ResMut<NextState<GameState>>) {
     next_state.set(GameState::Game);
-}
-
-fn fade_out(mut cameras: Query<&mut Exposure, With<Camera>>, time: Res<Time>) {
-    for mut camera in cameras.iter_mut() {
-        camera
-            .ev100
-            .smooth_nudge(&58., FADE_DECAY, time.delta_secs());
-    }
-}
-
-fn fade_in(mut cameras: Query<&mut Exposure, With<Camera>>, time: Res<Time>) {
-    for mut camera in cameras.iter_mut() {
-        camera
-            .ev100
-            .smooth_nudge(&Exposure::BLENDER.ev100, FADE_DECAY, time.delta_secs());
-    }
 }
 
 fn attach_world_to_game(
