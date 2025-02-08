@@ -5,16 +5,23 @@ mod events;
 mod loader;
 mod materials;
 
-use std::time::Duration;
+use std::{collections::HashMap, time::Duration};
 
 use bevy::{
     app::Plugin as BevyPlugin,
-    asset::AssetApp,
+    asset::{AssetApp, Assets},
     core::Name,
-    prelude::{AnimationPlayer, AnimationTransitions, Entity, Parent, Query, Trigger},
+    pbr::MeshMaterial3d,
+    prelude::{
+        AnimationPlayer, AnimationTransitions, Children, Commands, Entity, HierarchyQueryExt,
+        Parent, Query, ResMut, Transform, Trigger, With,
+    },
 };
+use materials::RsmMaterial;
 
 pub use self::{components::Model, events::StartPropAnimation, loader::AssetLoader};
+
+use super::rsw::{AnimatedProp, WorldLoaded};
 
 pub struct Plugin;
 
@@ -26,6 +33,8 @@ impl BevyPlugin for Plugin {
             // Loader
             .register_asset_loader(AssetLoader)
             // Observers
+            .add_observer(start_rsm)
+            .add_observer(invert_materials)
             .add_observer(start_rsm_animation);
 
         // Materials
@@ -33,6 +42,90 @@ impl BevyPlugin for Plugin {
 
         #[cfg(feature = "debug")]
         app.add_plugins(debug::Plugin);
+    }
+}
+
+fn start_rsm(
+    trigger: Trigger<WorldLoaded>,
+    mut commands: Commands,
+    children: Query<&Children>,
+    animated_props: Query<(&Children, &AnimatedProp)>,
+) {
+    let Ok(world_children) = children.get(trigger.entity()) else {
+        bevy::log::error!("Just loaded world had no children.");
+        return;
+    };
+    let Some(models_container) = world_children.iter().find_map(|child| {
+        children
+            .get(*child)
+            .ok()
+            .filter(|container| animated_props.contains(container[0]))
+    }) else {
+        bevy::log::error!("World does not have a container with AnimatedProps.");
+        return;
+    };
+
+    for (animated_prop_children, animation_properties) in animated_props.iter_many(models_container)
+    {
+        if animated_prop_children.is_empty() {
+            continue;
+        }
+        commands.trigger_targets(
+            StartPropAnimation {
+                speed: animation_properties.animation_speed,
+                mode: animation_properties.animation_type,
+            },
+            animated_prop_children.to_vec(),
+        )
+    }
+}
+
+fn invert_materials(
+    trigger: Trigger<WorldLoaded>,
+    mut commands: Commands,
+    children: Query<&Children>,
+    animated_props: Query<(Entity, &Transform), With<AnimatedProp>>,
+    materials: Query<&MeshMaterial3d<RsmMaterial>>,
+    mut rsm_materials: ResMut<Assets<RsmMaterial>>,
+) {
+    let Ok(world_children) = children.get(trigger.entity()) else {
+        bevy::log::error!("Just loaded world had no children.");
+        return;
+    };
+    let Some(models_container) = world_children.iter().find_map(|child| {
+        children
+            .get(*child)
+            .ok()
+            .filter(|container| animated_props.contains(container[0]))
+    }) else {
+        bevy::log::error!("World does not have a container with AnimatedProps.");
+        return;
+    };
+
+    let mut new_material_cache = HashMap::new();
+    for (prop, _) in animated_props
+        .iter_many(models_container)
+        .filter(|(_, transform)| {
+            (transform.scale.x * transform.scale.y * transform.scale.z).is_sign_negative()
+        })
+    {
+        for child_of_inverted_model in children.iter_descendants(prop) {
+            if let Ok(material) = materials.get(child_of_inverted_model) {
+                let new_handle = new_material_cache
+                    .entry(material.0.id())
+                    .or_insert_with(|| {
+                        if let Some(mut clone) = rsm_materials.get(material.id()).cloned() {
+                            clone.inverse_scale = true;
+                            rsm_materials.add(clone)
+                        } else {
+                            material.0.clone()
+                        }
+                    });
+                commands
+                    .entity(child_of_inverted_model)
+                    .insert(MeshMaterial3d(new_handle.clone()));
+            }
+        }
     }
 }
 

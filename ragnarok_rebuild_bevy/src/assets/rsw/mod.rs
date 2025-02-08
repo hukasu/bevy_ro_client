@@ -19,7 +19,7 @@ use bevy::{
 
 pub use ragnarok_rebuild_assets::rsw::Error;
 
-use crate::assets::{paths, rsm};
+use crate::assets::paths;
 
 #[cfg(feature = "audio")]
 pub use self::components::EnvironmentalSound;
@@ -96,9 +96,7 @@ fn world_added(trigger: Trigger<OnAdd, World>, mut commands: Commands) {
 fn world_loaded(
     trigger: Trigger<WorldLoaded>,
     mut commands: Commands,
-    children: Query<&Children>,
     worlds: Query<Entity, With<World>>,
-    animated_props: Query<(&Children, &AnimatedProp)>,
 ) {
     let other_worlds = worlds
         .iter()
@@ -106,34 +104,6 @@ fn world_loaded(
         .collect::<Vec<_>>();
     if !other_worlds.is_empty() {
         commands.trigger_targets(UnloadWorld, other_worlds);
-    }
-
-    let Ok(world_children) = children.get(trigger.entity()) else {
-        bevy::log::error!("Just loaded world had no children.");
-        return;
-    };
-    let Some(models_container) = world_children.iter().find_map(|child| {
-        children
-            .get(*child)
-            .ok()
-            .filter(|container| animated_props.contains(container[0]))
-    }) else {
-        bevy::log::error!("World does not have a container with AnimatedProps.");
-        return;
-    };
-
-    for (animated_prop_children, animation_properties) in animated_props.iter_many(models_container)
-    {
-        if animated_prop_children.is_empty() {
-            continue;
-        }
-        commands.trigger_targets(
-            rsm::StartPropAnimation {
-                speed: animation_properties.animation_speed,
-                mode: animation_properties.animation_type,
-            },
-            animated_prop_children.to_vec(),
-        )
     }
 }
 
