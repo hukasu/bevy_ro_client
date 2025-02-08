@@ -5,37 +5,52 @@ pub mod entities;
 
 use bevy::{
     app::{Plugin, Startup, Update},
+    color::Color,
     core::Name,
-    math::{Quat, Vec3},
+    math::{Quat, StableInterpolate, Vec3},
     prelude::{
-        resource_changed, BuildChildren, ChildBuild, Commands, Entity, IntoSystemConfigs, OnAdd,
-        Query, Res, ResMut, Transform, Trigger, Visibility, With,
+        in_state, not, resource_changed, BuildChildren, Camera, Camera3d, ChildBuild, ClearColor,
+        Commands, Entity, IntoSystemConfigs, NextState, OnAdd, Query, Res, ResMut, Transform,
+        Trigger, Visibility, With,
     },
+    render::camera::Exposure,
+    time::Time,
 };
 
 use ragnarok_rebuild_bevy::{
-    assets::{gnd, rsw},
+    assets::{
+        gnd,
+        rsw::{self, LoadWorld, WorldLoaded},
+    },
     audio::{Bgm, Sound},
     WorldTransform,
 };
 
+use crate::states::GameState;
+
 use self::components::Game;
+
+const FADE_DECAY: f32 = 2.5;
 
 pub struct ClientPlugin;
 
 impl Plugin for ClientPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app
+        app.insert_resource(ClearColor(Color::BLACK))
             // Plugins
             .add_plugins(entities::Plugin)
             .add_plugins(camera::Plugin)
             // Startup system
             .add_systems(Startup, start_up)
+            .add_systems(Update, skip_login.run_if(in_state(GameState::Login)))
             .add_systems(
                 Update,
                 update_world_transform.run_if(resource_changed::<gnd::GroundScale>),
             )
+            .add_systems(Update, fade_out.run_if(in_state(GameState::MapChange)))
+            .add_systems(Update, fade_in.run_if(not(in_state(GameState::MapChange))))
             // Observers
+            .add_observer(change_to_game)
             .add_observer(attach_world_to_game)
             .add_observer(attach_entity_to_game)
             // TODO Change to observe on the the container entity
@@ -45,7 +60,7 @@ impl Plugin for ClientPlugin {
     }
 }
 
-fn start_up(mut commands: Commands) {
+fn start_up(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>) {
     commands
         .spawn((
             Name::new("RagnarokOnline"),
@@ -65,6 +80,36 @@ fn start_up(mut commands: Commands) {
                 Visibility::default(),
             ));
         });
+
+    next_state.set(GameState::Login);
+}
+
+fn skip_login(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>) {
+    commands.trigger(LoadWorld {
+        world: "prontera.rsw".into(),
+    });
+
+    next_state.set(GameState::MapChange);
+}
+
+fn change_to_game(_trigger: Trigger<WorldLoaded>, mut next_state: ResMut<NextState<GameState>>) {
+    next_state.set(GameState::Game);
+}
+
+fn fade_out(mut cameras: Query<&mut Exposure, With<Camera>>, time: Res<Time>) {
+    for mut camera in cameras.iter_mut() {
+        camera
+            .ev100
+            .smooth_nudge(&58., FADE_DECAY, time.delta_secs());
+    }
+}
+
+fn fade_in(mut cameras: Query<&mut Exposure, With<Camera>>, time: Res<Time>) {
+    for mut camera in cameras.iter_mut() {
+        camera
+            .ev100
+            .smooth_nudge(&Exposure::BLENDER.ev100, FADE_DECAY, time.delta_secs());
+    }
 }
 
 fn attach_world_to_game(

@@ -30,24 +30,6 @@ use crate::assets::{paths, rsm::components::ModelAnimation};
 
 pub struct AssetLoader;
 
-struct AssetLoaderContext<'a, 'b, 'c> {
-    world: World,
-    load_context: &'a mut LoadContext<'b>,
-    rsm: &'c rsm::Rsm,
-}
-
-#[derive(Debug, Clone)]
-enum LoadedTextureFormat {
-    Bmp,
-    Tga,
-}
-
-#[derive(Debug, Clone)]
-struct LoadedTexture {
-    texture: Handle<Image>,
-    format: LoadedTextureFormat,
-}
-
 impl BevyAssetLoader for AssetLoader {
     type Asset = Scene;
     type Settings = ();
@@ -354,6 +336,8 @@ impl AssetLoader {
                     format!("{}Material{}", rsm_mesh.name, i),
                     super::materials::RsmMaterial {
                         texture: mesh_textures[usize::from(*texture_id)].texture.clone(),
+                        double_sided: *two_sided == 1,
+                        inverse_scale: false,
                     },
                 );
 
@@ -633,4 +617,22 @@ impl AssetLoader {
                 .transform_point(transformation_matrix.transform_point(Vec3::from_array(*vertex)))
         }))
     }
+}
+
+struct AssetLoaderContext<'a, 'b, 'c> {
+    world: World,
+    load_context: &'a mut LoadContext<'b>,
+    rsm: &'c rsm::Rsm,
+}
+
+#[derive(Debug, Clone)]
+enum LoadedTextureFormat {
+    Bmp,
+    Tga,
+}
+
+#[derive(Debug, Clone)]
+struct LoadedTexture {
+    texture: Handle<Image>,
+    format: LoadedTextureFormat,
 }

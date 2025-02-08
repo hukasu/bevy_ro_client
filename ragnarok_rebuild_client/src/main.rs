@@ -1,6 +1,7 @@
 mod client;
 #[cfg(feature = "with-inspector")]
 mod inspector_egui;
+mod states;
 #[cfg(not(feature = "with-inspector"))]
 mod other {
     use bevy::{
@@ -36,7 +37,7 @@ mod other {
 }
 
 use bevy::{
-    app::{App, PluginGroup},
+    app::{App, PluginGroup, PluginGroupBuilder},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
     image::ImageSamplerDescriptor,
     log::LogPlugin,
@@ -49,8 +50,6 @@ use ragnarok_rebuild_bevy::{
     assets::{grf, paths::BASE_DATA_FOLDER},
     RagnarokPlugin,
 };
-
-use self::client::ClientPlugin;
 
 fn main() {
     let log_level = "trace";
@@ -102,9 +101,17 @@ fn main() {
         app.add_plugins(inspector_egui::Plugin);
     }
 
-    app
-        // Plugins
-        .add_plugins(ClientPlugin);
+    app.add_plugins(ClientPlugins);
 
     app.run();
+}
+
+struct ClientPlugins;
+
+impl bevy::app::PluginGroup for ClientPlugins {
+    fn build(self) -> bevy::app::PluginGroupBuilder {
+        PluginGroupBuilder::start::<Self>()
+            .add(client::ClientPlugin)
+            .add(states::Plugin)
+    }
 }

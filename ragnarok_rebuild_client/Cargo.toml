@@ -24,6 +24,7 @@ ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
 
 bevy = { workspace = true, default-features = false, features = [
+    "bevy_state",
     "bevy_window",
     "bevy_text",
     "wayland",

@@ -25,10 +25,10 @@ use crate::assets::{paths, rsm};
 pub use self::components::EnvironmentalSound;
 pub use self::{
     components::{AnimatedProp, EnvironmentalEffect, EnvironmentalLight, World},
-    events::{LoadWorld, WorldLoaded},
+    events::{LoadWorld, UnloadWorld, WorldLoaded},
     quad_tree::{QuadTree, QuadTreeIndex, QuadTreeIter},
 };
-use self::{events::UnloadWorld, loader::AssetLoader, resources::LoadingWorld};
+use self::{loader::AssetLoader, resources::LoadingWorld};
 
 const UNNAMED_WORLD: &str = "Unnamed World";
 
@@ -97,8 +97,8 @@ fn world_loaded(
     trigger: Trigger<WorldLoaded>,
     mut commands: Commands,
     children: Query<&Children>,
-    worlds: Query<Entity, With<components::World>>,
-    animated_props: Query<(&Children, &components::AnimatedProp)>,
+    worlds: Query<Entity, With<World>>,
+    animated_props: Query<(&Children, &AnimatedProp)>,
 ) {
     let other_worlds = worlds
         .iter()
