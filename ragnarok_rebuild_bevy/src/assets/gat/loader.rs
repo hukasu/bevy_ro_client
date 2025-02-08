@@ -1,7 +1,7 @@
 use bevy::{
-    asset::{AsyncReadExt, LoadContext},
+    asset::LoadContext,
     core::Name,
-    prelude::{SpatialBundle, World},
+    prelude::{Transform, Visibility, World},
     scene::Scene,
 };
 
@@ -16,22 +16,21 @@ impl bevy::asset::AssetLoader for AssetLoader {
     type Settings = ();
     type Error = gat::Error;
 
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut bevy::asset::io::Reader,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut bevy::asset::LoadContext,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            bevy::log::trace!("Loading Gat {:?}.", load_context.path());
+    async fn load(
+        &self,
+        reader: &mut dyn bevy::asset::io::Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        bevy::log::trace!("Loading Gat {:?}.", load_context.path());
 
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let gat = gat::Gat::from_reader(&mut data.as_slice())?;
-            Self::generate_altitude(load_context, &gat);
+        let mut data: Vec<u8> = vec![];
+        reader.read_to_end(&mut data).await?;
 
-            Ok(super::assets::Gat(gat))
-        })
+        let gat = gat::Gat::from_reader(&mut data.as_slice())?;
+        Self::generate_altitude(load_context, &gat);
+
+        Ok(super::assets::Gat(gat))
     }
 
     fn extensions(&self) -> &[&str] {
@@ -45,7 +44,8 @@ impl AssetLoader {
 
         world.spawn((
             Name::new("Tiles"),
-            SpatialBundle::default(),
+            Transform::default(),
+            Visibility::default(),
             Tiles {
                 tiles: gat.tiles.iter().map(Tile::from).collect(),
                 width: gat.width,

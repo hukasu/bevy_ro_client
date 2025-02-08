@@ -1,11 +1,11 @@
 use bevy::{
     app::PostUpdate,
-    asset::{Assets, Handle},
-    color::{self, Color},
+    asset::Assets,
+    color::{palettes, Color},
     math::Vec3,
     prelude::{
         Children, Entity, Gizmos, GlobalTransform, HierarchyQueryExt, IntoSystemConfigs, Mesh,
-        Query, ReflectResource, Res, Resource, ViewVisibility, With,
+        Mesh3d, Query, ReflectResource, Res, Resource, ViewVisibility, With,
     },
     reflect::Reflect,
     render::{
@@ -50,7 +50,7 @@ fn show_rsm_vertex_normal(
     models: Query<Entity, With<rsm::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
-    model_primitives: Query<(&Handle<Mesh>, &ViewVisibility)>,
+    model_primitives: Query<(&Mesh3d, &ViewVisibility)>,
     meshes: Res<Assets<Mesh>>,
 ) {
     for entity in models.iter() {
@@ -114,7 +114,7 @@ fn show_rsm_edges(
     models: Query<Entity, With<rsm::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
-    model_primitives: Query<(&Handle<Mesh>, &ViewVisibility)>,
+    model_primitives: Query<(&Mesh3d, &ViewVisibility)>,
     meshes: Res<Assets<Mesh>>,
 ) {
     for entity in models.iter() {
@@ -146,17 +146,17 @@ fn show_rsm_edges(
                     gizmos.line(
                         global_transform.transform_point(vertex[usize::from(i[0])]),
                         global_transform.transform_point(vertex[usize::from(i[1])]),
-                        color::palettes::css::ORANGE,
+                        palettes::css::ORANGE,
                     );
                     gizmos.line(
                         global_transform.transform_point(vertex[usize::from(i[0])]),
                         global_transform.transform_point(vertex[usize::from(i[2])]),
-                        color::palettes::css::ORANGE,
+                        palettes::css::ORANGE,
                     );
                     gizmos.line(
                         global_transform.transform_point(vertex[usize::from(i[1])]),
                         global_transform.transform_point(vertex[usize::from(i[2])]),
-                        color::palettes::css::ORANGE,
+                        palettes::css::ORANGE,
                     );
                 }
             } else {
@@ -164,17 +164,17 @@ fn show_rsm_edges(
                     gizmos.line(
                         global_transform.transform_point(v[0]),
                         global_transform.transform_point(v[1]),
-                        color::palettes::css::ORANGE,
+                        palettes::css::ORANGE,
                     );
                     gizmos.line(
                         global_transform.transform_point(v[0]),
                         global_transform.transform_point(v[2]),
-                        color::palettes::css::ORANGE,
+                        palettes::css::ORANGE,
                     );
                     gizmos.line(
                         global_transform.transform_point(v[1]),
                         global_transform.transform_point(v[2]),
-                        color::palettes::css::ORANGE,
+                        palettes::css::ORANGE,
                     );
                 }
             }

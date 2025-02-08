@@ -8,8 +8,8 @@ use bevy::{
     core::Name,
     math::{Quat, Vec3},
     prelude::{
-        resource_changed, BuildChildren, Commands, Entity, IntoSystemConfigs, OnAdd, Query, Res,
-        ResMut, SpatialBundle, Transform, Trigger, With,
+        resource_changed, BuildChildren, ChildBuild, Commands, Entity, IntoSystemConfigs, OnAdd,
+        Query, Res, ResMut, Transform, Trigger, Visibility, With,
     },
 };
 
@@ -36,12 +36,12 @@ impl Plugin for ClientPlugin {
                 update_world_transform.run_if(resource_changed::<gnd::GroundScale>),
             )
             // Observers
-            .observe(attach_world_to_game)
-            .observe(attach_entity_to_game)
+            .add_observer(attach_world_to_game)
+            .add_observer(attach_entity_to_game)
             // TODO Change to observe on the the container entity
             // in 0.15
-            .observe(attach_bgm_to_game)
-            .observe(attach_sound_to_game);
+            .add_observer(attach_bgm_to_game)
+            .add_observer(attach_sound_to_game);
     }
 }
 
@@ -50,14 +50,20 @@ fn start_up(mut commands: Commands) {
         .spawn((
             Name::new("RagnarokOnline"),
             components::Game,
-            SpatialBundle {
-                transform: Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI)),
-                ..Default::default()
-            },
+            Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI)),
+            Visibility::default(),
         ))
         .with_children(|builder| {
-            builder.spawn((Name::new("Playing sounds"), SpatialBundle::default()));
-            builder.spawn((Name::new("Actors"), SpatialBundle::default()));
+            builder.spawn((
+                Name::new("Playing sounds"),
+                Transform::default(),
+                Visibility::default(),
+            ));
+            builder.spawn((
+                Name::new("Actors"),
+                Transform::default(),
+                Visibility::default(),
+            ));
         });
 }
 

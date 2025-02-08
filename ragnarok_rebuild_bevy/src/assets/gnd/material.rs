@@ -1,12 +1,12 @@
 use bevy::{
     asset::{load_internal_asset, Asset, AssetApp, Handle},
-    math::Vec2,
     pbr::{Material, MaterialPlugin},
     prelude::{AlphaMode, Image, Mesh, Shader},
     reflect::Reflect,
     render::{
         mesh::MeshVertexAttribute,
         render_resource::{AsBindGroup, VertexFormat},
+        storage::ShaderStorageBuffer,
     },
 };
 
@@ -40,7 +40,7 @@ pub struct GndMaterial {
     #[sampler(1)]
     pub color_texture: Handle<Image>,
     #[storage(2, read_only)]
-    pub texture_uvs: Vec<Vec2>,
+    pub texture_uvs: Handle<ShaderStorageBuffer>,
 }
 
 impl GndMaterial {

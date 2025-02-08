@@ -12,10 +12,11 @@ use bevy::{
     asset::{AssetApp, AssetServer, Assets, Handle, LoadState},
     core::Name,
     math::{Quat, Vec2, Vec3},
+    pbr::MeshMaterial3d,
     prelude::{
-        BuildChildren, Camera3d, Commands, DespawnRecursiveExt, Entity, EventReader, EventWriter,
-        IntoSystemConfigs, Mesh, Plane3d, Query, Res, SpatialBundle, Transform, Trigger, With,
-        Without,
+        BuildChildren, Camera3d, ChildBuild, Commands, DespawnRecursiveExt, Entity, EventReader,
+        EventWriter, IntoSystemConfigs, Mesh, Mesh3d, Plane3d, Query, Res, Transform, Trigger,
+        Visibility, With, Without,
     },
     time::{Time, Timer},
 };
@@ -52,8 +53,8 @@ impl bevy::app::Plugin for Plugin {
             // Events
             .add_event::<ActorTimerTick>()
             // Observers
-            .observe(load_actor)
-            .observe(start_animation)
+            .add_observer(load_actor)
+            .add_observer(start_animation)
             // Systems
             .add_systems(
                 FixedUpdate,
@@ -89,12 +90,6 @@ fn load_actor(trigger: Trigger<LoadActor>, mut commands: Commands, asset_server:
         let actor_name = trigger.event().actor.clone();
         commands.entity(actor).insert((
             Name::new(format!("{}.act", actor_name)),
-            SpatialBundle {
-                transform: Transform::from_rotation(Quat::from_rotation_x(
-                    -std::f32::consts::FRAC_PI_8,
-                )),
-                ..Default::default()
-            },
             Actor {
                 act: asset_server.load_with_settings(
                     format!("{}{}.act", paths::SPR_FILES_FOLDER, actor_name),
@@ -110,6 +105,8 @@ fn load_actor(trigger: Trigger<LoadActor>, mut commands: Commands, asset_server:
                 timer: Timer::default(),
             },
             LoadingActor,
+            Transform::from_rotation(Quat::from_rotation_x(-std::f32::consts::FRAC_PI_8)),
+            Visibility::default(),
         ));
     }
 }
@@ -233,15 +230,20 @@ fn swap_animations(
         commands.entity(actor_id.entity).with_children(|builder| {
             for (i, layer) in frame.layers.iter().enumerate() {
                 let mut entity_commands = match &layer.sprite {
-                    AnimationLayerSprite::Indexed(handle) => {
-                        builder.spawn((IDENTITY_PLANE_HANDLE, handle.clone()))
-                    }
-                    AnimationLayerSprite::TrueColor(handle) => {
-                        builder.spawn((IDENTITY_PLANE_HANDLE, handle.clone()))
-                    }
+                    AnimationLayerSprite::Indexed(handle) => builder.spawn((
+                        Mesh3d(IDENTITY_PLANE_HANDLE),
+                        MeshMaterial3d(handle.clone()),
+                    )),
+                    AnimationLayerSprite::TrueColor(handle) => builder.spawn((
+                        Mesh3d(IDENTITY_PLANE_HANDLE),
+                        MeshMaterial3d(handle.clone()),
+                    )),
                 };
-                entity_commands
-                    .insert((Name::new(format!("Layer{}", i)), SpatialBundle::default()));
+                entity_commands.insert((
+                    Name::new(format!("Layer{}", i)),
+                    Transform::default(),
+                    Visibility::default(),
+                ));
             }
         });
 

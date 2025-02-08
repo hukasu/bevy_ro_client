@@ -1,12 +1,12 @@
 use bevy::{
     asset::AssetApp,
+    image::ImageSampler,
     prelude::Image,
     render::{
         render_asset::RenderAssetUsages,
         render_resource::{
             Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
         },
-        texture::ImageSampler,
     },
 };
 use ragnarok_rebuild_assets::pal;

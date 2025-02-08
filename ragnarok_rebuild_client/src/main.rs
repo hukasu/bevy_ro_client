@@ -4,10 +4,9 @@ mod inspector_egui;
 #[cfg(not(feature = "with-inspector"))]
 mod other {
     use bevy::{
-        core_pipeline::core_3d::Camera3dBundle,
         ecs::system::Commands,
         math::Vec3,
-        prelude::{App, IntoSystemConfigs, Startup, Transform},
+        prelude::{App, Camera3d, IntoSystemConfigs, Startup, Transform},
         render::view::GpuCulling,
     };
     use ragnarok_rebuild_bevy::{assets::rsw::LoadWorld, tables};
@@ -25,11 +24,8 @@ mod other {
 
     fn spawn_camera(mut commands: Commands) {
         commands.spawn((
-            Camera3dBundle {
-                transform: Transform::from_xyz(0., 500., 30.)
-                    .looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
-                ..Default::default()
-            },
+            Camera3d::default(),
+            Transform::from_xyz(0., 500., 30.).looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
             GpuCulling,
         ));
 
@@ -42,8 +38,9 @@ mod other {
 use bevy::{
     app::{App, PluginGroup},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
+    image::ImageSamplerDescriptor,
     log::LogPlugin,
-    render::texture::{ImagePlugin, ImageSamplerDescriptor},
+    prelude::ImagePlugin,
     window::{Window, WindowPlugin},
     DefaultPlugins,
 };

@@ -4,14 +4,14 @@ mod resources;
 
 use bevy::{
     app::{Plugin, Update},
-    asset::AssetServer,
+    asset::{AssetServer, Handle},
     audio::{
-        AudioBundle, AudioSink, AudioSinkPlayback, PlaybackMode, PlaybackSettings, SpatialScale,
-        Volume,
+        AudioPlayer, AudioSink, AudioSinkPlayback, AudioSource, PlaybackMode, PlaybackSettings,
+        SpatialScale, Volume,
     },
     core::Name,
     prelude::{
-        resource_changed, Commands, IntoSystemConfigs, Query, Res, SpatialBundle, Trigger, With,
+        resource_changed, Commands, IntoSystemConfigs, Query, Res, Trigger, Visibility, With,
     },
 };
 
@@ -37,8 +37,8 @@ impl Plugin for AudioPlugin {
                 volume_changed.run_if(resource_changed::<AudioSettings>),
             )
             // Observers
-            .observe(play_bgm)
-            .observe(play_sound);
+            .add_observer(play_bgm)
+            .add_observer(play_sound);
     }
 }
 
@@ -57,21 +57,19 @@ fn play_bgm(
 ) {
     let PlayBgm { track } = trigger.event();
 
-    let bgm = asset_server.load(format!("bgm://{}", track));
+    let bgm: Handle<AudioSource> = asset_server.load(format!("bgm://{}", track));
 
     commands.spawn((
         Name::new(track.to_string()),
         Bgm,
-        AudioBundle {
-            source: bgm,
-            settings: PlaybackSettings {
-                mode: PlaybackMode::Loop,
-                volume: Volume::new(audio_settings.bgm_volume),
-                speed: 1.,
-                paused: false,
-                spatial: false,
-                spatial_scale: None,
-            },
+        AudioPlayer(bgm),
+        PlaybackSettings {
+            mode: PlaybackMode::Loop,
+            volume: Volume::new(audio_settings.bgm_volume),
+            speed: 1.,
+            paused: false,
+            spatial: false,
+            spatial_scale: None,
         },
     ));
 }
@@ -92,20 +90,16 @@ fn play_sound(
     commands.spawn((
         Name::new(name.clone()),
         Sound,
-        SpatialBundle {
-            transform: *position,
-            ..Default::default()
-        },
-        AudioBundle {
-            source: track.clone(),
-            settings: PlaybackSettings {
-                mode: PlaybackMode::Despawn,
-                volume: Volume::new(volume * audio_settings.effects_volume),
-                speed: 1.,
-                paused: false,
-                spatial: true,
-                spatial_scale: Some(SpatialScale::new(5. / *range)),
-            },
+        *position,
+        Visibility::default(),
+        AudioPlayer(track.clone()),
+        PlaybackSettings {
+            mode: PlaybackMode::Despawn,
+            volume: Volume::new(volume * audio_settings.effects_volume),
+            speed: 1.,
+            paused: false,
+            spatial: true,
+            spatial_scale: Some(SpatialScale::new(5. / *range)),
         },
     ));
 }

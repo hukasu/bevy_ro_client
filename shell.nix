@@ -1,5 +1,5 @@
 let
-  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.05";
+  nixpkgs = fetchTarball "https://github.com/NixOS/nixpkgs/tarball/nixos-24.11";
   rust-overlay = (import (builtins.fetchGit {
     url = "https://github.com/oxalica/rust-overlay";
     ref = "master";
@@ -18,7 +18,7 @@ let
       usernamehw.errorlens
       serayuzgur.crates
       vadimcn.vscode-lldb
-      ms-vscode.hexeditor
+      notblank00.hexeditor
   ];
   buildInputs = with pkgs; [
     udev
@@ -41,6 +41,7 @@ in
     inherit buildInputs;
     packages = with pkgs; [
       git
+      tracy
       (rust-bin.stable.latest.default.override { extensions = ["rust-src"]; })
       (vscode-with-extensions.override {
         vscode = vscodium;

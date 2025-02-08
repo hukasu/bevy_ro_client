@@ -1,21 +1,21 @@
 use std::collections::BTreeMap;
 
 use bevy::{
-    asset::{io::Reader, AsyncReadExt, Handle, LoadContext},
+    asset::{io::Reader, Handle, LoadContext},
     core::Name,
     ecs::world::World,
-    hierarchy::BuildWorldChildren,
+    image::{
+        Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
+        ImageSamplerDescriptor,
+    },
     math::{Vec2, Vec3},
-    pbr::{MaterialMeshBundle, NotShadowCaster, NotShadowReceiver},
-    prelude::{Entity, SpatialBundle},
+    pbr::{MeshMaterial3d, NotShadowCaster, NotShadowReceiver},
+    prelude::{BuildChildren, Entity, Mesh3d, Transform, Visibility},
     render::{
         mesh::{Indices, Mesh, PrimitiveTopology},
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
-        texture::{
-            Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
-            ImageSamplerDescriptor,
-        },
+        storage::ShaderStorageBuffer,
     },
     scene::Scene,
 };
@@ -42,21 +42,19 @@ impl bevy::asset::AssetLoader for AssetLoader {
     type Settings = AssetLoaderSettings;
     type Error = gnd::Error;
 
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader,
-        settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async move {
-            bevy::log::trace!("Loading Gnd {:?}.", load_context.path());
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        bevy::log::trace!("Loading Gnd {:?}.", load_context.path());
 
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let gnd = gnd::Gnd::from_reader(&mut data.as_slice())?;
+        let mut data: Vec<u8> = vec![];
+        reader.read_to_end(&mut data).await?;
+        let gnd = gnd::Gnd::from_reader(&mut data.as_slice())?;
 
-            Ok(Self::generate_ground(&gnd, settings, load_context).await)
-        })
+        Ok(Self::generate_ground(&gnd, settings, load_context).await)
     }
 
     fn extensions(&self) -> &[&str] {
@@ -65,10 +63,10 @@ impl bevy::asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    async fn generate_ground<'a>(
+    async fn generate_ground(
         gnd: &gnd::Gnd,
         settings: &AssetLoaderSettings,
-        load_context: &mut LoadContext<'a>,
+        load_context: &mut LoadContext<'_>,
     ) -> Scene {
         let mut world = World::new();
 
@@ -80,10 +78,10 @@ impl AssetLoader {
         Scene::new(world)
     }
 
-    async fn generate_ground_mesh<'a>(
+    async fn generate_ground_mesh(
         gnd: &gnd::Gnd,
         world: &mut World,
-        load_context: &mut LoadContext<'a>,
+        load_context: &mut LoadContext<'_>,
     ) {
         let texture_atlas = Self::build_ground_texture_atlas(load_context, &gnd.textures).await;
         Self::build_cubes(gnd, texture_atlas, world, load_context);
@@ -96,7 +94,11 @@ impl AssetLoader {
         load_context: &mut LoadContext,
     ) {
         let water_planes = world
-            .spawn((Name::new("WaterPlanes"), SpatialBundle::default()))
+            .spawn((
+                Name::new("WaterPlanes"),
+                Transform::default(),
+                Visibility::default(),
+            ))
             .id();
 
         let rsw_water_plane = [&settings.water_plane].into_iter().filter_map(|plane| {
@@ -177,11 +179,8 @@ impl AssetLoader {
         world.spawn((
             Name::new("Ground"),
             Ground,
-            MaterialMeshBundle {
-                mesh,
-                material,
-                ..Default::default()
-            },
+            Mesh3d(mesh),
+            MeshMaterial3d(material),
         ));
     }
 
@@ -382,8 +381,9 @@ impl AssetLoader {
         world
             .spawn((
                 Name::new(name.to_owned()),
-                SpatialBundle::default(),
-                mesh,
+                Transform::default(),
+                Visibility::default(),
+                Mesh3d(mesh),
                 water_plane::WaterPlane::new(material, water_plane.texture_cyclical_interval),
                 NotShadowCaster,
                 NotShadowReceiver,
@@ -391,16 +391,16 @@ impl AssetLoader {
             .id()
     }
 
-    async fn build_ground_texture_atlas<'a, 'b>(
-        load_context: &mut LoadContext<'a>,
-        texture_paths: &'b [Box<str>],
+    async fn build_ground_texture_atlas(
+        load_context: &mut LoadContext<'_>,
+        texture_paths: &[Box<str>],
     ) -> Handle<GndMaterial> {
         let mut images = Vec::with_capacity(texture_paths.len());
 
         for path in texture_paths.iter() {
             let direct_image = load_context
                 .loader()
-                .direct()
+                .immediate()
                 .load::<Image>(format!("{}{}", paths::TEXTURE_FILES_FOLDER, path))
                 .await;
             match direct_image {
@@ -427,13 +427,26 @@ impl AssetLoader {
         let (color_texture_image, texture_uvs) =
             helper::build_texture_atlas_from_list_of_images(&images, TextureFormat::Rgba8UnormSrgb);
 
+        let storage_buffer = load_context.add_labeled_asset(
+            "TextureAtlas/UVs".to_string(),
+            ShaderStorageBuffer::new(
+                texture_uvs
+                    .iter()
+                    .flat_map(Vec2::to_array)
+                    .flat_map(f32::to_le_bytes)
+                    .collect::<Vec<_>>()
+                    .as_slice(),
+                RenderAssetUsages::RENDER_WORLD,
+            ),
+        );
+
         let color_texture =
             load_context.add_labeled_asset("TextureAtlas/Image".to_string(), color_texture_image);
         load_context.add_labeled_asset(
             "TextureAtlas".to_string(),
             GndMaterial {
                 color_texture,
-                texture_uvs,
+                texture_uvs: storage_buffer,
             },
         )
     }

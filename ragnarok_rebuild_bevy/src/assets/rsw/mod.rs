@@ -48,10 +48,10 @@ impl bevy::app::Plugin for Plugin {
             // Systems
             .add_systems(Update, wait_models.run_if(resource_exists::<LoadingWorld>))
             // Observers
-            .observe(load_world)
-            .observe(unload_world)
-            .observe(world_added)
-            .observe(world_loaded);
+            .add_observer(load_world)
+            .add_observer(unload_world)
+            .add_observer(world_added)
+            .add_observer(world_loaded);
 
         #[cfg(feature = "debug")]
         app.add_plugins(debug::Plugin);

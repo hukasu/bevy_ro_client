@@ -2,6 +2,7 @@ use std::marker::PhantomData;
 
 use bevy::{
     asset::{load_internal_asset, Asset, AssetApp, Handle},
+    image::Image,
     pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin},
     reflect::Reflect,
     render::{
@@ -10,7 +11,6 @@ use bevy::{
         render_resource::{
             AsBindGroup, RenderPipelineDescriptor, Shader, ShaderRef, SpecializedMeshPipelineError,
         },
-        texture::Image,
     },
 };
 

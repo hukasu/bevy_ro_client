@@ -1,7 +1,7 @@
 use bevy::{
     app::{PostUpdate, Update},
     color::palettes,
-    math::{Dir3, EulerRot, Quat, Vec2, Vec3},
+    math::{EulerRot, Isometry3d, Quat, Vec2, Vec3},
     pbr::{DirectionalLight, PointLight},
     prelude::{
         Children, Entity, Gizmos, GlobalTransform, IntoSystemConfigs, Query, ReflectResource, Res,
@@ -83,9 +83,9 @@ fn directional_light_debug(
 
     let color = directional_light.color;
     let (_, rotation, translation) = directional_light_pos.to_scale_rotation_translation();
+
     gizmos.rect(
-        translation,
-        rotation,
+        Isometry3d::new(translation, rotation),
         Vec2::splat(DIRECTIONAL_LIGHT_GIZMO_LENGHT / 2.),
         color,
     );
@@ -154,18 +154,13 @@ fn point_light_debug(
         let color = light_properties.color;
         let translation = light_pos.translation();
 
-        gizmos.sphere(translation, Quat::default(), light_properties.range, color);
+        gizmos.sphere(translation, light_properties.range, color);
         let scale_factor = if light_properties.range < POINT_LIGHT_RANGE_THRESHOLD {
             light_properties.range / POINT_LIGHT_RANGE_THRESHOLD
         } else {
             1.
         };
-        gizmos.sphere(
-            translation,
-            Quat::default(),
-            POINT_LIGHT_GIZMO_LENGHT * scale_factor,
-            color,
-        );
+        gizmos.sphere(translation, POINT_LIGHT_GIZMO_LENGHT * scale_factor, color);
         // Poles
         let pole_offset = Vec3::new(0., POINT_LIGHT_GIZMO_LENGHT, 0.);
         gizmos.line(
@@ -242,48 +237,57 @@ fn sound_debug(
         let translation = effect_transform.translation();
         let sounds_translation = translation + Vec3::new(-SOUND_GIZMO_RADIUS / 2., 0., 0.);
         gizmos.sphere(
-            translation,
-            Quat::default(),
+            Isometry3d::new(translation, Quat::default()),
             effect_properties.range / 5.,
             color,
         );
         gizmos.arc_3d(
             std::f32::consts::FRAC_PI_2,
             SOUND_GIZMO_RADIUS / 3.,
-            sounds_translation,
-            Quat::from_euler(
-                EulerRot::XYZ,
-                std::f32::consts::FRAC_PI_2,
-                -std::f32::consts::FRAC_PI_4,
-                0.,
+            Isometry3d::new(
+                sounds_translation,
+                Quat::from_euler(
+                    EulerRot::XYZ,
+                    std::f32::consts::FRAC_PI_2,
+                    -std::f32::consts::FRAC_PI_4,
+                    0.,
+                ),
             ),
             color,
         );
         gizmos.arc_3d(
             std::f32::consts::FRAC_PI_2,
             SOUND_GIZMO_RADIUS * 2. / 3.,
-            sounds_translation,
-            Quat::from_euler(
-                EulerRot::XYZ,
-                std::f32::consts::FRAC_PI_2,
-                -std::f32::consts::FRAC_PI_4,
-                0.,
+            Isometry3d::new(
+                sounds_translation,
+                Quat::from_euler(
+                    EulerRot::XYZ,
+                    std::f32::consts::FRAC_PI_2,
+                    -std::f32::consts::FRAC_PI_4,
+                    0.,
+                ),
             ),
             color,
         );
         gizmos.arc_3d(
             std::f32::consts::FRAC_PI_2,
             SOUND_GIZMO_RADIUS,
-            sounds_translation,
-            Quat::from_euler(
-                EulerRot::XYZ,
-                std::f32::consts::FRAC_PI_2,
-                -std::f32::consts::FRAC_PI_4,
-                0.,
+            Isometry3d::new(
+                sounds_translation,
+                Quat::from_euler(
+                    EulerRot::XYZ,
+                    std::f32::consts::FRAC_PI_2,
+                    -std::f32::consts::FRAC_PI_4,
+                    0.,
+                ),
             ),
             color,
         );
-        gizmos.circle(translation, Dir3::NEG_Z, SOUND_GIZMO_RADIUS, color);
+        gizmos.circle(
+            Isometry3d::new(translation, Quat::from_scaled_axis(Vec3::NEG_Z)),
+            SOUND_GIZMO_RADIUS,
+            color,
+        );
     }
 }
 
@@ -330,47 +334,59 @@ fn effect_debug(
         gizmos.arc_3d(
             std::f32::consts::FRAC_PI_2,
             EFFECT_GIZMO_RADIUS,
-            translation + Vec3::new(-EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
-            Quat::from_euler(EulerRot::XYZ, std::f32::consts::FRAC_PI_2, 0., 0.),
-            color,
-        );
-        gizmos.arc_3d(
-            std::f32::consts::FRAC_PI_2,
-            EFFECT_GIZMO_RADIUS,
-            translation + Vec3::new(EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
-            Quat::from_euler(
-                EulerRot::XYZ,
-                std::f32::consts::FRAC_PI_2,
-                std::f32::consts::PI,
-                0.,
+            Isometry3d::new(
+                translation + Vec3::new(-EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
+                Quat::from_euler(EulerRot::XYZ, std::f32::consts::FRAC_PI_2, 0., 0.),
             ),
             color,
         );
         gizmos.arc_3d(
             std::f32::consts::FRAC_PI_2,
             EFFECT_GIZMO_RADIUS,
-            translation + Vec3::new(-EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
-            Quat::from_euler(
-                EulerRot::XYZ,
-                std::f32::consts::FRAC_PI_2,
-                std::f32::consts::FRAC_PI_2 * 3.,
-                0.,
+            Isometry3d::new(
+                translation + Vec3::new(EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
+                Quat::from_euler(
+                    EulerRot::XYZ,
+                    std::f32::consts::FRAC_PI_2,
+                    std::f32::consts::PI,
+                    0.,
+                ),
             ),
             color,
         );
         gizmos.arc_3d(
             std::f32::consts::FRAC_PI_2,
             EFFECT_GIZMO_RADIUS,
-            translation + Vec3::new(EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
-            Quat::from_euler(
-                EulerRot::XYZ,
-                std::f32::consts::FRAC_PI_2,
-                std::f32::consts::FRAC_PI_2,
-                0.,
+            Isometry3d::new(
+                translation + Vec3::new(-EFFECT_GIZMO_RADIUS, EFFECT_GIZMO_RADIUS, 0.),
+                Quat::from_euler(
+                    EulerRot::XYZ,
+                    std::f32::consts::FRAC_PI_2,
+                    std::f32::consts::FRAC_PI_2 * 3.,
+                    0.,
+                ),
             ),
             color,
         );
-        gizmos.circle(translation, Dir3::NEG_Z, EFFECT_GIZMO_RADIUS, color);
+        gizmos.arc_3d(
+            std::f32::consts::FRAC_PI_2,
+            EFFECT_GIZMO_RADIUS,
+            Isometry3d::new(
+                translation + Vec3::new(EFFECT_GIZMO_RADIUS, -EFFECT_GIZMO_RADIUS, 0.),
+                Quat::from_euler(
+                    EulerRot::XYZ,
+                    std::f32::consts::FRAC_PI_2,
+                    std::f32::consts::FRAC_PI_2,
+                    0.,
+                ),
+            ),
+            color,
+        );
+        gizmos.circle(
+            Isometry3d::new(translation, Quat::from_scaled_axis(Vec3::NEG_Z)),
+            EFFECT_GIZMO_RADIUS,
+            color,
+        );
     }
 }
 

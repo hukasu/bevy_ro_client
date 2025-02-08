@@ -3,6 +3,7 @@ mod material;
 
 use bevy::{
     app::{App, Plugin as BevyPlugin, Update},
+    pbr::MeshMaterial3d,
     prelude::{Commands, Entity, Query, Res},
     time::Time,
 };
@@ -39,7 +40,7 @@ pub fn update_texture(
 
             commands
                 .entity(entity)
-                .insert(plane.frames[plane.current_frame].clone());
+                .insert(MeshMaterial3d(plane.frames[plane.current_frame].clone()));
         }
     }
 }

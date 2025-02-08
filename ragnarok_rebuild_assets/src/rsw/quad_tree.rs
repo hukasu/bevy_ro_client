@@ -155,7 +155,7 @@ impl<'a> Crawler<'a> {
     }
 }
 
-impl<'a> Deref for Crawler<'a> {
+impl Deref for Crawler<'_> {
     type Target = Range;
 
     fn deref(&self) -> &Self::Target {

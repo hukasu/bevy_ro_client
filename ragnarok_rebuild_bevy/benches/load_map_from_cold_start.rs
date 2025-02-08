@@ -98,7 +98,7 @@ fn start_app_and_load_map(map: &str, render_creation: RenderCreation) {
         ))
         .add_plugins(RagnarokPlugin)
         .add_systems(Startup, start_map_load)
-        .observe(end_test_on_map_load);
+        .add_observer(end_test_on_map_load);
     app.run();
 }
 

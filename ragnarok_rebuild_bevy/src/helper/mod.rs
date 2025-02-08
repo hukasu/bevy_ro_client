@@ -7,7 +7,8 @@ use bevy::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
     },
-    sprite::{TextureAtlasBuilder, TextureAtlasLayout},
+    sprite::{TextureAtlasBuilder, TextureAtlasLayout, TextureAtlasSources},
+    utils::HashMap,
 };
 
 pub use self::aabb_ext::AabbExt;
@@ -23,8 +24,11 @@ pub fn build_texture_atlas_from_list_of_images(
         texture_atlas_builder.add_texture(None, image);
     }
 
-    let (layout, color_texture_image) = texture_atlas_builder.build().unwrap_or((
+    let (layout, _sources, color_texture_image) = texture_atlas_builder.build().unwrap_or((
         TextureAtlasLayout::new_empty(UVec2::splat(0)),
+        TextureAtlasSources {
+            texture_ids: HashMap::new(),
+        },
         Image::new_fill(
             Extent3d {
                 width: 8,

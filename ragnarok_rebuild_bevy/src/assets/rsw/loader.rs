@@ -4,15 +4,14 @@ use std::time::Duration;
 #[cfg(feature = "audio")]
 use bevy::{asset::Handle, audio::AudioSource, time::Timer};
 use bevy::{
-    asset::{io::Reader, AsyncReadExt, LoadContext},
+    asset::{io::Reader, LoadContext},
     color::{Color, Luminance},
     core::Name,
-    hierarchy::BuildWorldChildren,
     math::{EulerRot, Quat, Vec3},
-    pbr::{AmbientLight, DirectionalLight, DirectionalLightBundle, PointLight, PointLightBundle},
-    prelude::{Entity, SpatialBundle, TransformBundle},
+    pbr::{AmbientLight, DirectionalLight, PointLight},
+    prelude::{BuildChildren, ChildBuild, Entity, Visibility},
     render::primitives::Aabb,
-    scene::{Scene, SceneBundle},
+    scene::{Scene, SceneRoot},
     transform::components::Transform,
 };
 
@@ -34,19 +33,17 @@ impl bevy::asset::AssetLoader for AssetLoader {
     type Settings = ();
     type Error = super::Error;
 
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async {
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let rsw = rsw::Rsw::from_reader(&mut data.as_slice())?;
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut data: Vec<u8> = vec![];
+        reader.read_to_end(&mut data).await?;
+        let rsw = rsw::Rsw::from_reader(&mut data.as_slice())?;
 
-            Ok(Self::generate_world(&rsw, load_context))
-        })
+        Ok(Self::generate_world(&rsw, load_context))
     }
 
     fn extensions(&self) -> &[&str] {
@@ -83,7 +80,8 @@ impl AssetLoader {
         world
             .spawn((
                 Name::new(filename.to_string()),
-                SpatialBundle::default(),
+                Transform::default(),
+                Visibility::default(),
                 World {
                     has_lights: !rsw.lights.is_empty(),
                     has_sounds: !rsw.sounds.is_empty(),
@@ -91,7 +89,7 @@ impl AssetLoader {
                     quad_tree: super::QuadTree::from(&rsw.quad_tree),
                 },
             ))
-            .push_children(&[
+            .add_children(&[
                 directional_light,
                 ground,
                 tiles,
@@ -145,19 +143,16 @@ impl AssetLoader {
         world
             .spawn((
                 Name::new("DirectionalLight"),
-                DirectionalLightBundle {
-                    directional_light: DirectionalLight {
-                        color: directional_light_color,
-                        illuminance: Self::LIGHT_LUX
-                            * (directional_light_color.luminance()
-                                + rsw.lighting_parameters.shadow_map_alpha),
-                        shadows_enabled: true,
-                        ..Default::default()
-                    },
-                    transform: light_transform.looking_at(Vec3::ZERO, Vec3::Y),
+                DiffuseLight,
+                DirectionalLight {
+                    color: directional_light_color,
+                    illuminance: Self::LIGHT_LUX
+                        * (directional_light_color.luminance()
+                            + rsw.lighting_parameters.shadow_map_alpha),
+                    shadows_enabled: true,
                     ..Default::default()
                 },
-                DiffuseLight,
+                light_transform.looking_at(Vec3::ZERO, Vec3::Y),
             ))
             .id()
     }
@@ -178,13 +173,7 @@ impl AssetLoader {
             .load(format!("{}{}", paths::GROUND_FILES_FOLDER, rsw.gnd_file));
 
         world
-            .spawn((
-                Name::new(rsw.gnd_file.to_string()),
-                SceneBundle {
-                    scene: world_ground,
-                    ..Default::default()
-                },
-            ))
+            .spawn((Name::new(rsw.gnd_file.to_string()), SceneRoot(world_ground)))
             .id()
     }
 
@@ -202,13 +191,7 @@ impl AssetLoader {
         ));
 
         world
-            .spawn((
-                Name::new(rsw.gat_file.to_string()),
-                SceneBundle {
-                    scene: world_tiles,
-                    ..Default::default()
-                },
-            ))
+            .spawn((Name::new(rsw.gat_file.to_string()), SceneRoot(world_tiles)))
             .id()
     }
 
@@ -219,7 +202,11 @@ impl AssetLoader {
     ) -> Entity {
         bevy::log::trace!("Spawning animated props of {:?}", load_context.path());
         world
-            .spawn((Name::new("Models"), SpatialBundle::default()))
+            .spawn((
+                Name::new("Models"),
+                Transform::default(),
+                Visibility::default(),
+            ))
             .with_children(|parent| {
                 for prop in rsw.models.iter() {
                     let prop_handle = load_context.load(format!(
@@ -233,19 +220,16 @@ impl AssetLoader {
                             animation_type: prop.animation_type,
                             animation_speed: prop.animation_speed,
                         },
-                        SceneBundle {
-                            scene: prop_handle,
-                            transform: Transform {
-                                translation: Vec3::from_array(prop.position),
-                                rotation: Quat::from_euler(
-                                    EulerRot::ZXY,
-                                    prop.rotation[2].to_radians(),
-                                    prop.rotation[0].to_radians(),
-                                    prop.rotation[1].to_radians(),
-                                ),
-                                scale: Vec3::from_array(prop.scale),
-                            },
-                            ..Default::default()
+                        SceneRoot(prop_handle),
+                        Transform {
+                            translation: Vec3::from_array(prop.position),
+                            rotation: Quat::from_euler(
+                                EulerRot::ZXY,
+                                prop.rotation[2].to_radians(),
+                                prop.rotation[0].to_radians(),
+                                prop.rotation[1].to_radians(),
+                            ),
+                            scale: Vec3::from_array(prop.scale),
                         },
                     ));
                 }
@@ -260,29 +244,28 @@ impl AssetLoader {
     ) -> Entity {
         bevy::log::trace!("Spawning environmental lights of {:?}", load_context.path());
         world
-            .spawn((Name::new("Lights"), SpatialBundle::default()))
+            .spawn((
+                Name::new("Lights"),
+                Transform::default(),
+                Visibility::default(),
+            ))
             .with_children(|parent| {
                 for light in rsw.lights.iter() {
                     let color = Color::srgb(light.color[0], light.color[1], light.color[2]);
                     parent.spawn((
                         Name::new(light.name.to_string()),
-                        PointLightBundle {
-                            transform: Transform::from_translation(Vec3::from_array(
-                                light.position,
-                            )),
-                            point_light: PointLight {
-                                color,
-                                intensity: Self::POINT_LIGHT_LUMEN
-                                    * (color.luminance()
-                                        + (1. - rsw.lighting_parameters.shadow_map_alpha)),
-                                range: light.range / 5.,
-                                shadows_enabled: true,
-                                ..Default::default()
-                            },
+                        EnvironmentalLight { range: light.range },
+                        PointLight {
+                            color,
+                            intensity: Self::POINT_LIGHT_LUMEN
+                                * (color.luminance()
+                                    + (1. - rsw.lighting_parameters.shadow_map_alpha)),
+                            range: light.range / 5.,
+                            shadows_enabled: true,
                             ..Default::default()
                         },
                         Aabb::from_min_max(-Vec3::splat(light.range), Vec3::splat(light.range)),
-                        EnvironmentalLight { range: light.range },
+                        Transform::from_translation(Vec3::from_array(light.position)),
                     ));
                 }
             })
@@ -297,7 +280,7 @@ impl AssetLoader {
     ) -> Entity {
         bevy::log::trace!("Spawning environmental sounds of {:?}", load_context.path());
         world
-            .spawn((Name::new("Sounds"), SpatialBundle::default()))
+            .spawn((Name::new("Sounds"), Transform::default(), Visibility::default()))
             .with_children(|parent| {
                 for sound in rsw.sounds.iter() {
                     let audio_handle: Handle<AudioSource> =
@@ -305,10 +288,6 @@ impl AssetLoader {
 
                     parent.spawn((
                         Name::new(sound.name.to_string()),
-                        TransformBundle {
-                            local: Transform::from_translation(Vec3::from_array(sound.position)),
-                            ..Default::default()
-                        },
                         EnvironmentalSound {
                             name: sound.name.to_string(),
                             source: audio_handle,
@@ -327,6 +306,7 @@ impl AssetLoader {
                                 bevy::time::TimerMode::Repeating,
                             ),
                         },
+                        Transform::from_translation(Vec3::from_array(sound.position)),
                     ));
                 }
             })
@@ -343,16 +323,17 @@ impl AssetLoader {
             load_context.path()
         );
         world
-            .spawn((Name::new("Effects"), SpatialBundle::default()))
+            .spawn((
+                Name::new("Effects"),
+                Transform::default(),
+                Visibility::default(),
+            ))
             .with_children(|parent| {
                 for effect in rsw.effects.iter() {
                     parent.spawn((
                         Name::new(effect.name.to_string()),
-                        TransformBundle {
-                            local: Transform::from_translation(Vec3::from_array(effect.position)),
-                            ..Default::default()
-                        },
                         EnvironmentalEffect,
+                        Transform::from_translation(Vec3::from_array(effect.position)),
                     ));
                 }
             })

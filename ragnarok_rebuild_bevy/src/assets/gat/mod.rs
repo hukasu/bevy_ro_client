@@ -48,7 +48,7 @@ impl bevy::app::Plugin for Plugin {
             )
             .add_systems(
                 Update,
-                clear_hovered_tile.run_if(resource_removed::<resources::TileRayCast>()),
+                clear_hovered_tile.run_if(resource_removed::<resources::TileRayCast>),
             );
 
         #[cfg(feature = "debug")]

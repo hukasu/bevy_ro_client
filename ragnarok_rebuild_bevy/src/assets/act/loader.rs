@@ -1,12 +1,11 @@
 use std::fmt::Display;
 
 use bevy::{
-    asset::{io::Reader, AsyncReadExt, LoadContext},
+    asset::{io::Reader, LoadContext},
     color::Color,
     math::{IVec2, Quat, Vec2},
     prelude::Transform,
     reflect::TypePath,
-    utils::ConditionalSendFuture,
 };
 
 use ragnarok_rebuild_assets::act;
@@ -36,19 +35,17 @@ impl bevy::asset::AssetLoader for AssetLoader {
     type Settings = AssetLoaderSettings;
     type Error = AssetLoaderError;
 
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut Reader,
-        settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext,
-    ) -> impl ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async {
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let actor = act::Act::from_reader(&mut data.as_slice())?;
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut data: Vec<u8> = vec![];
+        reader.read_to_end(&mut data).await?;
+        let actor = act::Act::from_reader(&mut data.as_slice())?;
 
-            Self::generate_actor(load_context, settings, &actor)
-        })
+        Self::generate_actor(load_context, settings, &actor)
     }
 
     fn extensions(&self) -> &[&str] {

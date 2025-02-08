@@ -1,5 +1,6 @@
 use bevy::{
-    asset::{Asset, AsyncReadExt, Handle},
+    asset::{Asset, Handle},
+    image::ImageSampler,
     prelude::Image,
     reflect::Reflect,
     render::{
@@ -7,7 +8,6 @@ use bevy::{
         render_resource::{
             Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
         },
-        texture::ImageSampler,
     },
 };
 
@@ -29,19 +29,17 @@ impl bevy::asset::AssetLoader for AssetLoader {
     type Settings = ();
     type Error = spr::Error;
 
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut bevy::asset::io::Reader,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut bevy::asset::LoadContext,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async {
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let sprite = spr::Spr::from_reader(&mut data.as_slice())?;
+    async fn load(
+        &self,
+        reader: &mut dyn bevy::asset::io::Reader,
+        _settings: &Self::Settings,
+        load_context: &mut bevy::asset::LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut data: Vec<u8> = vec![];
+        reader.read_to_end(&mut data).await?;
+        let sprite = spr::Spr::from_reader(&mut data.as_slice())?;
 
-            Ok(Self::generate_sprite(load_context, sprite))
-        })
+        Ok(Self::generate_sprite(load_context, sprite))
     }
 
     fn extensions(&self) -> &[&str] {

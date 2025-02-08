@@ -1,11 +1,11 @@
 use bevy::{
     app::PostUpdate,
-    asset::{Assets, Handle},
+    asset::Assets,
     color::{self, Color, Srgba},
     math::Vec3,
     prelude::{
-        Gizmos, GlobalTransform, IntoSystemConfigs, Mesh, Query, ReflectResource, Res, Resource,
-        ViewVisibility, With,
+        Gizmos, GlobalTransform, IntoSystemConfigs, Mesh, Mesh3d, Query, ReflectResource, Res,
+        Resource, ViewVisibility, With,
     },
     reflect::Reflect,
     render::{
@@ -47,7 +47,7 @@ pub struct GndDebug {
 
 fn show_gnd_vertex_normal(
     mut gizmos: Gizmos,
-    grounds: Query<(&GlobalTransform, &Handle<Mesh>, &ViewVisibility), With<gnd::Ground>>,
+    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<gnd::Ground>>,
     meshes: Res<Assets<Mesh>>,
 ) {
     for (ground_transform, ground_mesh, ground_in_view) in grounds.iter() {
@@ -101,7 +101,7 @@ fn show_gnd_vertex_normal_condition(gnd_debug: Res<GndDebug>) -> bool {
 
 fn show_gnd_edges(
     mut gizmos: Gizmos,
-    grounds: Query<(&GlobalTransform, &Handle<Mesh>, &ViewVisibility), With<gnd::Ground>>,
+    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<gnd::Ground>>,
     meshes: Res<Assets<Mesh>>,
 ) {
     const GIZMO_COLOR: Srgba = color::palettes::css::ORANGE;

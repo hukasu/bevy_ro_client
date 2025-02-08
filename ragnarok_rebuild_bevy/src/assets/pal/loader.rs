@@ -1,4 +1,4 @@
-use bevy::{asset::AsyncReadExt, prelude::Image};
+use bevy::prelude::Image;
 use ragnarok_rebuild_assets::pal;
 
 pub struct AssetLoader;
@@ -8,19 +8,18 @@ impl bevy::asset::AssetLoader for AssetLoader {
     type Settings = ();
     type Error = pal::Error;
 
-    fn load<'a>(
-        &'a self,
-        reader: &'a mut bevy::asset::io::Reader,
-        _settings: &'a Self::Settings,
-        _load_context: &'a mut bevy::asset::LoadContext,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async {
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let palette = pal::Pal::from_reader(&mut data.as_slice())?;
+    async fn load(
+        &self,
+        reader: &mut dyn bevy::asset::io::Reader,
+        _settings: &Self::Settings,
+        _load_context: &mut bevy::asset::LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut data: Vec<u8> = vec![];
+        reader.read_to_end(&mut data).await?;
 
-            Ok(super::palette_to_image(&palette))
-        })
+        let palette = pal::Pal::from_reader(&mut data.as_slice())?;
+
+        Ok(super::palette_to_image(&palette))
     }
 
     fn extensions(&self) -> &[&str] {

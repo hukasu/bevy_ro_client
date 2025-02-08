@@ -12,22 +12,27 @@ workspace = true
 with-inspector = [
     "bevy-inspector-egui",
     "bevy_flycam",
-    "iyes_perf_ui",
+    # "iyes_perf_ui",
     "ragnarok_rebuild_bevy/debug",
-    "ab_glyph",
     "bevy/default_font",
+    "bevy/file_watcher",
+    "bevy/embedded_watcher",
 ]
 
 [dependencies]
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
 
-bevy = { workspace = true, default-features = false }
+bevy = { workspace = true, default-features = false, features = [
+    "bevy_window",
+    "bevy_text",
+    "wayland",
+    "trace",
+    "multi_threaded",
+] }
 bevy-inspector-egui = { workspace = true, optional = true }
 bevy_flycam = { workspace = true, optional = true }
-iyes_perf_ui = { workspace = true, optional = true }
-
-ab_glyph = { workspace = true, optional = true }
+# iyes_perf_ui = { workspace = true, optional = true }
 
 tungstenite = { workspace = true }
 url = { workspace = true }

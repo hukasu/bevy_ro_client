@@ -1,28 +1,30 @@
 use bevy::{
     animation::{
-        AnimationClip, AnimationPlayer, AnimationTarget, AnimationTargetId, Keyframes,
-        VariableCurve,
+        animated_field, AnimationClip, AnimationPlayer, AnimationTarget, AnimationTargetId,
     },
-    asset::{io::Reader, AssetLoader as BevyAssetLoader, AsyncReadExt, Handle, LoadContext},
+    asset::{io::Reader, AssetLoader as BevyAssetLoader, Handle, LoadContext},
     core::Name,
     ecs::world::World,
-    hierarchy::BuildWorldChildren,
+    image::Image,
     math::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4},
-    pbr::MaterialMeshBundle,
-    prelude::{AnimationGraph, AnimationTransitions, Entity, Interpolation, SpatialBundle},
+    pbr::MeshMaterial3d,
+    prelude::{
+        AnimatableCurve, AnimatedField, AnimationGraph, AnimationGraphHandle, AnimationTransitions,
+        BuildChildren, ChildBuild, Entity, Mesh3d, UnevenSampleAutoCurve, Visibility,
+    },
     render::{
         mesh::{Indices, Mesh},
         primitives::Aabb,
         render_asset::RenderAssetUsages,
         render_resource::PrimitiveTopology,
-        texture::Image,
     },
     scene::Scene,
     transform::components::Transform,
     utils::hashbrown::{hash_map::Entry, HashMap},
 };
-use ragnarok_rebuild_assets::rsm;
 use uuid::Uuid;
+
+use ragnarok_rebuild_assets::rsm;
 
 use crate::assets::{paths, rsm::components::ModelAnimation};
 
@@ -51,26 +53,25 @@ impl BevyAssetLoader for AssetLoader {
     type Settings = ();
     type Error = rsm::Error;
 
-    fn load<'a, 'b>(
-        &'a self,
-        reader: &'a mut Reader,
-        _settings: &'a Self::Settings,
-        load_context: &'a mut LoadContext<'b>,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Self::Asset, Self::Error>> {
-        Box::pin(async {
-            let mut data: Vec<u8> = vec![];
-            reader.read_to_end(&mut data).await?;
-            let rsm = rsm::Rsm::from_reader(&mut data.as_slice())?;
+    async fn load(
+        &self,
+        reader: &mut dyn Reader,
+        _settings: &Self::Settings,
+        load_context: &mut LoadContext<'_>,
+    ) -> Result<Self::Asset, Self::Error> {
+        let mut data: Vec<u8> = vec![];
+        reader.read_to_end(&mut data).await?;
 
-            let context = AssetLoaderContext {
-                world: World::new(),
-                load_context,
-                rsm: &rsm,
-            };
-            let scene = Self::generate_model(context);
+        let rsm = rsm::Rsm::from_reader(&mut data.as_slice())?;
 
-            Ok(scene)
-        })
+        let context = AssetLoaderContext {
+            world: World::new(),
+            load_context,
+            rsm: &rsm,
+        };
+        let scene = Self::generate_model(context);
+
+        Ok(scene)
     }
 
     fn extensions(&self) -> &[&str] {
@@ -87,7 +88,11 @@ impl AssetLoader {
 
         let rsm_root = asset_loader_context
             .world
-            .spawn((Name::new("root"), SpatialBundle::INHERITED_IDENTITY))
+            .spawn((
+                Name::new("root"),
+                Transform::default(),
+                Visibility::default(),
+            ))
             .id();
 
         // Load the texture defined at the top level of the model.
@@ -142,7 +147,7 @@ impl AssetLoader {
             rsm_root_mut.insert((
                 AnimationTransitions::default(),
                 AnimationPlayer::default(),
-                animation_graph_handle,
+                AnimationGraphHandle(animation_graph_handle),
                 super::Model {
                     animation: Some(ModelAnimation {
                         animation: animation_clip_handle,
@@ -154,7 +159,7 @@ impl AssetLoader {
             rsm_root_mut.insert(super::Model { animation: None });
         }
         // Pushing children meshes
-        rsm_root_mut.push_children(&root_meshes);
+        rsm_root_mut.add_children(&root_meshes);
 
         Scene {
             world: asset_loader_context.world,
@@ -266,21 +271,16 @@ impl AssetLoader {
 
         let mut node = asset_loader_context.world.spawn((
             Name::new(rsm_mesh.name.to_string()),
-            SpatialBundle::from_transform(node_transform),
+            node_transform,
+            Visibility::default(),
         ));
         node.with_children(|parent| {
             let transform = Self::mesh_transformation_matrix(rsm_mesh);
             parent
-                .spawn((
-                    Name::new("Primitives"),
-                    SpatialBundle {
-                        transform,
-                        ..Default::default()
-                    },
-                ))
-                .push_children(&primitives);
+                .spawn((Name::new("Primitives"), transform, Visibility::default()))
+                .add_children(&primitives);
         })
-        .push_children(&children);
+        .add_children(&children);
 
         if let Some(node_animation_target_id) =
             Self::build_mesh_animation(asset_loader_context.load_context, rsm_mesh, animation_clip)
@@ -361,11 +361,8 @@ impl AssetLoader {
                     .world
                     .spawn((
                         Name::new(format!("Primitive{i}")),
-                        MaterialMeshBundle {
-                            mesh,
-                            material,
-                            ..Default::default()
-                        },
+                        Mesh3d(mesh),
+                        MeshMaterial3d(material),
                     ))
                     .id()
             })
@@ -380,27 +377,27 @@ impl AssetLoader {
             return None;
         }
         let rsm = asset_loader_context.rsm;
-        let animation_target_id = AnimationTargetId(Uuid::new_v4());
 
-        animation_clip.add_curve_to_target(
-            animation_target_id,
-            VariableCurve {
-                keyframe_timestamps: rsm
-                    .scale_key_frames
-                    .iter()
-                    .map(|frame| frame.frame as f32 / 1000.)
-                    .collect(),
-                keyframes: Keyframes::Scale(
+        if let Ok(uneven_curve) = UnevenSampleAutoCurve::new(
+            rsm.scale_key_frames
+                .iter()
+                .map(|frame| frame.frame as f32 / 1000.)
+                .zip(
                     rsm.scale_key_frames
                         .iter()
-                        .map(|frame| Vec3::from_array(frame.scale))
-                        .collect(),
+                        .map(|frame| Vec3::from_array(frame.scale)),
                 ),
-                interpolation: Interpolation::Linear,
-            },
-        );
+        ) {
+            let animation_target_id = AnimationTargetId(Uuid::new_v4());
+            let animatable_curve =
+                AnimatableCurve::new(animated_field!(Transform::scale), uneven_curve);
 
-        Some(animation_target_id)
+            animation_clip.add_curve_to_target(animation_target_id, animatable_curve);
+
+            Some(animation_target_id)
+        } else {
+            None
+        }
     }
 
     fn build_mesh_animation(
@@ -422,63 +419,51 @@ impl AssetLoader {
 
         let animation_target_id = AnimationTargetId(Uuid::new_v4());
 
-        if !mesh.position_key_frames.is_empty() {
+        if let Ok(translation_curve) = UnevenSampleAutoCurve::new(
+            mesh.position_key_frames
+                .iter()
+                .map(|frame| frame.frame as f32 / 1000.)
+                .zip(
+                    mesh.position_key_frames
+                        .iter()
+                        .map(|frame| Vec3::from_array(frame.position)),
+                ),
+        ) {
             animation_clip.add_curve_to_target(
                 animation_target_id,
-                VariableCurve {
-                    keyframe_timestamps: mesh
-                        .position_key_frames
+                AnimatableCurve::new(animated_field!(Transform::translation), translation_curve),
+            );
+        };
+
+        if let Ok(rotation_curve) = UnevenSampleAutoCurve::new(
+            mesh.rotation_key_frames
+                .iter()
+                .map(|frame| frame.frame as f32 / 1000.)
+                .zip(
+                    mesh.rotation_key_frames
                         .iter()
-                        .map(|frame| frame.frame as f32 / 1000.)
-                        .collect(),
-                    keyframes: Keyframes::Translation(
-                        mesh.position_key_frames
-                            .iter()
-                            .map(|frame| Vec3::from_array(frame.position))
-                            .collect(),
-                    ),
-                    interpolation: Interpolation::Linear,
-                },
+                        .map(|frame| Quat::from_array(frame.quaternion)),
+                ),
+        ) {
+            animation_clip.add_curve_to_target(
+                animation_target_id,
+                AnimatableCurve::new(animated_field!(Transform::rotation), rotation_curve),
             );
         }
 
-        if !mesh.rotation_key_frames.is_empty() {
+        if let Ok(scale_curve) = UnevenSampleAutoCurve::new(
+            mesh.scale_key_frames
+                .iter()
+                .map(|frame| frame.frame as f32 / 1000.)
+                .zip(
+                    mesh.scale_key_frames
+                        .iter()
+                        .map(|frame| Vec3::from_array(frame.scale)),
+                ),
+        ) {
             animation_clip.add_curve_to_target(
                 animation_target_id,
-                VariableCurve {
-                    keyframe_timestamps: mesh
-                        .rotation_key_frames
-                        .iter()
-                        .map(|frame| frame.frame as f32 / 1000.)
-                        .collect(),
-                    keyframes: Keyframes::Rotation(
-                        mesh.rotation_key_frames
-                            .iter()
-                            .map(|frame| Quat::from_array(frame.quaternion))
-                            .collect(),
-                    ),
-                    interpolation: Interpolation::Linear,
-                },
-            );
-        }
-
-        if !mesh.scale_key_frames.is_empty() {
-            animation_clip.add_curve_to_target(
-                animation_target_id,
-                VariableCurve {
-                    keyframe_timestamps: mesh
-                        .scale_key_frames
-                        .iter()
-                        .map(|frame| frame.frame as f32 / 1000.)
-                        .collect(),
-                    keyframes: Keyframes::Scale(
-                        mesh.scale_key_frames
-                            .iter()
-                            .map(|frame| Vec3::from_array(frame.scale))
-                            .collect(),
-                    ),
-                    interpolation: Interpolation::Linear,
-                },
+                AnimatableCurve::new(animated_field!(Transform::scale), scale_curve),
             );
         }
 

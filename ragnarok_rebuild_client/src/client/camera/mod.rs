@@ -26,7 +26,7 @@ impl bevy::app::Plugin for Plugin {
 fn is_mouse_free(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
     if let Ok(primary_window) = windows.get_single() {
         matches!(
-            primary_window.cursor.grab_mode,
+            primary_window.cursor_options.grab_mode,
             bevy::window::CursorGrabMode::None
         )
     } else {
@@ -54,7 +54,7 @@ fn cast_ray_to_ground(
         return;
     };
 
-    let Some(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
+    let Ok(ray) = camera.viewport_to_world(camera_transform, cursor_position) else {
         return;
     };
 

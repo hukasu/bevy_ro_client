@@ -26,7 +26,7 @@ impl BevyPlugin for Plugin {
             // Loader
             .register_asset_loader(AssetLoader)
             // Observers
-            .observe(start_rsm_animation);
+            .add_observer(start_rsm_animation);
 
         // Materials
         app.add_plugins(materials::Plugin);
