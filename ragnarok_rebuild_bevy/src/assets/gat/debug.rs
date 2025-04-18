@@ -50,6 +50,17 @@ fn show_hovered(
 
     let x = hovered.x as f32 - (gat.width / 2) as f32;
     let z = hovered.z as f32 - (gat.height / 2) as f32;
+    let color = match hovered.tile.tile_type {
+        0 => palettes::tailwind::EMERALD_400,
+        1 => palettes::tailwind::RED_400,
+        2 => palettes::tailwind::BLUE_900,
+        3 => palettes::tailwind::BLUE_400,
+        4 => palettes::tailwind::BLUE_700,
+        5 => palettes::tailwind::GRAY_400,
+        6 => palettes::tailwind::GRAY_900,
+        7 => palettes::tailwind::PURPLE_400,
+        other => unreachable!("Unknown tile type {}.", other),
+    };
 
     // Hovered tile is in game space but x and z are in world scape, so we scale
     // only Y by the transform
@@ -67,7 +78,7 @@ fn show_hovered(
         aabb.compute_global_transform(GlobalTransform::from(
             transform.with_scale(transform.scale.with_x(1.).with_z(1.)),
         )),
-        palettes::tailwind::EMERALD_400,
+        color,
     );
 }
 
