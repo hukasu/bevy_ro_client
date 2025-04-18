@@ -185,6 +185,16 @@ fn debug_mesh(mesh: &Mesh, textures: &[Box<str>]) -> Option<String> {
         }
     }
 
+    if mesh.transformation_matrix != [1., 0., 0., 0., 0., 1., 0., -1., 0.] {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(
+            debug_ref,
+            "\t\thas non-canonical transformation matrix. ({:?})",
+            mesh.transformation_matrix
+        )
+        .unwrap();
+    }
+
     if let Some(face_debug) = check_unused_vertices(mesh) {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(debug_ref, "\t\t{}", face_debug).unwrap();
