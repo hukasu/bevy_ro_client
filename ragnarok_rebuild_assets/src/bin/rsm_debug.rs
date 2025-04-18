@@ -45,17 +45,12 @@ fn debug_rsm(rsm: &Rsm) -> Option<String> {
     let header = || format!("\t{:?}\n", rsm.version);
     let mut debug = None;
 
-    // if let Some(texture_count) = debug_texture_count(rsm) {
-    //     let debug_ref = debug.get_or_insert_with(header);
-    //     write!(debug_ref, "{}", texture_count).unwrap();
-    // }
-
     if rsm.root_meshes.is_empty() {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(debug_ref, "\t\thas no root meshes.").unwrap();
     }
 
-    if rsm.volume_boxes.len() != 0 {
+    if !rsm.volume_boxes.is_empty() {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(debug_ref, "\t\thas volume boxes. ({:?})", rsm.volume_boxes).unwrap();
     }
@@ -217,7 +212,7 @@ fn debug_face(face: &Face, index: usize) -> Option<String> {
             face.smoothing_group
         )
         .unwrap();
-    } else if face.smoothing_group.len() == 0 {
+    } else if face.smoothing_group.is_empty() {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(debug_ref, "\t\t\t has no smoothing groups.",).unwrap();
     }
