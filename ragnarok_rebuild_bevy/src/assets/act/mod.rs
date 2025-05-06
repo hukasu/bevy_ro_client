@@ -6,17 +6,15 @@ mod loader;
 use std::time::Duration;
 
 #[cfg(feature = "audio")]
-use bevy::hierarchy::Parent;
+use bevy::prelude::ChildOf;
 use bevy::{
     app::{FixedUpdate, Update},
-    asset::{AssetApp, AssetServer, Assets, Handle, LoadState},
-    core::Name,
+    asset::{weak_handle, AssetApp, AssetServer, Assets, Handle, LoadState},
     math::{Quat, Vec2, Vec3},
     pbr::MeshMaterial3d,
     prelude::{
-        BuildChildren, Camera3d, ChildBuild, Commands, DespawnRecursiveExt, Entity, EventReader,
-        EventWriter, IntoSystemConfigs, Mesh, Mesh3d, Plane3d, Query, Res, Transform, Trigger,
-        Visibility, With, Without,
+        Camera3d, Children, Commands, Entity, EventReader, EventWriter, IntoScheduleConfigs, Mesh,
+        Mesh3d, Name, Plane3d, Query, Res, Transform, Trigger, Visibility, With, Without,
     },
     time::{Time, Timer},
 };
@@ -38,8 +36,7 @@ use self::{
     loader::{AssetLoader, AssetLoaderSettings},
 };
 
-const IDENTITY_PLANE_HANDLE: Handle<Mesh> =
-    Handle::weak_from_u128(0xe19c5b465ee0452a8d601d8b0da1fdf3);
+const IDENTITY_PLANE_HANDLE: Handle<Mesh> = weak_handle!("e19c5b46-5ee0-452a-8d60-1d8b0da1fdf3");
 
 pub struct Plugin;
 
@@ -77,7 +74,7 @@ impl bevy::app::Plugin for Plugin {
 }
 
 fn load_actor(trigger: Trigger<LoadActor>, mut commands: Commands, asset_server: Res<AssetServer>) {
-    if trigger.entity() == Entity::PLACEHOLDER {
+    if trigger.target() == Entity::PLACEHOLDER {
         bevy::log::error!("Could not spawn Actor because the event had no entity. Use `commands.trigger_targets`.");
     } else {
         // Spawning an empty entity for questions of ordering of
@@ -85,7 +82,7 @@ fn load_actor(trigger: Trigger<LoadActor>, mut commands: Commands, asset_server:
         let actor = commands.spawn_empty().id();
         // Pushing the empty actor to the parent, this will cause the
         // actor to have access to Parent on the OnAdd of the Actor components
-        commands.entity(trigger.entity()).add_child(actor);
+        commands.entity(trigger.target()).add_child(actor);
         // Adding actor components
         let actor_name = trigger.event().actor.clone();
         commands.entity(actor).insert((
@@ -142,13 +139,13 @@ fn start_animation(
     mut actors: Query<&mut Actor, With<LoadingActor>>,
     animations: Res<Assets<Animation>>,
 ) {
-    let Ok(mut actor) = actors.get_mut(trigger.entity()) else {
+    let Ok(mut actor) = actors.get_mut(trigger.target()) else {
         bevy::log::error!("Trying to start Actor animation on an entity that is not an Actor.");
         return;
     };
 
     bevy::log::trace!("Starting Actor animation.");
-    commands.entity(trigger.entity()).remove::<LoadingActor>();
+    commands.entity(trigger.target()).remove::<LoadingActor>();
 
     let Some(animation) = animations.get(&actor.act) else {
         bevy::log::error!("Actor's Act was marked as Loaded but was not present on Assets.");
@@ -170,7 +167,7 @@ fn tick_animations(
 ) {
     let delta = time.delta();
 
-    event_writer.send_batch(
+    event_writer.write_batch(
         actors
             .iter_mut()
             .map(|(entity, mut actor)| {
@@ -195,7 +192,7 @@ fn actor_look_at_camera(
     cameras: Query<&Transform, (With<Camera3d>, Without<Actor>)>,
     world_transform: Res<WorldTransform>,
 ) {
-    let Ok(camera) = cameras.get_single() else {
+    let Ok(camera) = cameras.single() else {
         bevy::log::error_once!("Couldn't get a camera for actors to look at.");
         return;
     };
@@ -210,7 +207,7 @@ fn swap_animations(
     mut commands: Commands,
     mut event_reader: EventReader<ActorTimerTick>,
     mut actors: Query<&mut Actor, Without<LoadingActor>>,
-    #[cfg(feature = "audio")] parents: Query<&Parent, Without<LoadingActor>>,
+    #[cfg(feature = "audio")] children: Query<&ChildOf, Without<LoadingActor>>,
     #[cfg(feature = "audio")] transforms: Query<&Transform>,
     animations: Res<Assets<Animation>>,
 ) {
@@ -225,7 +222,9 @@ fn swap_animations(
         let clip = &animation.clips[actor.clip];
         let frame = &clip.frames[actor.frame];
 
-        commands.entity(actor_id.entity).despawn_descendants();
+        commands
+            .entity(actor_id.entity)
+            .despawn_related::<Children>();
 
         commands.entity(actor_id.entity).with_children(|builder| {
             for (i, layer) in frame.layers.iter().enumerate() {
@@ -253,10 +252,10 @@ fn swap_animations(
 
         #[cfg(feature = "audio")]
         {
-            let Ok(actor_parent) = parents.get(actor_id.entity) else {
+            let Ok(actor_parent) = children.get(actor_id.entity) else {
                 return;
             };
-            let Ok(actor_transform) = transforms.get(actor_parent.get()) else {
+            let Ok(actor_transform) = transforms.get(actor_parent.parent()) else {
                 return;
             };
             if let Some(AnimationEvent::Sound(sound)) = &frame.event {

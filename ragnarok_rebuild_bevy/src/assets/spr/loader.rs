@@ -71,7 +71,7 @@ impl AssetLoader {
             .enumerate()
             .map(|(index, sprite)| {
                 let image = Image {
-                    data: sprite.indexes.to_vec(),
+                    data: Some(sprite.indexes.to_vec()),
                     texture_descriptor: TextureDescriptor {
                         label: Some("indexed_sprite"),
                         size: Extent3d {
@@ -109,11 +109,13 @@ impl AssetLoader {
             .enumerate()
             .map(|(index, sprite)| {
                 let image = Image {
-                    data: sprite
-                        .pixels
-                        .iter()
-                        .flat_map(|pixel| [pixel.red, pixel.green, pixel.blue, pixel.alpha])
-                        .collect(),
+                    data: Some(
+                        sprite
+                            .pixels
+                            .iter()
+                            .flat_map(|pixel| [pixel.red, pixel.green, pixel.blue, pixel.alpha])
+                            .collect(),
+                    ),
                     texture_descriptor: TextureDescriptor {
                         label: Some("true_color_sprite"),
                         size: Extent3d {

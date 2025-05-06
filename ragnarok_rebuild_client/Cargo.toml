@@ -11,7 +11,7 @@ workspace = true
 [features]
 with-inspector = [
     "bevy-inspector-egui",
-    "bevy_flycam",
+    # "bevy_flycam",
     # "iyes_perf_ui",
     "ragnarok_rebuild_bevy/debug",
     "bevy/default_font",
@@ -33,7 +33,7 @@ bevy = { workspace = true, default-features = false, features = [
     "multi_threaded",
 ] }
 bevy-inspector-egui = { workspace = true, optional = true }
-bevy_flycam = { workspace = true, optional = true }
+# bevy_flycam = { workspace = true, optional = true }
 # iyes_perf_ui = { workspace = true, optional = true }
 
 tungstenite = { workspace = true }

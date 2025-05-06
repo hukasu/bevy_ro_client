@@ -23,11 +23,13 @@ impl bevy::app::Plugin for Plugin {
 
 pub fn palette_to_image(palette: &pal::Pal) -> Image {
     Image {
-        data: palette
-            .colors
-            .iter()
-            .flat_map(|color| [color.red, color.green, color.blue, color.alpha])
-            .collect(),
+        data: Some(
+            palette
+                .colors
+                .iter()
+                .flat_map(|color| [color.red, color.green, color.blue, color.alpha])
+                .collect(),
+        ),
         texture_descriptor: TextureDescriptor {
             label: Some("palette"),
             size: Extent3d {

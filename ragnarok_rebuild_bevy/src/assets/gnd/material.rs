@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{load_internal_asset, Asset, AssetApp, Handle},
+    asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle},
     pbr::{Material, MaterialPlugin},
     prelude::{AlphaMode, Image, Mesh, Shader},
     reflect::Reflect,
@@ -10,8 +10,7 @@ use bevy::{
     },
 };
 
-const GND_SHADER_HANDLE: Handle<Shader> =
-    Handle::weak_from_u128(0xb7fa811ae840469eb97291bb81c55dfd);
+const GND_SHADER_HANDLE: Handle<Shader> = weak_handle!("b7fa811a-e840-469e-b972-91bb81c55dfd");
 
 pub struct Plugin;
 

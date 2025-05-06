@@ -2,7 +2,7 @@ use bevy::{
     app::Update,
     ecs::schedule::common_conditions::{not, resource_exists},
     math::bounding::RayCast3d,
-    prelude::{Camera, Commands, GlobalTransform, IntoSystemConfigs, Query, With},
+    prelude::{Camera, Commands, GlobalTransform, IntoScheduleConfigs, Query, With},
     window::{PrimaryWindow, Window},
 };
 use ragnarok_rebuild_bevy::assets::gat::TileRayCast;
@@ -24,7 +24,7 @@ impl bevy::app::Plugin for Plugin {
 }
 
 fn is_mouse_free(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
-    if let Ok(primary_window) = windows.get_single() {
+    if let Ok(primary_window) = windows.single() {
         matches!(
             primary_window.cursor_options.grab_mode,
             bevy::window::CursorGrabMode::None
@@ -40,12 +40,12 @@ fn cast_ray_to_ground(
     primary_windows: Query<&Window, With<PrimaryWindow>>,
     cameras: Query<(&Camera, &GlobalTransform)>,
 ) {
-    let Ok(primary_window) = primary_windows.get_single() else {
+    let Ok(primary_window) = primary_windows.single() else {
         bevy::log::error!("There are none or more than one PrimaryWindow spawned.");
         return;
     };
 
-    let Ok((camera, camera_transform)) = cameras.get_single() else {
+    let Ok((camera, camera_transform)) = cameras.single() else {
         bevy::log::error!("There are none or more than one PrimCameraaryWindow spawned.");
         return;
     };

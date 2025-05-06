@@ -6,10 +6,7 @@ use bevy::{
     asset::{AssetServer, Assets},
     color::Color,
     image::{Image, ImageLoaderSettings, ImageSampler},
-    prelude::{
-        BuildChildren, ChildBuild, Commands, DespawnRecursiveExt, Entity, ImageNode, OnEnter,
-        OnExit, Res, Single, With,
-    },
+    prelude::{Commands, Entity, ImageNode, OnEnter, OnExit, Res, Single, With},
     ui::{AlignSelf, BackgroundColor, FlexDirection, Node, PositionType, Val, ZIndex},
 };
 
@@ -103,5 +100,5 @@ fn hide_loading_screen(
     mut commands: Commands,
     loading_screen: Single<Entity, With<LoadingScreen>>,
 ) {
-    commands.entity(*loading_screen).despawn_recursive();
+    commands.entity(*loading_screen).despawn();
 }

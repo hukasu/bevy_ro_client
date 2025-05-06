@@ -1,7 +1,7 @@
 use std::marker::PhantomData;
 
 use bevy::{
-    asset::{load_internal_asset, Asset, AssetApp, Handle},
+    asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle},
     image::Image,
     pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin},
     reflect::Reflect,
@@ -12,15 +12,16 @@ use bevy::{
             AsBindGroup, Face, RenderPipelineDescriptor, Shader, ShaderRef,
             SpecializedMeshPipelineError,
         },
+        RenderDebugFlags,
     },
 };
 
 const RSM_VERTEX_SHADER_HANDLE: Handle<Shader> =
-    Handle::weak_from_u128(0x6f222d4d294c4d81b7660f49d6d03320);
+    weak_handle!("6f222d4d-294c-4d81-b766-0f49d6d03320");
 const RSM_PREPASS_SHADER_HANDLE: Handle<Shader> =
-    Handle::weak_from_u128(0xc017affd8ac840cc894803aeff34d07e);
+    weak_handle!("c017affd-8ac8-40cc-8948-03aeff34d07e");
 const RSM_FRAGMENT_SHADER_HANDLE: Handle<Shader> =
-    Handle::weak_from_u128(0xd13565d887864a32a9751d5f63c5f7ec);
+    weak_handle!("d13565d8-8786-4a32-a975-1d5f63c5f7ec");
 
 pub struct Plugin;
 
@@ -34,6 +35,7 @@ impl bevy::app::Plugin for Plugin {
             .add_plugins(MaterialPlugin::<RsmMaterial> {
                 prepass_enabled: true,
                 shadows_enabled: true,
+                debug_flags: RenderDebugFlags::empty(),
                 _marker: PhantomData,
             });
         load_internal_asset!(

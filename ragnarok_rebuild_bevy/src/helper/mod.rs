@@ -1,14 +1,14 @@
 mod aabb_ext;
 
 use bevy::{
+    image::{TextureAtlasBuilder, TextureAtlasLayout, TextureAtlasSources},
     math::{UVec2, Vec2},
+    platform::collections::HashMap,
     prelude::Image,
     render::{
         render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
     },
-    sprite::{TextureAtlasBuilder, TextureAtlasLayout, TextureAtlasSources},
-    utils::HashMap,
 };
 
 pub use self::aabb_ext::AabbExt;

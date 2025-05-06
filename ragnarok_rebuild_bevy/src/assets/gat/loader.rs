@@ -1,7 +1,6 @@
 use bevy::{
     asset::LoadContext,
-    core::Name,
-    prelude::{Transform, Visibility, World},
+    prelude::{Name, Transform, Visibility, World},
     scene::Scene,
 };
 

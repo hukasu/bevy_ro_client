@@ -1,5 +1,5 @@
 use bevy::{
-    math::{Vec3, Vec3A},
+    math::Vec3A,
     prelude::{GlobalTransform, Transform, TransformPoint},
     render::primitives::Aabb,
 };
@@ -32,8 +32,7 @@ impl AabbExt for Aabb {
                 self.center + (Vec3A::new(-1., -1., -1.) * self.half_extents),
             ]
             .into_iter()
-            .map(|point| transform.transform_point(point))
-            .map(Vec3::from),
+            .map(|point| transform.transform_point(point)),
         ) else {
             unreachable!("Aabb is calculated from rotated vertices.")
         };

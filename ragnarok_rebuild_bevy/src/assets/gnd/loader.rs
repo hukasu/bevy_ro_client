@@ -2,7 +2,6 @@ use std::collections::BTreeMap;
 
 use bevy::{
     asset::{io::Reader, Handle, LoadContext},
-    core::Name,
     ecs::world::World,
     image::{
         Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
@@ -10,7 +9,7 @@ use bevy::{
     },
     math::{Vec2, Vec3},
     pbr::{MeshMaterial3d, NotShadowCaster, NotShadowReceiver},
-    prelude::{BuildChildren, Entity, Mesh3d, Transform, Visibility},
+    prelude::{Entity, Mesh3d, Name, Transform, Visibility},
     render::{
         mesh::{Indices, Mesh, PrimitiveTopology},
         render_asset::RenderAssetUsages,

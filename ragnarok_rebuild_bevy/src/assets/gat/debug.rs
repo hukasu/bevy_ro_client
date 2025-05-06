@@ -3,7 +3,7 @@ use bevy::{
     color::palettes,
     math::Vec3,
     prelude::{
-        Gizmos, GlobalTransform, IntoSystemConfigs, Query, ReflectResource, Res, Resource,
+        Gizmos, GlobalTransform, IntoScheduleConfigs, Query, ReflectResource, Res, Resource,
         TransformSystem,
     },
     reflect::Reflect,
@@ -41,7 +41,7 @@ fn show_hovered(
     hovered_tile: Res<super::resources::HoveredTile>,
     gats: Query<(&super::components::Tiles, &GlobalTransform)>,
 ) {
-    let Ok((gat, gat_transform)) = gats.get_single() else {
+    let Ok((gat, gat_transform)) = gats.single() else {
         return;
     };
     let Some(hovered) = **hovered_tile else {

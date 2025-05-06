@@ -7,12 +7,10 @@ mod loading_screen;
 use bevy::{
     app::{Plugin, Startup, Update},
     color::Color,
-    core::Name,
     math::{Quat, Vec3},
     prelude::{
-        in_state, resource_changed, BuildChildren, ChildBuild, ClearColor, Commands, Entity,
-        IntoSystemConfigs, NextState, OnAdd, Query, Res, ResMut, Transform, Trigger, Visibility,
-        With,
+        in_state, resource_changed, ClearColor, Commands, Entity, IntoScheduleConfigs, Name,
+        NextState, OnAdd, Query, Res, ResMut, Transform, Trigger, Visibility, With,
     },
 };
 
@@ -97,14 +95,11 @@ fn attach_world_to_game(
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
-    let Ok(game) = games
-        .get_single()
-        .inspect_err(|err| bevy::log::error!("{err}"))
-    else {
+    let Ok(game) = games.single().inspect_err(|err| bevy::log::error!("{err}")) else {
         return;
     };
 
-    commands.entity(game).add_child(trigger.entity());
+    commands.entity(game).add_child(trigger.target());
 }
 
 fn attach_entity_to_game(
@@ -112,14 +107,11 @@ fn attach_entity_to_game(
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
-    let Ok(game) = games
-        .get_single()
-        .inspect_err(|err| bevy::log::error!("{err}"))
-    else {
+    let Ok(game) = games.single().inspect_err(|err| bevy::log::error!("{err}")) else {
         return;
     };
 
-    commands.entity(game).add_child(trigger.entity());
+    commands.entity(game).add_child(trigger.target());
 }
 
 fn attach_bgm_to_game(
@@ -127,14 +119,11 @@ fn attach_bgm_to_game(
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
-    let Ok(game) = games
-        .get_single()
-        .inspect_err(|err| bevy::log::error!("{err}"))
-    else {
+    let Ok(game) = games.single().inspect_err(|err| bevy::log::error!("{err}")) else {
         return;
     };
 
-    commands.entity(game).add_child(trigger.entity());
+    commands.entity(game).add_child(trigger.target());
 }
 
 fn attach_sound_to_game(
@@ -142,14 +131,11 @@ fn attach_sound_to_game(
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
-    let Ok(game) = games
-        .get_single()
-        .inspect_err(|err| bevy::log::error!("{err}"))
-    else {
+    let Ok(game) = games.single().inspect_err(|err| bevy::log::error!("{err}")) else {
         return;
     };
 
-    commands.entity(game).add_child(trigger.entity());
+    commands.entity(game).add_child(trigger.target());
 }
 
 fn update_world_transform(
@@ -159,7 +145,7 @@ fn update_world_transform(
 ) {
     bevy::log::trace!("Updating world transform.");
     let Ok(mut game_transform) = games
-        .get_single_mut()
+        .single_mut()
         .inspect_err(|err| bevy::log::error!("{err}"))
     else {
         return;

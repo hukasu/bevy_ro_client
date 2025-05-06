@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{load_internal_asset, Asset, AssetApp, Handle},
+    asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle},
     pbr::{Material, MaterialPlugin},
     prelude::{AlphaMode, Image, Shader},
     reflect::Reflect,
@@ -7,7 +7,7 @@ use bevy::{
 };
 
 const WATER_PLANE_SHADER_HANDLE: Handle<Shader> =
-    Handle::weak_from_u128(0x13c76198ee094c50bbe45609d880269e);
+    weak_handle!("13c76198-ee09-4c50-bbe4-5609d880269e");
 
 pub struct Plugin;
 

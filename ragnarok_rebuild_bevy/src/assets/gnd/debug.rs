@@ -4,7 +4,7 @@ use bevy::{
     color::{self, Color, Srgba},
     math::Vec3,
     prelude::{
-        Gizmos, GlobalTransform, IntoSystemConfigs, Mesh, Mesh3d, Query, ReflectResource, Res,
+        Gizmos, GlobalTransform, IntoScheduleConfigs, Mesh, Mesh3d, Query, ReflectResource, Res,
         Resource, ViewVisibility, With,
     },
     reflect::Reflect,

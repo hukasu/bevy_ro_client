@@ -10,14 +10,11 @@ use bevy::{
     app::Update,
     asset::AssetApp,
     ecs::{
-        schedule::{
-            common_conditions::{resource_exists, resource_removed},
-            IntoSystemConfigs,
-        },
+        schedule::common_conditions::{resource_exists, resource_removed},
         system::{Query, Res, ResMut},
     },
     math::{bounding::Aabb3d, Quat, Vec3},
-    prelude::Triangle3d,
+    prelude::{IntoScheduleConfigs, Triangle3d},
     render::primitives::Aabb,
 };
 
@@ -65,11 +62,11 @@ fn mouse_intersect_gat(
     mut hovered_tile: ResMut<resources::HoveredTile>,
     world_transform: Res<WorldTransform>,
 ) {
-    let Ok(tiles) = gats.get_single() else {
+    let Ok(tiles) = gats.single() else {
         bevy::log::error!("There are none or more than one Gat spawned.");
         return;
     };
-    let Ok(rsw) = rsws.get_single() else {
+    let Ok(rsw) = rsws.single() else {
         bevy::log::error!("There are none or more than one Rsw spawned.");
         return;
     };

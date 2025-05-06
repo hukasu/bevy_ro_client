@@ -9,10 +9,9 @@ mod resources;
 use bevy::{
     app::Update,
     asset::{AssetApp, AssetServer, Handle},
-    core::Name,
     prelude::{
-        resource_exists, Children, Commands, DespawnRecursiveExt, Entity, IntoSystemConfigs, OnAdd,
-        Query, Res, ResMut, Trigger, With,
+        resource_exists, Children, Commands, Entity, IntoScheduleConfigs, Name, OnAdd, Query, Res,
+        ResMut, Trigger, With,
     },
     scene::{Scene, SceneInstance, SceneSpawner},
 };
@@ -81,15 +80,17 @@ fn unload_world(
     world_names: Query<&Name, With<components::World>>,
 ) {
     let name = world_names
-        .get(trigger.entity())
+        .get(trigger.target())
         .map_or(UNNAMED_WORLD, |name| name.as_str());
     bevy::log::trace!("Unloading world {}", name);
-    commands.entity(trigger.entity()).despawn_recursive();
+    commands
+        .entity(trigger.target())
+        .despawn_related::<Children>();
 }
 
 fn world_added(trigger: Trigger<OnAdd, World>, mut commands: Commands) {
     commands.insert_resource(LoadingWorld {
-        world: trigger.entity(),
+        world: trigger.target(),
     });
 }
 
@@ -100,7 +101,7 @@ fn world_loaded(
 ) {
     let other_worlds = worlds
         .iter()
-        .filter(|world| world.ne(&trigger.entity()))
+        .filter(|world| world.ne(&trigger.target()))
         .collect::<Vec<_>>();
     if !other_worlds.is_empty() {
         commands.trigger_targets(UnloadWorld, other_worlds);
@@ -144,7 +145,7 @@ fn play_environmental_audio(
     mut environmental_sounds: Query<&mut EnvironmentalSound>,
     time: Res<bevy::time::Time>,
 ) {
-    let Ok((world, world_info)) = worlds.get_single() else {
+    let Ok((world, world_info)) = worlds.single() else {
         return;
     };
     if !world_info.has_sounds {

@@ -4,7 +4,7 @@ pub mod system_sets;
 use bevy::{
     app::Startup,
     asset::{AssetServer, Handle},
-    prelude::{App, Commands, Deref, IntoSystemConfigs, ReflectResource, Res, Resource},
+    prelude::{App, Commands, Deref, IntoScheduleConfigs, ReflectResource, Res, Resource},
     reflect::Reflect,
 };
 

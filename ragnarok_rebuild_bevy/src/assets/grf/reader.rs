@@ -44,45 +44,37 @@ impl BevyAsserReader for AssetReader {
         Err(AssetReaderError::NotFound(path.to_path_buf()))
     }
 
-    fn is_directory<'a>(
-        &'a self,
-        path: &'a Path,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<bool, AssetReaderError>> {
-        Box::pin(async move {
-            match self.grf.is_directory(path) {
-                Ok(is_dir) => Ok(is_dir),
-                Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
-                Err(err) => Err(AssetReaderError::Io(
-                    Error::new(
-                        ErrorKind::Other,
-                        format!("An error occurred while checking if path is directory. '{err}'"),
-                    )
-                    .into(),
-                )),
-            }
-        })
+    async fn is_directory<'a>(&'a self, path: &'a Path) -> Result<bool, AssetReaderError> {
+        match self.grf.is_directory(path) {
+            Ok(is_dir) => Ok(is_dir),
+            Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
+            Err(err) => Err(AssetReaderError::Io(
+                Error::new(
+                    ErrorKind::Other,
+                    format!("An error occurred while checking if path is directory. '{err}'"),
+                )
+                .into(),
+            )),
+        }
     }
 
-    fn read_directory<'a>(
+    async fn read_directory<'a>(
         &'a self,
         path: &'a Path,
-    ) -> impl bevy::utils::ConditionalSendFuture<Output = Result<Box<PathStream>, AssetReaderError>>
-    {
-        Box::pin(async {
-            match self.grf.read_directory(path) {
-                Ok(paths) => {
-                    let stream: Box<PathStream> = Box::new(futures::stream::iter(paths.to_vec()));
-                    Ok(stream)
-                }
-                Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
-                Err(err) => Err(AssetReaderError::Io(
-                    Error::new(
-                        ErrorKind::Other,
-                        format!("An error occurred while checking if path is directory. '{err}'"),
-                    )
-                    .into(),
-                )),
+    ) -> Result<Box<PathStream>, AssetReaderError> {
+        match self.grf.read_directory(path) {
+            Ok(paths) => {
+                let stream: Box<PathStream> = Box::new(futures::stream::iter(paths.to_vec()));
+                Ok(stream)
             }
-        })
+            Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
+            Err(err) => Err(AssetReaderError::Io(
+                Error::new(
+                    ErrorKind::Other,
+                    format!("An error occurred while checking if path is directory. '{err}'"),
+                )
+                .into(),
+            )),
+        }
     }
 }

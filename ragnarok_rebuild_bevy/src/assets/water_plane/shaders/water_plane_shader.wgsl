@@ -32,7 +32,7 @@ struct Wave {
 fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
 
-    pbr_input.material.reflectance = 0.0;
+    pbr_input.material.reflectance = vec3(0.0);
 #ifndef OPAQUE_WATER_PLANE
     pbr_input.material.flags = STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND;
 #endif

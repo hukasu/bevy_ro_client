@@ -10,11 +10,10 @@ use std::{collections::HashMap, time::Duration};
 use bevy::{
     app::Plugin as BevyPlugin,
     asset::{AssetApp, Assets},
-    core::Name,
     pbr::MeshMaterial3d,
     prelude::{
-        AnimationPlayer, AnimationTransitions, Children, Commands, Entity, HierarchyQueryExt,
-        Parent, Query, ResMut, Transform, Trigger, With,
+        AnimationPlayer, AnimationTransitions, ChildOf, Children, Commands, Entity, Name, Query,
+        ResMut, Transform, Trigger, With,
     },
 };
 use materials::RsmMaterial;
@@ -51,7 +50,7 @@ fn start_rsm(
     children: Query<&Children>,
     animated_props: Query<(&Children, &AnimatedProp)>,
 ) {
-    let Ok(world_children) = children.get(trigger.entity()) else {
+    let Ok(world_children) = children.get(trigger.target()) else {
         bevy::log::error!("Just loaded world had no children.");
         return;
     };
@@ -88,7 +87,7 @@ fn invert_materials(
     materials: Query<&MeshMaterial3d<RsmMaterial>>,
     mut rsm_materials: ResMut<Assets<RsmMaterial>>,
 ) {
-    let Ok(world_children) = children.get(trigger.entity()) else {
+    let Ok(world_children) = children.get(trigger.target()) else {
         bevy::log::error!("Just loaded world had no children.");
         return;
     };
@@ -131,14 +130,14 @@ fn invert_materials(
 
 fn start_rsm_animation(
     trigger: Trigger<StartPropAnimation>,
-    models: Query<(Entity, &Parent, &Model)>,
+    models: Query<(Entity, &ChildOf, &Model)>,
     mut animation_graphs: Query<(&mut AnimationPlayer, &mut AnimationTransitions)>,
     names: Query<&Name>,
 ) {
-    let Ok((entity, parent, model)) = models.get(trigger.entity()) else {
+    let Ok((entity, child, model)) = models.get(trigger.target()) else {
         bevy::log::trace!(
             "Prop {} is missing one or more of the required animation components.",
-            trigger.entity()
+            trigger.target()
         );
         return;
     };
@@ -149,7 +148,7 @@ fn start_rsm_animation(
     };
 
     let name = names
-        .get(parent.get())
+        .get(child.parent())
         .map(|name| name.as_str())
         .unwrap_or("Unnamed AnimatedProp");
     bevy::log::trace!("Starting animation of prop {}", name);

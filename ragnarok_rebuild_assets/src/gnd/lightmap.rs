@@ -19,10 +19,10 @@ impl Lightmap {
         let pixel_format = reader.read_le_i32()?;
 
         let shadow_map_pixels = (0..(lightmap_count))
-            .map(|_| Self::read_shadowmap_data(reader, width, height).map_err(super::Error::from))
+            .map(|_| Self::read_shadowmap_data(reader, width, height))
             .collect::<Result<Box<[_]>, super::Error>>()?;
         let light_map_pixels = (0..(lightmap_count))
-            .map(|_| Self::read_lightmap_data(reader, width, height).map_err(super::Error::from))
+            .map(|_| Self::read_lightmap_data(reader, width, height))
             .collect::<Result<Box<[_]>, super::Error>>()?;
 
         Ok(Self {

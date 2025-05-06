@@ -8,14 +8,16 @@ use bevy::{
     prelude::{Commands, EventWriter, Res, Resource, Trigger},
     render::{
         renderer::{initialize_renderer, RenderInstance, WgpuWrapper},
-        settings::{RenderCreation, WgpuSettings},
-        RenderPlugin,
+        settings::{RenderCreation, RenderResources, WgpuSettings},
+        RenderDebugFlags, RenderPlugin,
     },
     window::WindowPlugin,
     DefaultPlugins,
 };
 use futures::executor::block_on;
-use wgpu::{Backends, Instance, InstanceDescriptor, InstanceFlags, RequestAdapterOptions};
+use wgpu::{
+    BackendOptions, Backends, Instance, InstanceDescriptor, InstanceFlags, RequestAdapterOptions,
+};
 
 use ragnarok_rebuild_bevy::{
     assets::{
@@ -37,11 +39,10 @@ fn load_map_from_cold_start(c: &mut Criterion) {
         "lighthalzen.rsw",
     ];
 
-    let instance = Arc::new(WgpuWrapper::new(Instance::new(InstanceDescriptor {
+    let instance = Arc::new(WgpuWrapper::new(Instance::new(&InstanceDescriptor {
         backends: Backends::all(),
         flags: InstanceFlags::empty(),
-        dx12_shader_compiler: wgpu::Dx12Compiler::Fxc,
-        gles_minor_version: wgpu::Gles3MinorVersion::Automatic,
+        backend_options: BackendOptions::from_env_or_default(),
     })));
     let (render_device, render_queue, render_adapter_info, render_adapter) =
         block_on(initialize_renderer(
@@ -58,13 +59,13 @@ fn load_map_from_cold_start(c: &mut Criterion) {
             b.iter(|| {
                 start_app_and_load_map(
                     s,
-                    RenderCreation::Manual(
+                    RenderCreation::Manual(RenderResources(
                         render_device.clone(),
                         render_queue.clone(),
                         render_adapter_info.clone(),
                         render_adapter.clone(),
                         RenderInstance(instance.clone()),
-                    ),
+                    )),
                 )
             })
         });
@@ -88,6 +89,7 @@ fn start_app_and_load_map(map: &str, render_creation: RenderCreation) {
                 .set(RenderPlugin {
                     render_creation,
                     synchronous_pipeline_compilation: false,
+                    debug_flags: RenderDebugFlags::empty(),
                 })
                 .set(WindowPlugin {
                     primary_window: None,
@@ -109,7 +111,7 @@ fn start_map_load(mut commands: Commands, map_to_load: Res<MapToLoad>) {
 }
 
 fn end_test_on_map_load(_trigger: Trigger<WorldLoaded>, mut event_writer: EventWriter<AppExit>) {
-    event_writer.send(AppExit::Success);
+    event_writer.write(AppExit::Success);
 }
 
 criterion_group!(benches, load_map_from_cold_start);

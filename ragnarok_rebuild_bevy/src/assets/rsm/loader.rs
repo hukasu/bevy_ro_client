@@ -3,14 +3,14 @@ use bevy::{
         animated_field, AnimationClip, AnimationPlayer, AnimationTarget, AnimationTargetId,
     },
     asset::{io::Reader, AssetLoader as BevyAssetLoader, Handle, LoadContext},
-    core::Name,
     ecs::world::World,
     image::Image,
     math::{Mat3, Mat4, Quat, Vec2, Vec3, Vec4},
     pbr::MeshMaterial3d,
+    platform::collections::{hash_map::Entry, HashMap},
     prelude::{
         AnimatableCurve, AnimatedField, AnimationGraph, AnimationGraphHandle, AnimationTransitions,
-        BuildChildren, ChildBuild, Entity, Mesh3d, UnevenSampleAutoCurve, Visibility,
+        Entity, Mesh3d, Name, UnevenSampleAutoCurve, Visibility,
     },
     render::{
         mesh::{Indices, Mesh},
@@ -20,7 +20,6 @@ use bevy::{
     },
     scene::Scene,
     transform::components::Transform,
-    utils::hashbrown::{hash_map::Entry, HashMap},
 };
 use uuid::Uuid;
 

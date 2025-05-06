@@ -2,9 +2,9 @@ use std::{error::Error, fmt::Display};
 
 use bevy::{
     asset::{Asset, AssetApp},
+    platform::collections::HashSet,
     prelude::Deref,
     reflect::Reflect,
-    utils::HashSet,
 };
 
 pub(super) struct Plugin;

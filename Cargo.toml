@@ -11,7 +11,7 @@ resolver = "2"
 [workspace.dependencies]
 bevy = { version = "0.16.0", default-features = false }
 bevy-inspector-egui = { version = "0.31.0" }
-bevy_flycam = { version = "0.15.0" }
+# bevy_flycam = { version = "0.15.0" }
 # iyes_perf_ui = { version = "0.3" }
 
 log = "0.4.25"
@@ -34,7 +34,7 @@ sqlx = { version = "0.8.0", features = [
     "uuid",
 ] }
 
-wgpu = "23.0.1"
+wgpu = "24.0.3"
 criterion = "0.5.1"
 
 [workspace.lints.clippy]

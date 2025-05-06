@@ -4,8 +4,8 @@ use bevy::{
     color::{palettes, Color},
     math::Vec3,
     prelude::{
-        Children, Entity, Gizmos, GlobalTransform, HierarchyQueryExt, IntoSystemConfigs, Mesh,
-        Mesh3d, Query, ReflectResource, Res, Resource, ViewVisibility, With,
+        Children, Entity, Gizmos, GlobalTransform, IntoScheduleConfigs, Mesh, Mesh3d, Query,
+        ReflectResource, Res, Resource, ViewVisibility, With,
     },
     reflect::Reflect,
     render::{

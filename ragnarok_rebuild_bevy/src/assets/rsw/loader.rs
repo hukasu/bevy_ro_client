@@ -6,10 +6,9 @@ use bevy::{asset::Handle, audio::AudioSource, time::Timer};
 use bevy::{
     asset::{io::Reader, LoadContext},
     color::{Color, Luminance},
-    core::Name,
     math::{EulerRot, Quat, Vec3},
     pbr::{AmbientLight, DirectionalLight, PointLight},
-    prelude::{BuildChildren, ChildBuild, Entity, Visibility},
+    prelude::{Entity, Name, Visibility},
     render::primitives::Aabb,
     scene::{Scene, SceneRoot},
     transform::components::Transform,
@@ -118,6 +117,7 @@ impl AssetLoader {
             brightness: Self::LIGHT_LUX
                 * (color.luminance() + (1. - rsw.lighting_parameters.shadow_map_alpha)),
             color,
+            affects_lightmapped_meshes: true,
         });
     }
 

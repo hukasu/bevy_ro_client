@@ -4,8 +4,8 @@ use bevy::{
     math::{EulerRot, Isometry3d, Quat, Vec2, Vec3},
     pbr::{DirectionalLight, PointLight},
     prelude::{
-        Children, Entity, Gizmos, GlobalTransform, IntoSystemConfigs, Query, ReflectResource, Res,
-        Resource, Transform, With,
+        Children, Entity, Gizmos, GlobalTransform, IntoScheduleConfigs, Query, ReflectResource,
+        Res, Resource, Transform, With,
     },
     reflect::Reflect,
     render::view::VisibilitySystems,
@@ -65,7 +65,7 @@ fn directional_light_debug(
 ) {
     const DIRECTIONAL_LIGHT_GIZMO_LENGHT: f32 = 5.;
 
-    let Ok(world) = worlds.get_single() else {
+    let Ok(world) = worlds.single() else {
         return;
     };
 
@@ -125,7 +125,7 @@ fn point_light_debug(
     const POINT_LIGHT_GIZMO_LENGHT: f32 = 1.;
     const POINT_LIGHT_RANGE_THRESHOLD: f32 = 5.;
 
-    let Ok((world, world_info)) = worlds.get_single() else {
+    let Ok((world, world_info)) = worlds.single() else {
         return;
     };
     if !world_info.has_lights {
@@ -207,7 +207,7 @@ fn sound_debug(
 ) {
     const SOUND_GIZMO_RADIUS: f32 = 5.;
 
-    let Ok((world, world_info)) = worlds.get_single() else {
+    let Ok((world, world_info)) = worlds.single() else {
         return;
     };
     if !world_info.has_sounds {
@@ -303,7 +303,7 @@ fn effect_debug(
 ) {
     const EFFECT_GIZMO_RADIUS: f32 = 5.;
 
-    let Ok((world, world_info)) = worlds.get_single() else {
+    let Ok((world, world_info)) = worlds.single() else {
         return;
     };
     if !world_info.has_effects {

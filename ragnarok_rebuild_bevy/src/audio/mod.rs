@@ -9,9 +9,9 @@ use bevy::{
         AudioPlayer, AudioSink, AudioSinkPlayback, AudioSource, PlaybackMode, PlaybackSettings,
         SpatialScale, Volume,
     },
-    core::Name,
     prelude::{
-        resource_changed, Commands, IntoSystemConfigs, Query, Res, Trigger, Visibility, With,
+        resource_changed, Commands, IntoScheduleConfigs, Name, Query, Res, Trigger, Visibility,
+        With,
     },
 };
 
@@ -42,10 +42,10 @@ impl Plugin for AudioPlugin {
     }
 }
 
-fn volume_changed(audio_settings: Res<AudioSettings>, bgms: Query<&AudioSink, With<Bgm>>) {
+fn volume_changed(audio_settings: Res<AudioSettings>, mut bgms: Query<&mut AudioSink, With<Bgm>>) {
     bevy::log::trace!("Volume changed. {:?}", audio_settings);
-    if let Ok(bgm) = bgms.get_single() {
-        bgm.set_volume(audio_settings.bgm_volume);
+    if let Ok(mut bgm) = bgms.single_mut() {
+        bgm.set_volume(Volume::Linear(audio_settings.bgm_volume));
     };
 }
 
@@ -65,11 +65,12 @@ fn play_bgm(
         AudioPlayer(bgm),
         PlaybackSettings {
             mode: PlaybackMode::Loop,
-            volume: Volume::new(audio_settings.bgm_volume),
+            volume: Volume::Linear(audio_settings.bgm_volume),
             speed: 1.,
             paused: false,
             spatial: false,
             spatial_scale: None,
+            muted: false,
         },
     ));
 }
@@ -95,11 +96,12 @@ fn play_sound(
         AudioPlayer(track.clone()),
         PlaybackSettings {
             mode: PlaybackMode::Despawn,
-            volume: Volume::new(volume * audio_settings.effects_volume),
+            volume: Volume::Linear(volume * audio_settings.effects_volume),
             speed: 1.,
             paused: false,
             spatial: true,
             spatial_scale: Some(SpatialScale::new(5. / *range)),
+            muted: false,
         },
     ));
 }

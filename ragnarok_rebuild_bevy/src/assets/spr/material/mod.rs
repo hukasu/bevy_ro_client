@@ -1,5 +1,5 @@
 use bevy::{
-    asset::{load_internal_asset, Asset, AssetApp, Handle},
+    asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle},
     color::LinearRgba,
     math::Mat4,
     pbr::{Material, MaterialPlugin},
@@ -8,8 +8,7 @@ use bevy::{
     render::render_resource::{AsBindGroup, ShaderType},
 };
 
-pub const SPR_SHADER_HANDLE: Handle<Shader> =
-    Handle::weak_from_u128(0x0ed8f3b137fa41ad9652e2d32b3eeed5);
+pub const SPR_SHADER_HANDLE: Handle<Shader> = weak_handle!("0ed8f3b1-37fa-41ad-9652-e2d32b3eeed5");
 
 pub struct Plugin;
 
