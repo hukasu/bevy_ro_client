@@ -4,9 +4,9 @@ mod true_color;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
+use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
 
-use crate::{common::Version, pal};
+use crate::pal;
 
 pub use self::{error::Error, indexed::IndexedSprite, true_color::TrueColorSprite};
 

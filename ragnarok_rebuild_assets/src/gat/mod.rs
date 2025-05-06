@@ -3,9 +3,7 @@ mod tile;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use crate::common::Version;
+use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
 
 pub use self::{
     error::Error,

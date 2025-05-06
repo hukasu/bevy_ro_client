@@ -4,9 +4,7 @@ mod volume_box;
 
 use std::io::{self, Read};
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use super::{common::Version, read_n_euc_kr_strings};
+use ragnarok_rebuild_common::{euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version};
 
 pub use self::{error::Error, volume_box::VolumeBox};
 
@@ -37,7 +35,7 @@ pub struct Rsm {
 impl Rsm {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, self::Error> {
         let signature = Self::read_signature(reader)?;
-        let version = Version::rsm_version_from_reader(reader)?;
+        let version = Self::read_version(reader)?;
         let animation_length = reader.read_le_i32()?;
         let shade_type = match reader.read_le_i32()? {
             0 => ShadeType::Unlit,
@@ -140,6 +138,12 @@ impl Rsm {
         } else {
             Err(Error::InvalidSignature(signature))
         }
+    }
+
+    fn read_version(mut reader: &mut dyn Read) -> Result<Version, error::Error> {
+        let major = reader.read_u8()?;
+        let minor = reader.read_u8()?;
+        Ok(Version(major, minor, 0))
     }
 
     fn read_textures_and_meshs_names(

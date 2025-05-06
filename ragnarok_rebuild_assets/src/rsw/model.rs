@@ -1,8 +1,6 @@
 use std::io::Read;
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use crate::{common::Version, read_euc_kr_string};
+use ragnarok_rebuild_common::{euc_kr::read_euc_kr_string, reader_ext::ReaderExt, Version};
 
 #[derive(Debug)]
 pub struct Model {

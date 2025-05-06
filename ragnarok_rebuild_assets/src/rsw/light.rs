@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
+use ragnarok_rebuild_common::{euc_kr::read_euc_kr_string, reader_ext::ReaderExt};
 
 #[derive(Debug)]
 pub struct Light {
@@ -12,7 +12,7 @@ pub struct Light {
 
 impl Light {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, std::io::Error> {
-        let name = crate::read_euc_kr_string(reader, 80)?;
+        let name = read_euc_kr_string(reader, 80)?;
 
         let position = [
             reader.read_le_f32()?,

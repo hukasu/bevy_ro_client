@@ -9,8 +9,9 @@ mod sound;
 
 use std::io::Read;
 
-use super::common::{Version, WaterPlane};
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
+use ragnarok_rebuild_common::{
+    euc_kr::read_euc_kr_string, reader_ext::ReaderExt, Version, WaterPlane,
+};
 
 pub use self::{
     bounding_box::BoundingBox,
@@ -70,10 +71,10 @@ impl Rsw {
 
         let flag = Self::read_flag(reader, &version)?;
 
-        let ini_file = super::read_euc_kr_string(reader, 40)?;
-        let gnd_file = super::read_euc_kr_string(reader, 40)?;
-        let gat_file = super::read_euc_kr_string(reader, 40)?;
-        let source_file = super::read_euc_kr_string(reader, 40)?;
+        let ini_file = read_euc_kr_string(reader, 40)?;
+        let gnd_file = read_euc_kr_string(reader, 40)?;
+        let gat_file = read_euc_kr_string(reader, 40)?;
+        let source_file = read_euc_kr_string(reader, 40)?;
 
         let water_configuration = Self::read_water_configuration(reader, &version)?;
         let lighting_parameters = LightingParams::from_reader(reader)?;

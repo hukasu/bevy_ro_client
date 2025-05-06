@@ -1,9 +1,3 @@
-use std::io::Read;
-
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use crate::{gnd, rsm};
-
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Version(pub u8, pub u8, pub u32);
 
@@ -22,18 +16,6 @@ impl Version {
 
     pub fn patch(&self) -> u32 {
         self.2
-    }
-
-    pub fn gnd_version_from_reader(mut reader: &mut dyn Read) -> Result<Self, gnd::Error> {
-        let major = reader.read_u8()?;
-        let minor = reader.read_u8()?;
-        Ok(Version(major, minor, 0))
-    }
-
-    pub fn rsm_version_from_reader(mut reader: &mut dyn Read) -> Result<Self, rsm::Error> {
-        let major = reader.read_u8()?;
-        let minor = reader.read_u8()?;
-        Ok(Version(major, minor, 0))
     }
 }
 

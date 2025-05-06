@@ -19,7 +19,9 @@ use bevy::{
     scene::Scene,
 };
 
-use ragnarok_rebuild_assets::{common, gnd};
+use ragnarok_rebuild_assets::gnd;
+use ragnarok_rebuild_common::WaterPlane;
+
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -31,7 +33,7 @@ use super::{components::Ground, material::GndMaterial, GroundScale};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct AssetLoaderSettings {
-    pub water_plane: Option<common::WaterPlane>,
+    pub water_plane: Option<WaterPlane>,
 }
 
 pub struct AssetLoader;
@@ -364,7 +366,7 @@ impl AssetLoader {
     #[must_use]
     fn build_water_plane(
         gnd: &gnd::Gnd,
-        water_plane: &common::WaterPlane,
+        water_plane: &WaterPlane,
         name: &str,
         world: &mut World,
         load_context: &mut LoadContext,
@@ -451,7 +453,7 @@ impl AssetLoader {
     }
 
     #[must_use]
-    fn water_plane_mesh(gnd: &gnd::Gnd, water_plane: &common::WaterPlane) -> Mesh {
+    fn water_plane_mesh(gnd: &gnd::Gnd, water_plane: &WaterPlane) -> Mesh {
         let mut vertices: Vec<Vec3> = vec![];
         let mut normals: Vec<Vec3> = vec![];
         let mut uvs: Vec<Vec2> = vec![];
@@ -548,7 +550,7 @@ impl AssetLoader {
     #[must_use]
     fn water_plane_material(
         load_context: &mut LoadContext,
-        water_plane: &common::WaterPlane,
+        water_plane: &WaterPlane,
         name: &str,
         frame: usize,
     ) -> Handle<water_plane::WaterPlaneMaterial> {

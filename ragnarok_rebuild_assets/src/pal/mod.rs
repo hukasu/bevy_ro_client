@@ -2,9 +2,7 @@ mod error;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use crate::common::Color;
+use ragnarok_rebuild_common::{reader_ext::ReaderExt, Color};
 
 pub use self::error::Error;
 

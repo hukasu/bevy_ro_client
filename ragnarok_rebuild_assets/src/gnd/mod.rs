@@ -5,11 +5,9 @@ mod surface;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use crate::read_n_euc_kr_strings;
-
-use super::common::{Version, WaterPlane};
+use ragnarok_rebuild_common::{
+    euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version, WaterPlane,
+};
 
 pub use self::{
     error::Error, ground_mesh_cube::GroundMeshCube, lightmap::Lightmap, surface::Surface,
@@ -32,7 +30,7 @@ pub struct Gnd {
 impl Gnd {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, Error> {
         let signature = Self::read_signature(reader)?;
-        let version = Version::gnd_version_from_reader(reader)?;
+        let version = Self::read_version(reader)?;
 
         if version < Version(1, 7, 0) || version >= Version(1, 10, 0) {
             return Err(Error::UnknownVersion(version));
@@ -94,6 +92,12 @@ impl Gnd {
         } else {
             Err(Error::InvalidSignature(signature))
         }
+    }
+
+    fn read_version(mut reader: &mut dyn Read) -> Result<Version, error::Error> {
+        let major = reader.read_u8()?;
+        let minor = reader.read_u8()?;
+        Ok(Version(major, minor, 0))
     }
 
     fn read_water_planes(

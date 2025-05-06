@@ -7,9 +7,7 @@ mod texture_uv;
 
 use std::io::{self, Read};
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use crate::{common::Version, read_n_euc_kr_strings};
+use ragnarok_rebuild_common::{euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version};
 
 pub use self::{
     face::Face, position_key_frame::PositionKeyFrame, rotation_key_frame::RotationKeyFrame,

@@ -1,4 +1,4 @@
-use crate::common::Version;
+use ragnarok_rebuild_common::Version;
 
 #[derive(Debug)]
 pub enum Error {

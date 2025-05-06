@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
-use crate::{common::Version, pal};
+use ragnarok_rebuild_common::Version;
+
+use crate::pal;
 
 #[derive(Debug)]
 pub enum Error {

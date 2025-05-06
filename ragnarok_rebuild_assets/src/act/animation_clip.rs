@@ -1,8 +1,6 @@
 use std::io::Read;
 
-use ragnarok_rebuild_common::reader_ext::ReaderExt;
-
-use crate::common::{Color, Version};
+use ragnarok_rebuild_common::{reader_ext::ReaderExt, Color, Version};
 
 #[derive(Debug)]
 pub struct AnimationClip {
