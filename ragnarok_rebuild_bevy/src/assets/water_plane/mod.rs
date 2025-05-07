@@ -40,7 +40,7 @@ pub fn update_texture(
 
             commands
                 .entity(entity)
-                .insert(MeshMaterial3d(plane.frames[plane.current_frame].clone()));
+                .try_insert(MeshMaterial3d(plane.frames[plane.current_frame].clone()));
         }
     }
 }
