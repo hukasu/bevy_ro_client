@@ -8,6 +8,9 @@ edition = "2021"
 [lints]
 workspace = true
 
+[features]
+warning = []
+
 [dependencies]
 log = { workspace = true }
 
