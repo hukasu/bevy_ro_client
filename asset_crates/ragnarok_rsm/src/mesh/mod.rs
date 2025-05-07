@@ -5,7 +5,10 @@ mod scale_key_frame;
 mod texture_animation;
 mod texture_uv;
 
-use std::io::{self, Read};
+use std::{
+    collections::{HashMap, hash_map::Entry},
+    io::{self, Read},
+};
 
 #[cfg(feature = "bevy")]
 use bevy_animation::{
@@ -13,13 +16,13 @@ use bevy_animation::{
     prelude::{AnimatableCurve, AnimatedField, AnimationCurve},
 };
 #[cfg(feature = "bevy")]
-use bevy_math::{curve::UnevenSampleAutoCurve, Mat3, Mat4, Quat, Vec3};
+use bevy_math::{Mat3, Mat4, Quat, Vec3, curve::UnevenSampleAutoCurve};
 #[cfg(feature = "bevy")]
 use bevy_render::primitives::Aabb;
 #[cfg(feature = "bevy")]
 use bevy_transform::components::Transform;
 
-use ragnarok_rebuild_common::{euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version};
+use ragnarok_rebuild_common::{Version, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt};
 
 pub use self::{
     face::Face, position_key_frame::PositionKeyFrame, rotation_key_frame::RotationKeyFrame,
@@ -209,6 +212,65 @@ impl Mesh {
         })
     }
 
+    pub fn flat_mesh(&self) -> MeshAttributes {
+        let vertices = &self.vertices;
+        let uvs = &self.uvs;
+        let texture_index = &self.texture_indexes;
+
+        let mut mesh_attributes = MeshAttributes::default();
+
+        let mut attributes = HashMap::new();
+
+        for face in &self.faces {
+            let (a, b, c) = (
+                vertices[usize::from(face.vertices[0])],
+                vertices[usize::from(face.vertices[1])],
+                vertices[usize::from(face.vertices[2])],
+            );
+            let normal = flat_normal(&a, &b, &c);
+
+            for (vertex, uv) in face.vertices.iter().copied().zip(face.uv) {
+                #[expect(
+                    clippy::unwrap_used,
+                    reason = "Should never have more than u16 vertexes"
+                )]
+                let cur_len = u16::try_from(attributes.len()).unwrap();
+                match attributes.entry((vertex, uv, face.texture_id, face.two_side)) {
+                    Entry::Vacant(v) => {
+                        v.insert(cur_len);
+                        mesh_attributes.vertices.push(vertices[usize::from(vertex)]);
+                        mesh_attributes.normals.push(normal);
+                        mesh_attributes.uv.push(uvs[usize::from(uv)].uv);
+                        mesh_attributes.color.push(
+                            uvs[usize::from(uv)]
+                                .color
+                                .map(|channel| channel as f32 / 255.),
+                        );
+                        mesh_attributes
+                            .indexes
+                            .entry((
+                                texture_index[usize::from(face.texture_id)],
+                                face.two_side == 1,
+                            ))
+                            .and_modify(|indexes| indexes.push(cur_len))
+                            .or_insert(vec![cur_len]);
+                    }
+                    Entry::Occupied(o) => {
+                        let Some(entry) = mesh_attributes.indexes.get_mut(&(
+                            texture_index[usize::from(face.texture_id)],
+                            face.two_side == 1,
+                        )) else {
+                            unreachable!("If it is occupied then an entry must exist.");
+                        };
+                        entry.push(*o.get());
+                    }
+                }
+            }
+        }
+
+        mesh_attributes
+    }
+
     #[cfg(feature = "bevy")]
     #[must_use]
     pub fn bounds(&self) -> Option<Aabb> {
@@ -223,7 +285,7 @@ impl Mesh {
 
     #[cfg(feature = "bevy")]
     #[must_use]
-    fn transformation_matrix(&self) -> Transform {
+    pub fn transformation_matrix(&self) -> Transform {
         let offset = Vec3::from_array(self.offset);
         let trasn_matrix = Mat3::from_cols_array(&self.transformation_matrix);
         Transform::from_matrix(Mat4 {
@@ -369,5 +431,55 @@ impl Mesh {
         } else {
             None
         }
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct MeshAttributes {
+    pub vertices: Vec<[f32; 3]>,
+    pub normals: Vec<[f32; 3]>,
+    pub uv: Vec<[f32; 2]>,
+    pub color: Vec<[f32; 4]>,
+    pub indexes: HashMap<(i32, bool), Vec<u16>>,
+}
+
+fn flat_normal(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
+    let v1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let v2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+
+    normalize(&cross(&v1, &v2))
+}
+
+fn cross(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+
+fn normalize(a: &[f32; 3]) -> [f32; 3] {
+    let magnitude = (a[0].powi(2) + a[1].powi(2) + a[2].powi(2)).sqrt();
+    [a[0] / magnitude, a[1] / magnitude, a[2] / magnitude]
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn cross_and_normalize() {
+        let c = cross(&[7., 12., 64.], &[324., 12., 54.]);
+        assert_eq!(c[0], -120.);
+        assert_eq!(c[1], 20358.);
+        assert_eq!(c[2], -3804.);
+        let n = normalize(&c);
+        assert_eq!(n[0], -0.005794107);
+        assert_eq!(n[1], 0.9829703);
+        assert_eq!(n[2], -0.1836732);
+        let f = flat_normal(&[0., 0., 0.], &[7., 12., 64.], &[324., 12., 54.]);
+        assert_eq!(f[0], -0.005794107);
+        assert_eq!(f[1], 0.9829703);
+        assert_eq!(f[2], -0.1836732);
     }
 }

@@ -1,25 +1,23 @@
 use std::path::{Path, PathBuf};
 
 use bevy_animation::{
-    animated_field,
-    graph::{AnimationGraph, AnimationGraphHandle},
-    prelude::{AnimatableCurve, AnimatedField, AnimationCurve, AnimationTransitions},
     AnimationClip, AnimationPlayer, AnimationTarget, AnimationTargetId,
+    graph::{AnimationGraph, AnimationGraphHandle},
+    prelude::AnimationTransitions,
 };
-use bevy_asset::{io::Reader, AssetLoader as BevyAssetLoader, Handle, LoadContext};
-use bevy_color::Color;
+use bevy_asset::{
+    AssetLoader as BevyAssetLoader, Handle, LoadContext, RenderAssetUsages, io::Reader,
+};
 use bevy_ecs::{
     bundle::Bundle,
     entity::Entity,
     hierarchy::{ChildOf, Children},
     name::Name,
-    spawn::{SpawnRelated, SpawnableList},
+    spawn::{SpawnIter, SpawnRelated, SpawnableList},
     world::World,
 };
-use bevy_image::Image;
-use bevy_math::prelude::Cuboid;
-use bevy_mesh::{MeshBuilder, Meshable};
-use bevy_pbr::{MeshMaterial3d, StandardMaterial};
+use bevy_mesh::PrimitiveTopology;
+use bevy_pbr::MeshMaterial3d;
 use bevy_platform::collections::HashSet;
 use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
@@ -30,6 +28,8 @@ use crate::{
     components::{Model, ModelAnimation},
     mesh::Mesh,
 };
+
+use super::materials::RsmMaterial;
 
 pub struct AssetLoader {
     texture_path_prefix: PathBuf,
@@ -104,11 +104,12 @@ impl SceneBuilder {
             Visibility::default(),
             animation,
             Children::spawn(MeshList::new(
-                &rsm.meshes,
+                rsm,
                 root_meshes.as_slice(),
                 &mut meshes_and_indexes,
                 root,
                 load_context,
+                loader,
             )),
         ));
 
@@ -203,19 +204,19 @@ struct MeshList {
 struct MeshListItem {
     name: Name,
     transform: Transform,
-    mesh: Handle<bevy_mesh::Mesh>,
-    material: Handle<StandardMaterial>,
+    primitives: PrimitiveList,
     animation_player: Entity,
     children: MeshList,
 }
 
 impl MeshList {
     pub fn new(
-        meshes: &[Mesh],
+        rsm: &Rsm,
         to_build: &[&str],
         remaining_meshes: &mut Vec<(usize, &str)>,
         animation_player: Entity,
         load_context: &mut LoadContext,
+        loader: &AssetLoader,
     ) -> Self {
         let mut mesh_list = Vec::new();
 
@@ -231,7 +232,7 @@ impl MeshList {
                 *mesh_to_build, mesh_name,
                 "Position had mesh name different from mesh_to_build."
             );
-            let current_mesh = &meshes[i];
+            let current_mesh = &rsm.meshes[i];
 
             let Some(mesh_bounds) = current_mesh.bounds() else {
                 bevy_log::warn!(
@@ -253,7 +254,8 @@ impl MeshList {
                 .map(|(i, _)| i)
                 .copied()
                 .collect::<HashSet<_>>();
-            let children = meshes
+            let children = rsm
+                .meshes
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| remaining_meshes_index.contains(i))
@@ -264,19 +266,21 @@ impl MeshList {
             mesh_list.push(MeshListItem {
                 name: Name::new(current_mesh.name.to_string()),
                 transform: node_transform,
-                mesh: load_context.add_labeled_asset(
-                    format!("Mesh{}", i),
-                    Cuboid::new(10., 10., 10.).mesh().build(),
+                primitives: PrimitiveList::new(
+                    current_mesh,
+                    i,
+                    &rsm.textures,
+                    load_context,
+                    loader,
                 ),
-                material: load_context
-                    .add_labeled_asset(format!("Material{}", i), Color::WHITE.into()),
                 animation_player,
                 children: MeshList::new(
-                    meshes,
+                    rsm,
                     children.as_slice(),
                     remaining_meshes,
                     animation_player,
                     load_context,
+                    loader,
                 ),
             });
         }
@@ -296,10 +300,9 @@ impl SpawnableList<ChildOf> for MeshList {
                 ChildOf(entity),
                 item.name,
                 item.transform,
-                Mesh3d(item.mesh),
-                MeshMaterial3d(item.material),
+                Visibility::default(),
                 animation_target,
-                Children::spawn(item.children),
+                Children::spawn((item.primitives, item.children)),
             ));
         }
     }
@@ -308,15 +311,103 @@ impl SpawnableList<ChildOf> for MeshList {
         self.meshes.len()
     }
 }
-
-#[derive(Debug, Clone)]
-enum LoadedTextureFormat {
-    Bmp,
-    Tga,
+struct PrimitiveList {
+    transform: Transform,
+    primitives: Vec<PrimitiveListItem>,
 }
 
-#[derive(Debug, Clone)]
-struct LoadedTexture {
-    texture: Handle<Image>,
-    format: LoadedTextureFormat,
+struct PrimitiveListItem {
+    name: Name,
+    mesh: Handle<bevy_mesh::Mesh>,
+    material: Handle<RsmMaterial>,
+}
+
+impl PrimitiveList {
+    pub fn new(
+        rsm_mesh: &Mesh,
+        i: usize,
+        rsm_textures: &[Box<str>],
+        load_context: &mut LoadContext,
+        loader: &AssetLoader,
+    ) -> Self {
+        let mut primitive_list = Vec::new();
+
+        let textures = if rsm_mesh.textures.is_empty() {
+            rsm_textures
+        } else {
+            &rsm_mesh.textures
+        };
+
+        let mesh_attributes = rsm_mesh.flat_mesh();
+
+        let usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
+        for (primitive, ((texture, double_sided), indexes)) in
+            mesh_attributes.indexes.into_iter().enumerate()
+        {
+            let mesh = bevy_mesh::Mesh::new(PrimitiveTopology::TriangleList, usage)
+                .with_inserted_attribute(
+                    bevy_mesh::Mesh::ATTRIBUTE_POSITION,
+                    mesh_attributes.vertices.clone(),
+                )
+                .with_inserted_attribute(
+                    bevy_mesh::Mesh::ATTRIBUTE_NORMAL,
+                    mesh_attributes.normals.clone(),
+                )
+                .with_inserted_attribute(
+                    bevy_mesh::Mesh::ATTRIBUTE_UV_0,
+                    mesh_attributes.uv.clone(),
+                )
+                .with_inserted_attribute(
+                    bevy_mesh::Mesh::ATTRIBUTE_COLOR,
+                    mesh_attributes.color.clone(),
+                )
+                .with_inserted_indices(bevy_mesh::Indices::U16(indexes));
+
+            let material = RsmMaterial {
+                texture: load_context.load(format!(
+                    "{}{}",
+                    loader.texture_path_prefix().display(),
+                    textures[usize::try_from(texture).unwrap()]
+                )),
+                double_sided,
+                inverse_scale: false,
+            };
+
+            primitive_list.push(PrimitiveListItem {
+                name: Name::new(format!("Primitive{}", primitive)),
+                mesh: load_context
+                    .add_labeled_asset(format!("Primitive{}/Mesh{}", primitive, i), mesh),
+                material: load_context
+                    .add_labeled_asset(format!("Primitive{}/Material{}", primitive, i), material),
+            });
+        }
+
+        Self {
+            transform: rsm_mesh.transformation_matrix(),
+            primitives: primitive_list,
+        }
+    }
+}
+
+impl SpawnableList<ChildOf> for PrimitiveList {
+    fn spawn(self, world: &mut World, entity: Entity) {
+        world.spawn((
+            ChildOf(entity),
+            Name::new("Primitives"),
+            self.transform,
+            Visibility::default(),
+            Children::spawn(SpawnIter(self.primitives.into_iter().map(|item| {
+                (item.name, Mesh3d(item.mesh), MeshMaterial3d(item.material))
+            }))),
+        ));
+    }
+
+    fn size_hint(&self) -> usize {
+        self.primitives.len()
+    }
 }
