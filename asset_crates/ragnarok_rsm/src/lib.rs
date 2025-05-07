@@ -21,7 +21,7 @@ use bevy_animation::{
 #[cfg(feature = "bevy")]
 use bevy_asset::Asset;
 #[cfg(feature = "bevy")]
-use bevy_math::{curve::UnevenSampleAutoCurve, Vec3};
+use bevy_math::{Vec3, curve::UnevenSampleAutoCurve};
 #[cfg(feature = "bevy")]
 use bevy_reflect::TypePath;
 #[cfg(feature = "bevy")]
@@ -29,8 +29,10 @@ use bevy_transform::components::Transform;
 
 #[cfg(feature = "warning")]
 use ragnarok_rebuild_common::warning::Warnings;
-use ragnarok_rebuild_common::{euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version};
+use ragnarok_rebuild_common::{Version, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt};
 
+#[cfg(feature = "warning")]
+use self::warnings::Warning;
 pub use self::{error::Error, volume_box::VolumeBox};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -54,7 +56,7 @@ pub struct Rsm {
     pub scale_key_frames: Box<[mesh::ScaleKeyFrame]>,
     pub volume_boxes: Box<[VolumeBox]>,
     #[cfg(feature = "warning")]
-    pub warnings: Warnings<warnings::Warning>,
+    pub warnings: Warnings<Warning>,
 }
 
 impl Rsm {
@@ -195,7 +197,7 @@ impl Rsm {
     fn read_meshs_names(
         mut reader: &mut dyn Read,
         version: &Version,
-        #[cfg(feature = "warning")] warnings: &mut Warnings<warnings::Warning>,
+        #[cfg(feature = "warning")] warnings: &mut Warnings<Warning>,
     ) -> Result<Box<[Box<str>]>, self::Error> {
         let mesh_names = if version >= &Version(2, 2, 0) {
             let count = reader.read_le_u32()?;
@@ -206,16 +208,19 @@ impl Rsm {
 
         #[cfg(feature = "warning")]
         if mesh_names.is_empty() {
-            warnings.push(warnings::Warning::EmptyRootMeshes);
+            warnings.push(Warning::EmptyRootMeshes);
         }
 
         #[cfg(feature = "warning")]
         {
             let mut set = HashSet::new();
             let mut set2 = HashSet::new();
-            for mesh in &mesh_names {
-                if !set.insert(mesh) && set2.insert(mesh) {
-                    warnings.push(warnings::Warning::DuplicateRootMeshName(mesh.clone()));
+            for mesh_name in &mesh_names {
+                if mesh_name.is_empty() {
+                    warnings.push(Warning::BlankRootMeshName);
+                }
+                if !set.insert(mesh_name) && set2.insert(mesh_name) {
+                    warnings.push(Warning::DuplicateRootMeshName(mesh_name.clone()));
                 }
             }
         }
@@ -226,7 +231,7 @@ impl Rsm {
     fn read_volume_boxes<R: Read>(
         reader: &mut R,
         version: &Version,
-        #[cfg(feature = "warning")] warnings: &mut Warnings<warnings::Warning>,
+        #[cfg(feature = "warning")] warnings: &mut Warnings<Warning>,
     ) -> Result<Box<[VolumeBox]>, error::Error> {
         let volume_boxes = match reader.read_le_u32() {
             Ok(count) => (0..count)
@@ -236,7 +241,7 @@ impl Rsm {
                 // V2.3 files seems to have a 50/50 on whether they have volume boxes or not
                 if err.kind().eq(&io::ErrorKind::UnexpectedEof) {
                     #[cfg(feature = "warning")]
-                    warnings.push(warnings::Warning::MissingVolumeBoxSection);
+                    warnings.push(Warning::MissingVolumeBoxSection);
                     #[cfg(not(feature = "warning"))]
                     bevy_log::warn!("RSM V{version} did not have a volume boxes section.");
 
@@ -249,7 +254,7 @@ impl Rsm {
 
         #[cfg(feature = "warning")]
         if !volume_boxes.is_empty() {
-            warnings.push(warnings::Warning::NonEmptyVolumeBox);
+            warnings.push(Warning::NonEmptyVolumeBox);
         }
 
         Ok(volume_boxes)

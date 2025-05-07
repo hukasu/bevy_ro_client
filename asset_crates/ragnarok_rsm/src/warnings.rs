@@ -3,6 +3,7 @@ use std::fmt::Display;
 #[derive(Debug)]
 pub enum Warning {
     EmptyRootMeshes,
+    BlankRootMeshName,
     DuplicateRootMeshName(Box<str>),
     NonEmptyVolumeBox,
     MissingVolumeBoxSection,
@@ -12,6 +13,7 @@ impl Display for Warning {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::EmptyRootMeshes => write!(f, "Root meshes is empty."),
+            Self::BlankRootMeshName => write!(f, "Has root mesh with blank name."),
             Self::DuplicateRootMeshName(name) => {
                 write!(f, "Root mesh name \"{}\" appear multiple times.", name)
             }
