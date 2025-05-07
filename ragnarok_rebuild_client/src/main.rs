@@ -7,8 +7,7 @@ mod other {
     use bevy::{
         ecs::system::Commands,
         math::Vec3,
-        prelude::{App, Camera3d, IntoSystemConfigs, Startup, Transform},
-        render::view::GpuCulling,
+        prelude::{App, Camera3d, IntoScheduleConfigs, Startup, Transform},
     };
     use ragnarok_rebuild_bevy::{assets::rsw::LoadWorld, tables};
 
@@ -27,7 +26,6 @@ mod other {
         commands.spawn((
             Camera3d::default(),
             Transform::from_xyz(0., 500., 30.).looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
-            GpuCulling,
         ));
 
         commands.trigger(LoadWorld {
