@@ -1,19 +1,17 @@
 use std::marker::PhantomData;
 
-use bevy::{
-    asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle},
-    image::Image,
-    pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin},
-    reflect::Reflect,
-    render::{
-        alpha::AlphaMode,
-        mesh::MeshVertexBufferLayoutRef,
-        render_resource::{
-            AsBindGroup, Face, RenderPipelineDescriptor, Shader, ShaderRef,
-            SpecializedMeshPipelineError,
-        },
-        RenderDebugFlags,
+use bevy_asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle};
+use bevy_image::Image;
+use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin};
+use bevy_reflect::Reflect;
+use bevy_render::{
+    alpha::AlphaMode,
+    mesh::MeshVertexBufferLayoutRef,
+    render_resource::{
+        AsBindGroup, Face, RenderPipelineDescriptor, Shader, ShaderRef,
+        SpecializedMeshPipelineError,
     },
+    RenderDebugFlags,
 };
 
 const RSM_VERTEX_SHADER_HANDLE: Handle<Shader> =
@@ -25,8 +23,8 @@ const RSM_FRAGMENT_SHADER_HANDLE: Handle<Shader> =
 
 pub struct Plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
         app
             // Asset
             .init_asset::<RsmMaterial>()

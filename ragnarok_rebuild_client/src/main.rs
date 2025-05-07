@@ -47,7 +47,10 @@ use bevy::{
 };
 
 use ragnarok_rebuild_bevy::{
-    assets::{grf, paths::BASE_DATA_FOLDER},
+    assets::{
+        grf,
+        paths::{self, BASE_DATA_FOLDER},
+    },
     RagnarokPlugin,
 };
 
@@ -58,16 +61,19 @@ fn main() {
     app
         // Asset Sources
         .register_asset_source("bgm", AssetSourceBuilder::platform_default("BGM/", None))
-        .register_asset_source("system", AssetSourceBuilder::platform_default("System/", None))
+        .register_asset_source(
+            "system",
+            AssetSourceBuilder::platform_default("System/", None),
+        )
         .register_asset_source(
             bevy::asset::io::AssetSourceId::Default,
             bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
                 let grf = grf::AssetReader::new(std::path::Path::new("data.grf")).unwrap();
                 Box::new(grf)
             }),
-        )
-        // Plugins
-        .add_plugins(
+        );
+    // Plugins
+    app.add_plugins(
             DefaultPlugins
                 .build()
                 .set(AssetPlugin {
@@ -76,7 +82,7 @@ fn main() {
                 })
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
-                    filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_assets={log_level},ragnarok_rebuild_common={log_level}"),
+                    filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_assets={log_level},ragnarok_rebuild_common={log_level},ragnarok_rsm={log_level}"),
                     custom_layer: |_| None
                 })
                 .set(ImagePlugin {
@@ -88,9 +94,14 @@ fn main() {
                         ..Default::default()
                     }),
                     ..Default::default()
-                }),
-        )
-        .add_plugins(RagnarokPlugin);
+                })
+        );
+    app.add_plugins((
+        RagnarokPlugin,
+        ragnarok_rsm::plugin::Plugin {
+            texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
+        },
+    ));
 
     #[cfg(not(feature = "with-inspector"))]
     {

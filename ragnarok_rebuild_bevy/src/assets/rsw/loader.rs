@@ -210,7 +210,7 @@ impl AssetLoader {
             .with_children(|parent| {
                 for prop in rsw.models.iter() {
                     let prop_handle = load_context.load(format!(
-                        "{}{}",
+                        "{}{}#Scene",
                         paths::MODEL_FILES_FOLDER,
                         prop.filename
                     ));

@@ -83,9 +83,7 @@ fn unload_world(
         .get(trigger.target())
         .map_or(UNNAMED_WORLD, |name| name.as_str());
     bevy::log::trace!("Unloading world {}", name);
-    commands
-        .entity(trigger.target())
-        .despawn_related::<Children>();
+    commands.entity(trigger.target()).despawn();
 }
 
 fn world_added(trigger: Trigger<OnAdd, World>, mut commands: Commands) {

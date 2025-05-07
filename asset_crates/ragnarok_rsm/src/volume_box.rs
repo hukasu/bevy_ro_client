@@ -1,8 +1,12 @@
 use std::io::{self, Read};
 
+#[cfg(feature = "bevy")]
+use bevy_reflect::Reflect;
+
 use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
 
 #[derive(Debug)]
+#[cfg_attr(feature = "bevy", derive(Reflect))]
 pub struct VolumeBox {
     pub size: [f32; 3],
     pub position: [f32; 3],

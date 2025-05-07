@@ -1,27 +1,30 @@
-use bevy::{
-    app::PostUpdate,
-    asset::Assets,
-    color::{palettes, Color},
-    math::Vec3,
-    prelude::{
-        Children, Entity, Gizmos, GlobalTransform, IntoScheduleConfigs, Mesh, Mesh3d, Query,
-        ReflectResource, Res, Resource, ViewVisibility, With,
-    },
-    reflect::Reflect,
-    render::{
-        mesh::{Indices, VertexAttributeValues},
-        view::VisibilitySystems,
-    },
+use bevy_app::PostUpdate;
+use bevy_asset::Assets;
+use bevy_color::{palettes, Color};
+use bevy_ecs::{
+    entity::Entity,
+    hierarchy::Children,
+    query::With,
+    reflect::ReflectResource,
+    resource::Resource,
+    schedule::IntoScheduleConfigs,
+    system::{Query, Res},
 };
-
-use crate::assets::rsm;
+use bevy_gizmos::gizmos::Gizmos;
+use bevy_math::Vec3;
+use bevy_reflect::Reflect;
+use bevy_render::{
+    mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues},
+    view::{ViewVisibility, VisibilitySystems},
+};
+use bevy_transform::components::GlobalTransform;
 
 const NORMAL_GIZMOS_LENGHT: f32 = 0.5;
 
 pub struct Plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
         app
             // Resources
             .register_type::<RsmDebug>()
@@ -47,7 +50,7 @@ pub struct RsmDebug {
 
 fn show_rsm_vertex_normal(
     mut gizmos: Gizmos,
-    models: Query<Entity, With<rsm::Model>>,
+    models: Query<Entity, With<crate::components::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
     model_primitives: Query<(&Mesh3d, &ViewVisibility)>,
@@ -111,7 +114,7 @@ fn show_rsm_vertex_normal_condition(show_rsm_vertex_normal: Res<RsmDebug>) -> bo
 
 fn show_rsm_edges(
     mut gizmos: Gizmos,
-    models: Query<Entity, With<rsm::Model>>,
+    models: Query<Entity, With<crate::components::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
     model_primitives: Query<(&Mesh3d, &ViewVisibility)>,

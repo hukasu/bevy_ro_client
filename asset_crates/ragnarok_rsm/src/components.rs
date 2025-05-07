@@ -1,10 +1,7 @@
-use bevy::{
-    animation::AnimationClip,
-    asset::Handle,
-    ecs::{component::Component, reflect::ReflectComponent},
-    prelude::AnimationNodeIndex,
-    reflect::Reflect,
-};
+use bevy_animation::{graph::AnimationNodeIndex, AnimationClip};
+use bevy_asset::Handle;
+use bevy_ecs::{component::Component, reflect::ReflectComponent};
+use bevy_reflect::Reflect;
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]

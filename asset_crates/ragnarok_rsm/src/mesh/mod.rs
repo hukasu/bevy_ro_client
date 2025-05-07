@@ -7,12 +7,26 @@ mod texture_uv;
 
 use std::io::{self, Read};
 
+#[cfg(feature = "bevy")]
+use bevy_animation::{
+    animated_field,
+    prelude::{AnimatableCurve, AnimatedField, AnimationCurve},
+};
+#[cfg(feature = "bevy")]
+use bevy_math::{curve::UnevenSampleAutoCurve, Mat3, Mat4, Quat, Vec3};
+#[cfg(feature = "bevy")]
+use bevy_render::primitives::Aabb;
+#[cfg(feature = "bevy")]
+use bevy_transform::components::Transform;
+
 use ragnarok_rebuild_common::{euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version};
 
 pub use self::{
     face::Face, position_key_frame::PositionKeyFrame, rotation_key_frame::RotationKeyFrame,
     scale_key_frame::ScaleKeyFrame, texture_animation::TextureAnimation, texture_uv::TextureUV,
 };
+#[cfg(feature = "bevy")]
+use crate::AnimationDuration;
 
 #[derive(Debug)]
 pub struct Mesh {
@@ -193,5 +207,167 @@ impl Mesh {
             position_key_frames,
             texture_animations,
         })
+    }
+
+    #[cfg(feature = "bevy")]
+    #[must_use]
+    pub fn bounds(&self) -> Option<Aabb> {
+        let transformation_matrix = self.transformation_matrix();
+        let transform = self.transform();
+
+        Aabb::enclosing(self.vertices.iter().map(move |vertex| {
+            transform
+                .transform_point(transformation_matrix.transform_point(Vec3::from_array(*vertex)))
+        }))
+    }
+
+    #[cfg(feature = "bevy")]
+    #[must_use]
+    fn transformation_matrix(&self) -> Transform {
+        let offset = Vec3::from_array(self.offset);
+        let trasn_matrix = Mat3::from_cols_array(&self.transformation_matrix);
+        Transform::from_matrix(Mat4 {
+            x_axis: trasn_matrix.x_axis.extend(0.),
+            y_axis: trasn_matrix.y_axis.extend(0.),
+            z_axis: trasn_matrix.z_axis.extend(0.),
+            w_axis: offset.extend(1.),
+        })
+    }
+
+    #[cfg(feature = "bevy")]
+    #[must_use]
+    pub fn transform(&self) -> Transform {
+        Self::recentered_transform(self, &Aabb::from_min_max(Vec3::splat(0.), Vec3::splat(0.)))
+    }
+
+    #[cfg(feature = "bevy")]
+    #[must_use]
+    pub fn recentered_transform(&self, mesh_bounds: &Aabb) -> Transform {
+        let translation = Vec3::from_array(self.position)
+            - Vec3::new(
+                mesh_bounds.center.x,
+                mesh_bounds.max().y,
+                mesh_bounds.center.z,
+            );
+        let rotation = {
+            let rotation_axis = Vec3::from_array(self.rotation_axis);
+            if rotation_axis.length() <= 0. {
+                Quat::default()
+            } else {
+                Quat::from_axis_angle(rotation_axis, self.rotation_angle)
+            }
+        };
+        let scale = Vec3::from_array(self.scale);
+
+        Transform {
+            translation,
+            rotation,
+            scale,
+        }
+    }
+
+    #[cfg(feature = "bevy")]
+    #[must_use]
+    pub fn position_animation_curve(
+        &self,
+        animation_duration: AnimationDuration,
+    ) -> Option<impl AnimationCurve> {
+        if !self.position_key_frames.is_empty() {
+            match UnevenSampleAutoCurve::new(
+                self.position_key_frames
+                    .iter()
+                    .map(|frame| animation_duration.transform(frame.frame as f32))
+                    .zip(
+                        self.position_key_frames
+                            .iter()
+                            .map(|frame| Vec3::from_array(frame.position)),
+                    ),
+            ) {
+                Ok(uneven_curve) => {
+                    let animatable_curve =
+                        AnimatableCurve::new(animated_field!(Transform::translation), uneven_curve);
+                    Some(animatable_curve)
+                }
+                Err(err) => {
+                    bevy_log::error!(
+                        "Failed to build position animation of {} due to `{err}`.",
+                        self.name
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+
+    #[cfg(feature = "bevy")]
+    #[must_use]
+    pub fn rotation_animation_curve(
+        &self,
+        animation_duration: AnimationDuration,
+    ) -> Option<impl AnimationCurve> {
+        if !self.rotation_key_frames.is_empty() {
+            match UnevenSampleAutoCurve::new(
+                self.rotation_key_frames
+                    .iter()
+                    .map(|frame| animation_duration.transform(frame.frame as f32))
+                    .zip(
+                        self.rotation_key_frames
+                            .iter()
+                            .map(|frame| Quat::from_array(frame.quaternion)),
+                    ),
+            ) {
+                Ok(uneven_curve) => {
+                    let animatable_curve =
+                        AnimatableCurve::new(animated_field!(Transform::rotation), uneven_curve);
+                    Some(animatable_curve)
+                }
+                Err(err) => {
+                    bevy_log::error!(
+                        "Failed to build rotation animation of {} due to `{err}`.",
+                        self.name
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        }
+    }
+
+    #[cfg(feature = "bevy")]
+    #[must_use]
+    pub fn scale_animation_curve(
+        &self,
+        animation_duration: AnimationDuration,
+    ) -> Option<impl AnimationCurve> {
+        if !self.scale_key_frames.is_empty() {
+            match UnevenSampleAutoCurve::new(
+                self.scale_key_frames
+                    .iter()
+                    .map(|frame| animation_duration.transform(frame.frame as f32))
+                    .zip(
+                        self.scale_key_frames
+                            .iter()
+                            .map(|frame| Vec3::from_array(frame.scale)),
+                    ),
+            ) {
+                Ok(uneven_curve) => {
+                    let animatable_curve =
+                        AnimatableCurve::new(animated_field!(Transform::scale), uneven_curve);
+                    Some(animatable_curve)
+                }
+                Err(err) => {
+                    bevy_log::error!(
+                        "Failed to build scale animation of {} due to `{err}`.",
+                        self.name
+                    );
+                    None
+                }
+            }
+        } else {
+            None
+        }
     }
 }
