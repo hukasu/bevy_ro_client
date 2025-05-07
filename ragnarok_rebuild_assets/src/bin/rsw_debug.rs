@@ -45,6 +45,14 @@ fn debug_rsw(rsw: &rsw::Rsw) -> Option<String> {
             write!(debug_ref, "{}", model_debug).unwrap();
         }
     }
+    if rsw
+        .models
+        .iter()
+        .any(|model| model.filename.ends_with("rsm2"))
+    {
+        let debug_ref = debug.get_or_insert_with(header);
+        writeln!(debug_ref, "\thas RSM2 model.",).unwrap();
+    }
 
     if let Some(light_debug) = debug_lights(&rsw.lights) {
         let debug_ref = debug.get_or_insert_with(header);
@@ -62,8 +70,7 @@ fn debug_model(model: &rsw::Model) -> Option<String> {
     if model.filename.is_empty() {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(debug_ref, "{INDENT}\thas empty filename.",).unwrap();
-    }
-    if model.filename.len() >= 75 {
+    } else if model.filename.len() >= 75 {
         let debug_ref = debug.get_or_insert_with(header);
         writeln!(
             debug_ref,
