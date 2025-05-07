@@ -4778,6 +4778,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "019b4b213425016d7d84a153c4c73afb0946fbb4840e4eece7ba8848b9d6da22"
 
 [[package]]
+name = "ragnarok_debugger"
+version = "0.1.0"
+dependencies = [
+ "ragnarok_rebuild_assets",
+ "ragnarok_rsm",
+]
+
+[[package]]
 name = "ragnarok_rebuild_assets"
 version = "0.1.0"
 dependencies = [
