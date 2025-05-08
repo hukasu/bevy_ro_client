@@ -1,6 +1,8 @@
 #[cfg(feature = "bevy")]
 pub mod components;
 mod error;
+#[cfg(feature = "bevy")]
+pub mod materials;
 pub mod mesh;
 #[cfg(feature = "bevy")]
 pub mod plugin;

@@ -30,7 +30,7 @@ use crate::{
     mesh::Mesh,
 };
 
-use super::materials::RsmMaterial;
+use crate::materials::RsmMaterial;
 
 type TextureCache = HashMap<(Handle<Image>, bool), (Handle<RsmMaterial>, Handle<RsmMaterial>)>;
 

@@ -1,7 +1,6 @@
 #[cfg(feature = "debug")]
 mod debug;
 pub(crate) mod loader;
-mod materials;
 
 use bevy_asset::AssetApp;
 use loader::AssetLoader;
@@ -23,7 +22,7 @@ impl bevy_app::Plugin for Plugin {
             .register_asset_loader(AssetLoader::new(self.texture_path_prefix.clone()));
 
         // Materials
-        app.add_plugins(materials::Plugin);
+        app.add_plugins(super::materials::Plugin);
 
         #[cfg(feature = "debug")]
         app.add_plugins(debug::Plugin);
