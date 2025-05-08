@@ -222,13 +222,6 @@ impl Mesh {
         let mut attributes = HashMap::new();
 
         for face in &self.faces {
-            let (a, b, c) = (
-                vertices[usize::from(face.vertices[0])],
-                vertices[usize::from(face.vertices[1])],
-                vertices[usize::from(face.vertices[2])],
-            );
-            let normal = flat_normal(&a, &b, &c);
-
             for (vertex, uv) in face.vertices.iter().copied().zip(face.uv) {
                 #[expect(
                     clippy::unwrap_used,
@@ -239,7 +232,6 @@ impl Mesh {
                     Entry::Vacant(v) => {
                         v.insert(cur_len);
                         mesh_attributes.vertices.push(vertices[usize::from(vertex)]);
-                        mesh_attributes.normals.push(normal);
                         mesh_attributes.uv.push(uvs[usize::from(uv)].uv);
                         mesh_attributes.color.push(
                             uvs[usize::from(uv)]
@@ -437,49 +429,7 @@ impl Mesh {
 #[derive(Debug, Default)]
 pub struct MeshAttributes {
     pub vertices: Vec<[f32; 3]>,
-    pub normals: Vec<[f32; 3]>,
     pub uv: Vec<[f32; 2]>,
     pub color: Vec<[f32; 4]>,
     pub indexes: HashMap<(i32, bool), Vec<u16>>,
-}
-
-fn flat_normal(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
-    let v1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-    let v2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-
-    normalize(&cross(&v1, &v2))
-}
-
-fn cross(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
-    [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0],
-    ]
-}
-
-fn normalize(a: &[f32; 3]) -> [f32; 3] {
-    let magnitude = (a[0].powi(2) + a[1].powi(2) + a[2].powi(2)).sqrt();
-    [a[0] / magnitude, a[1] / magnitude, a[2] / magnitude]
-}
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn cross_and_normalize() {
-        let c = cross(&[7., 12., 64.], &[324., 12., 54.]);
-        assert_eq!(c[0], -120.);
-        assert_eq!(c[1], 20358.);
-        assert_eq!(c[2], -3804.);
-        let n = normalize(&c);
-        assert_eq!(n[0], -0.005794107);
-        assert_eq!(n[1], 0.9829703);
-        assert_eq!(n[2], -0.1836732);
-        let f = flat_normal(&[0., 0., 0.], &[7., 12., 64.], &[324., 12., 54.]);
-        assert_eq!(f[0], -0.005794107);
-        assert_eq!(f[1], 0.9829703);
-        assert_eq!(f[2], -0.1836732);
-    }
 }

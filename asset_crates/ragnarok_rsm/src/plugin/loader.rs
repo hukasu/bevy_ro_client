@@ -23,7 +23,7 @@ use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
-use crate::Rsm;
+use crate::{Rsm, ShadeType};
 use crate::{
     components::{Model, ModelAnimation},
     mesh::Mesh,
@@ -269,6 +269,7 @@ impl MeshList {
                 primitives: PrimitiveList::new(
                     current_mesh,
                     i,
+                    rsm.shade_type,
                     &rsm.textures,
                     load_context,
                     loader,
@@ -326,6 +327,7 @@ impl PrimitiveList {
     pub fn new(
         rsm_mesh: &Mesh,
         i: usize,
+        shade_type: ShadeType,
         rsm_textures: &[Box<str>],
         load_context: &mut LoadContext,
         loader: &AssetLoader,
@@ -338,7 +340,12 @@ impl PrimitiveList {
             &rsm_mesh.textures
         };
 
-        let mesh_attributes = rsm_mesh.flat_mesh();
+        let mesh_attributes = if shade_type != ShadeType::Smooth {
+            rsm_mesh.flat_mesh()
+        } else {
+            // TODO smooth normals
+            rsm_mesh.flat_mesh()
+        };
 
         let usage = if cfg!(feature = "debug") {
             RenderAssetUsages::all()
@@ -355,10 +362,6 @@ impl PrimitiveList {
                     mesh_attributes.vertices.clone(),
                 )
                 .with_inserted_attribute(
-                    bevy_mesh::Mesh::ATTRIBUTE_NORMAL,
-                    mesh_attributes.normals.clone(),
-                )
-                .with_inserted_attribute(
                     bevy_mesh::Mesh::ATTRIBUTE_UV_0,
                     mesh_attributes.uv.clone(),
                 )
@@ -366,7 +369,8 @@ impl PrimitiveList {
                     bevy_mesh::Mesh::ATTRIBUTE_COLOR,
                     mesh_attributes.color.clone(),
                 )
-                .with_inserted_indices(bevy_mesh::Indices::U16(indexes));
+                .with_inserted_indices(bevy_mesh::Indices::U16(indexes))
+                .with_computed_smooth_normals();
 
             let material = RsmMaterial {
                 texture: load_context.load(
@@ -381,9 +385,11 @@ impl PrimitiveList {
             primitive_list.push(PrimitiveListItem {
                 name: Name::new(format!("Primitive{}", primitive)),
                 mesh: load_context
-                    .add_labeled_asset(format!("Primitive{}/Mesh{}", primitive, i), mesh),
-                material: load_context
-                    .add_labeled_asset(format!("Primitive{}/Material{}", primitive, i), material),
+                    .add_labeled_asset(format!("Mesh{}/Primitive{}/Mesh", i, primitive), mesh),
+                material: load_context.add_labeled_asset(
+                    format!("Mesh{}/Primitive{}/Material", i, primitive),
+                    material,
+                ),
             });
         }
 
