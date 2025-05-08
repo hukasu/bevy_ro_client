@@ -16,9 +16,10 @@ use bevy_ecs::{
     spawn::{SpawnIter, SpawnRelated, SpawnableList},
     world::World,
 };
+use bevy_image::Image;
 use bevy_mesh::PrimitiveTopology;
 use bevy_pbr::MeshMaterial3d;
-use bevy_platform::collections::HashSet;
+use bevy_platform::collections::{HashMap, HashSet};
 use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
@@ -30,6 +31,8 @@ use crate::{
 };
 
 use super::materials::RsmMaterial;
+
+type TextureCache = HashMap<(Handle<Image>, bool), (Handle<RsmMaterial>, Handle<RsmMaterial>)>;
 
 pub struct AssetLoader {
     texture_path_prefix: PathBuf,
@@ -98,6 +101,8 @@ impl SceneBuilder {
 
         let animation = Self::build_animation(rsm, root, &root_name, load_context);
 
+        let mut texture_cache = TextureCache::new();
+
         world.entity_mut(root).insert((
             root_name,
             Transform::default(),
@@ -108,6 +113,7 @@ impl SceneBuilder {
                 root_meshes.as_slice(),
                 &mut meshes_and_indexes,
                 root,
+                &mut texture_cache,
                 load_context,
                 loader,
             )),
@@ -215,6 +221,7 @@ impl MeshList {
         to_build: &[&str],
         remaining_meshes: &mut Vec<(usize, &str)>,
         animation_player: Entity,
+        texture_cache: &mut TextureCache,
         load_context: &mut LoadContext,
         loader: &AssetLoader,
     ) -> Self {
@@ -271,6 +278,7 @@ impl MeshList {
                     i,
                     rsm.shade_type,
                     &rsm.textures,
+                    texture_cache,
                     load_context,
                     loader,
                 ),
@@ -280,6 +288,7 @@ impl MeshList {
                     children.as_slice(),
                     remaining_meshes,
                     animation_player,
+                    texture_cache,
                     load_context,
                     loader,
                 ),
@@ -329,6 +338,7 @@ impl PrimitiveList {
         i: usize,
         shade_type: ShadeType,
         rsm_textures: &[Box<str>],
+        texture_cache: &mut TextureCache,
         load_context: &mut LoadContext,
         loader: &AssetLoader,
     ) -> Self {
@@ -372,24 +382,39 @@ impl PrimitiveList {
                 .with_inserted_indices(bevy_mesh::Indices::U16(indexes))
                 .with_computed_smooth_normals();
 
-            let material = RsmMaterial {
-                texture: load_context.load(
-                    loader
-                        .texture_path_prefix()
-                        .join(textures[usize::try_from(texture).unwrap()].as_ref()),
-                ),
-                double_sided,
-                inverse_scale: false,
-            };
+            let texture_count = texture_cache.len();
+            let texture = load_context.load(
+                loader
+                    .texture_path_prefix()
+                    .join(textures[usize::try_from(texture).unwrap()].as_ref()),
+            );
+
+            let material = texture_cache
+                .entry((texture.clone(), double_sided))
+                .or_insert((
+                    load_context.add_labeled_asset(
+                        format!("Material{}", texture_count),
+                        RsmMaterial {
+                            texture: texture.clone(),
+                            double_sided,
+                            inverse_scale: false,
+                        },
+                    ),
+                    load_context.add_labeled_asset(
+                        format!("Material{}/Inverted", texture_count),
+                        RsmMaterial {
+                            texture,
+                            double_sided,
+                            inverse_scale: true,
+                        },
+                    ),
+                ));
 
             primitive_list.push(PrimitiveListItem {
                 name: Name::new(format!("Primitive{}", primitive)),
                 mesh: load_context
                     .add_labeled_asset(format!("Mesh{}/Primitive{}/Mesh", i, primitive), mesh),
-                material: load_context.add_labeled_asset(
-                    format!("Mesh{}/Primitive{}/Material", i, primitive),
-                    material,
-                ),
+                material: material.0.clone(),
             });
         }
 
