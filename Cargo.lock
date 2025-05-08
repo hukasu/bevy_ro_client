@@ -884,6 +884,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_flycam"
+version = "0.16.0"
+source = "git+https://github.com/kSDOT/bevy_flycam/?branch=bevy-0.16.0-update#a6f36ac0c7e1f41d162d17d2ad3a93d97a5a8ef1"
+dependencies = [
+ "bevy",
+]
+
+[[package]]
 name = "bevy_gizmos"
 version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4822,6 +4830,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
+ "bevy_flycam",
  "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
  "ragnarok_rsm",

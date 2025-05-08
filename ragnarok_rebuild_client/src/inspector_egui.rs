@@ -3,19 +3,21 @@ use std::sync::Arc;
 use bevy::{
     app::{PostStartup, Startup, Update},
     asset::{AssetServer, Assets, Handle},
+    audio::SpatialListener,
     ecs::{
         schedule::common_conditions::resource_exists,
         system::{Commands, Res, ResMut},
     },
     math::Vec3,
     prelude::{
-        Camera3d, Deref, DerefMut, IntoScheduleConfigs, Name, NextState, Resource, Visibility,
+        Deref, DerefMut, Entity, IntoScheduleConfigs, Name, NextState, Query, Resource, Visibility,
+        With,
     },
     text::Font,
     transform::components::Transform,
 };
 
-// use bevy_flycam::FlyCam;
+use bevy_flycam::{prelude::MouseSettings, FlyCam};
 use bevy_inspector_egui::{
     bevy_egui::{EguiContextPass, EguiPlugin},
     quick::WorldInspectorPlugin,
@@ -41,21 +43,18 @@ impl bevy::app::Plugin for Plugin {
             WorldInspectorPlugin::default(),
         ))
         .insert_resource(TeleportTextBox(String::new()))
-        .add_systems(Startup, (init_font_loading, temp_camera))
+        .add_systems(Startup, init_font_loading)
         .add_systems(
             Update,
             check_loading_font.run_if(resource_exists::<LoadingFont>),
         )
         .add_systems(EguiContextPass, teleport_windows);
 
-        // app.add_plugins(bevy_flycam::prelude::PlayerPlugin)
-        //     .insert_resource(bevy_flycam::prelude::MovementSettings {
-        //         sensitivity: 0.00015, // default: 0.00012
-        //         speed: 24.0,          // default: 12.0
-        //     })
-        //     .add_systems(PostStartup, add_listener_to_fly_cam)
-        //     // .add_systems(PostStartup, add_oit_to_camera)
-        //     ;
+        app.add_plugins(bevy_flycam::FlyCameraPlugin::default())
+            .insert_resource(MouseSettings::default())
+            .add_systems(PostStartup, add_listener_to_fly_cam)
+            // .add_systems(PostStartup, add_oit_to_camera)
+            ;
 
         // app.add_plugins(iyes_perf_ui::PerfUiPlugin)
         //     .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
@@ -64,13 +63,6 @@ impl bevy::app::Plugin for Plugin {
 
         app.add_systems(PostStartup, spawn_palette);
     }
-}
-
-fn temp_camera(mut commands: Commands) {
-    commands.spawn((
-        Camera3d::default(),
-        Transform::from_xyz(0., 25., 50.).looking_at(Vec3::ZERO, Vec3::Y),
-    ));
 }
 
 #[derive(Debug, Resource, Deref, DerefMut)]
@@ -93,14 +85,14 @@ fn teleport_windows(
     });
 }
 
-// fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
-//     let Ok(flycam) = flycams.get_single() else {
-//         bevy::log::error!("Zero or more than one FlyCam present.");
-//         return;
-//     };
+fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
+    let Ok(flycam) = flycams.single() else {
+        bevy::log::error!("Zero or more than one FlyCam present.");
+        return;
+    };
 
-//     commands.entity(flycam).insert(SpatialListener::default());
-// }
+    commands.entity(flycam).insert(SpatialListener::default());
+}
 
 // fn add_oit_to_camera(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
 //     let Ok(flycam) = flycams.get_single() else {

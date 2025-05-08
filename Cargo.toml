@@ -30,7 +30,7 @@ bevy_scene = { version = "0.16.0", default-features = false }
 bevy_transform = { version = "0.16.0", default-features = false }
 
 bevy-inspector-egui = { version = "0.31.0" }
-# bevy_flycam = { version = "0.15.0" }
+bevy_flycam = { git = "https://github.com/kSDOT/bevy_flycam/", branch = "bevy-0.16.0-update" }
 # iyes_perf_ui = { version = "0.3" }
 
 log = "0.4.25"
