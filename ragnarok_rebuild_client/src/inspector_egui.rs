@@ -3,15 +3,15 @@ use std::sync::Arc;
 use bevy::{
     app::{PostStartup, Startup, Update},
     asset::{AssetServer, Assets, Handle},
-    audio::SpatialListener,
     ecs::{
         schedule::common_conditions::resource_exists,
         system::{Commands, Res, ResMut},
     },
+    input::common_conditions::input_just_pressed,
     math::Vec3,
     prelude::{
-        Deref, DerefMut, Entity, IntoScheduleConfigs, Name, NextState, Query, Resource, Visibility,
-        With,
+        Camera, Deref, DerefMut, Entity, IntoScheduleConfigs, KeyCode, Name, NextState, Query,
+        Resource, Single, Visibility, With,
     },
     text::Font,
     transform::components::Transform,
@@ -50,11 +50,16 @@ impl bevy::app::Plugin for Plugin {
         )
         .add_systems(EguiContextPass, teleport_windows);
 
-        app.add_plugins(bevy_flycam::FlyCameraPlugin::default())
-            .insert_resource(MouseSettings::default())
-            .add_systems(PostStartup, add_listener_to_fly_cam)
-            // .add_systems(PostStartup, add_oit_to_camera)
-            ;
+        // FlyCam
+        app.add_plugins(bevy_flycam::FlyCameraPlugin {
+            spawn_camera: false,
+            grab_cursor_on_startup: true,
+        })
+        .insert_resource(MouseSettings::default())
+        .add_systems(
+            Update,
+            toggle_flycam.run_if(input_just_pressed(KeyCode::KeyF)),
+        );
 
         // app.add_plugins(iyes_perf_ui::PerfUiPlugin)
         //     .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin)
@@ -85,26 +90,17 @@ fn teleport_windows(
     });
 }
 
-fn add_listener_to_fly_cam(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
-    let Ok(flycam) = flycams.single() else {
-        bevy::log::error!("Zero or more than one FlyCam present.");
-        return;
-    };
-
-    commands.entity(flycam).insert(SpatialListener::default());
+fn toggle_flycam(
+    mut commands: Commands,
+    camera: Single<Entity, With<Camera>>,
+    flycams: Query<&FlyCam>,
+) {
+    if flycams.contains(*camera) {
+        commands.entity(*camera).remove::<FlyCam>();
+    } else {
+        commands.entity(*camera).insert(FlyCam);
+    }
 }
-
-// fn add_oit_to_camera(mut commands: Commands, flycams: Query<Entity, With<FlyCam>>) {
-//     let Ok(flycam) = flycams.get_single() else {
-//         bevy::log::error!("Zero or more than one FlyCam present.");
-//         return;
-//     };
-
-//     commands
-//         .entity(flycam)
-//         .insert(OrderIndependentTransparencySettings::default())
-//         .insert(Msaa::Off);
-// }
 
 // fn spawn_perf_ui(mut commands: Commands) {
 //     commands.spawn(iyes_perf_ui::entries::PerfUiBundle::default());

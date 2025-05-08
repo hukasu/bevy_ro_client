@@ -1,8 +1,9 @@
 use bevy::{
-    app::Update,
+    app::{Startup, Update},
+    audio::SpatialListener,
     ecs::schedule::common_conditions::{not, resource_exists},
     math::bounding::RayCast3d,
-    prelude::{Camera, Commands, GlobalTransform, IntoScheduleConfigs, Query, With},
+    prelude::{Camera, Camera3d, Commands, GlobalTransform, IntoScheduleConfigs, Query, With},
     window::{PrimaryWindow, Window},
 };
 use ragnarok_rebuild_bevy::assets::gat::TileRayCast;
@@ -13,6 +14,7 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app
             // Systems
+            .add_systems(Startup, create_camera)
             .add_systems(Update, cast_ray_to_ground.run_if(is_mouse_free))
             .add_systems(
                 Update,
@@ -21,6 +23,10 @@ impl bevy::app::Plugin for Plugin {
                     .run_if(not(is_mouse_free)),
             );
     }
+}
+
+fn create_camera(mut commands: Commands) {
+    commands.spawn((Camera3d::default(), SpatialListener::default()));
 }
 
 fn is_mouse_free(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
