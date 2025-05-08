@@ -31,6 +31,8 @@ pub use self::{
 #[cfg(feature = "bevy")]
 use crate::AnimationDuration;
 
+type TexturePathsAndIndexes = (Box<[Box<str>]>, Box<[i32]>);
+
 #[derive(Debug)]
 pub struct Mesh {
     pub name: Box<str>,
@@ -53,45 +55,12 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn from_reader(mut reader: &mut dyn Read, version: &Version) -> Result<Self, super::Error> {
-        let (name, parent_name) = if version >= &Version(2, 2, 0) {
-            let [ref name, ref parent_name] = *read_n_euc_kr_strings(reader, 2, None)? else {
-                return Err(super::Error::InvalidMeshName);
-            };
-            (name.clone(), parent_name.clone())
-        } else {
-            let [ref name, ref parent_name] = *read_n_euc_kr_strings(reader, 2, Some(40))? else {
-                return Err(super::Error::InvalidMeshName);
-            };
-            (name.clone(), parent_name.clone())
-        };
+    pub fn from_reader<R: Read>(reader: &mut R, version: &Version) -> Result<Self, super::Error> {
+        let (name, parent_name) = Self::read_name(reader, version)?;
 
-        let (textures, texture_indexes) = if version >= &Version(2, 3, 0) {
-            let count = reader.read_le_u32()?;
-            let textures = read_n_euc_kr_strings(reader, count, None)?;
+        let (textures, texture_indexes) = Self::read_textures_and_texture_indexes(reader, version)?;
 
-            (textures, (0..count as i32).collect())
-        } else {
-            let texture_indexes = {
-                let count = reader.read_le_u32()?;
-                (0..count)
-                    .map(|_| reader.read_le_i32())
-                    .collect::<Result<Box<[i32]>, io::Error>>()?
-            };
-            ([].into(), texture_indexes)
-        };
-
-        let transformation_matrix = [
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-            reader.read_le_f32()?,
-        ];
+        let transformation_matrix = Self::read_transformation_matrix(reader)?;
 
         let (offset, position, rotation_angle, rotation_axis, scale) =
             if version >= &Version(2, 2, 0) {
@@ -130,66 +99,19 @@ impl Mesh {
                 (offset, position, rotation_angle, rotation_axis, scale)
             };
 
-        let vertices = {
-            let count = reader.read_le_u32()?;
-            (0..count)
-                .map(|_| -> Result<[f32; 3], io::Error> {
-                    Ok([
-                        reader.read_le_f32()?,
-                        reader.read_le_f32()?,
-                        reader.read_le_f32()?,
-                    ])
-                })
-                .collect::<Result<Box<[[f32; 3]]>, io::Error>>()?
-        };
+        let vertices = Self::read_vertices(reader)?;
 
-        let uvs = {
-            let count = reader.read_le_u32()?;
-            (0..count)
-                .map(|_| TextureUV::from_reader(reader, version))
-                .collect::<Result<Box<[TextureUV]>, io::Error>>()?
-        };
+        let uvs = Self::read_uvs(reader, version)?;
 
-        let faces = {
-            let count = reader.read_le_u32()?;
-            (0..count)
-                .map(|_| Face::from_reader(reader, version))
-                .collect::<Result<Box<[Face]>, io::Error>>()?
-        };
+        let faces = Self::read_faces(reader, version)?;
 
-        let scale_key_frames = if version >= &Version(1, 6, 0) {
-            let count = reader.read_le_u32()?;
-            (0..count)
-                .map(|_| ScaleKeyFrame::from_reader(reader))
-                .collect::<Result<Box<[ScaleKeyFrame]>, io::Error>>()?
-        } else {
-            [].into()
-        };
+        let scale_key_frames = Self::read_scale_key_frames(reader, version)?;
 
-        let rotation_key_frames = {
-            let count = reader.read_le_u32()?;
-            (0..count)
-                .map(|_| RotationKeyFrame::from_reader(reader))
-                .collect::<Result<Box<[RotationKeyFrame]>, io::Error>>()?
-        };
+        let rotation_key_frames = Self::read_rotation_key_frames(reader)?;
 
-        let position_key_frames = if version >= &Version(2, 2, 0) {
-            let count = reader.read_le_u32()?;
-            (0..count)
-                .map(|_| PositionKeyFrame::from_reader(reader))
-                .collect::<Result<Box<[PositionKeyFrame]>, io::Error>>()?
-        } else {
-            [].into()
-        };
+        let position_key_frames = Self::read_position_key_frames(reader, version)?;
 
-        let texture_animations = if version >= &Version(2, 3, 0) {
-            let count = reader.read_le_u32()?;
-            (0..count)
-                .map(|_| TextureAnimation::from_reader(reader))
-                .collect::<Result<Box<[TextureAnimation]>, io::Error>>()?
-        } else {
-            [].into()
-        };
+        let texture_animations = Self::read_texture_key_frames(reader, version)?;
 
         Ok(Self {
             name,
@@ -210,6 +132,135 @@ impl Mesh {
             position_key_frames,
             texture_animations,
         })
+    }
+
+    fn read_name<R: Read>(
+        reader: &mut R,
+        version: &Version,
+    ) -> Result<(Box<str>, Box<str>), super::Error> {
+        if version >= &Version(2, 2, 0) {
+            let [ref name, ref parent_name] = *read_n_euc_kr_strings(reader, 2, None)? else {
+                return Err(super::Error::InvalidMeshName);
+            };
+            Ok((name.clone(), parent_name.clone()))
+        } else {
+            let [ref name, ref parent_name] = *read_n_euc_kr_strings(reader, 2, Some(40))? else {
+                return Err(super::Error::InvalidMeshName);
+            };
+            Ok((name.clone(), parent_name.clone()))
+        }
+    }
+
+    fn read_textures_and_texture_indexes<R: Read>(
+        reader: &mut R,
+        version: &Version,
+    ) -> Result<TexturePathsAndIndexes, super::Error> {
+        if version >= &Version(2, 3, 0) {
+            let count = reader.read_le_u32()?;
+            let textures = read_n_euc_kr_strings(reader, count, None)?;
+
+            Ok((textures, (0..count as i32).collect()))
+        } else {
+            let texture_indexes = {
+                let count = reader.read_le_u32()?;
+                (0..count)
+                    .map(|_| reader.read_le_i32())
+                    .collect::<Result<Box<[i32]>, io::Error>>()?
+            };
+            Ok(([].into(), texture_indexes))
+        }
+    }
+
+    fn read_transformation_matrix<R: Read>(reader: &mut R) -> Result<[f32; 9], super::Error> {
+        Ok([
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+            reader.read_le_f32()?,
+        ])
+    }
+
+    fn read_vertices<R: Read>(reader: &mut R) -> Result<Box<[[f32; 3]]>, io::Error> {
+        let count = reader.read_le_u32()?;
+        (0..count)
+            .map(|_| -> Result<[f32; 3], io::Error> {
+                Ok([
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                    reader.read_le_f32()?,
+                ])
+            })
+            .collect::<Result<Box<[[f32; 3]]>, io::Error>>()
+    }
+
+    fn read_uvs<R: Read>(reader: &mut R, version: &Version) -> Result<Box<[TextureUV]>, io::Error> {
+        let count = reader.read_le_u32()?;
+        (0..count)
+            .map(|_| TextureUV::from_reader(reader, version))
+            .collect::<Result<Box<[TextureUV]>, io::Error>>()
+    }
+
+    fn read_faces<R: Read>(reader: &mut R, version: &Version) -> Result<Box<[Face]>, io::Error> {
+        let count = reader.read_le_u32()?;
+        (0..count)
+            .map(|_| Face::from_reader(reader, version))
+            .collect::<Result<Box<[Face]>, io::Error>>()
+    }
+
+    fn read_scale_key_frames<R: Read>(
+        reader: &mut R,
+        version: &Version,
+    ) -> Result<Box<[ScaleKeyFrame]>, io::Error> {
+        if version >= &Version(1, 6, 0) {
+            let count = reader.read_le_u32()?;
+            (0..count)
+                .map(|_| ScaleKeyFrame::from_reader(reader))
+                .collect::<Result<Box<[ScaleKeyFrame]>, io::Error>>()
+        } else {
+            Ok([].into())
+        }
+    }
+
+    fn read_rotation_key_frames<R: Read>(
+        reader: &mut R,
+    ) -> Result<Box<[RotationKeyFrame]>, io::Error> {
+        let count = reader.read_le_u32()?;
+        (0..count)
+            .map(|_| RotationKeyFrame::from_reader(reader))
+            .collect::<Result<Box<[RotationKeyFrame]>, io::Error>>()
+    }
+
+    fn read_position_key_frames<R: Read>(
+        reader: &mut R,
+        version: &Version,
+    ) -> Result<Box<[PositionKeyFrame]>, io::Error> {
+        if version >= &Version(2, 2, 0) {
+            let count = reader.read_le_u32()?;
+            (0..count)
+                .map(|_| PositionKeyFrame::from_reader(reader))
+                .collect::<Result<Box<[PositionKeyFrame]>, io::Error>>()
+        } else {
+            Ok([].into())
+        }
+    }
+
+    fn read_texture_key_frames<R: Read>(
+        reader: &mut R,
+        version: &Version,
+    ) -> Result<Box<[TextureAnimation]>, io::Error> {
+        if version >= &Version(2, 3, 0) {
+            let count = reader.read_le_u32()?;
+            (0..count)
+                .map(|_| TextureAnimation::from_reader(reader))
+                .collect::<Result<Box<[TextureAnimation]>, io::Error>>()
+        } else {
+            Ok([].into())
+        }
     }
 
     pub fn flat_mesh(&self) -> MeshAttributes {
