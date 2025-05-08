@@ -15,7 +15,8 @@ impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut bevy_app::App) {
         app
             // Types
-            .register_type::<super::components::Model>();
+            .register_type::<super::components::Model>()
+            .register_type::<super::components::ModelInvertedMaterial>();
 
         // Assets
         app.init_asset::<Rsm>()

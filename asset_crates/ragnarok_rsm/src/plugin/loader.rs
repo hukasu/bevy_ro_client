@@ -24,7 +24,7 @@ use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
-use crate::{Rsm, ShadeType};
+use crate::{Rsm, ShadeType, components::ModelInvertedMaterial};
 use crate::{
     components::{Model, ModelAnimation},
     mesh::Mesh,
@@ -330,6 +330,7 @@ struct PrimitiveListItem {
     name: Name,
     mesh: Handle<bevy_mesh::Mesh>,
     material: Handle<RsmMaterial>,
+    inverted_material: Handle<RsmMaterial>,
 }
 
 impl PrimitiveList {
@@ -415,6 +416,7 @@ impl PrimitiveList {
                 mesh: load_context
                     .add_labeled_asset(format!("Mesh{}/Primitive{}/Mesh", i, primitive), mesh),
                 material: material.0.clone(),
+                inverted_material: material.1.clone(),
             });
         }
 
@@ -433,7 +435,12 @@ impl SpawnableList<ChildOf> for PrimitiveList {
             self.transform,
             Visibility::default(),
             Children::spawn(SpawnIter(self.primitives.into_iter().map(|item| {
-                (item.name, Mesh3d(item.mesh), MeshMaterial3d(item.material))
+                (
+                    item.name,
+                    Mesh3d(item.mesh),
+                    MeshMaterial3d(item.material),
+                    ModelInvertedMaterial(item.inverted_material),
+                )
             }))),
         ));
     }

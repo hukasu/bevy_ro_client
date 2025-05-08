@@ -103,11 +103,17 @@ impl Material for RsmMaterial {
 
         descriptor.primitive.cull_mode = if key.bind_group_data.double_sided {
             None
-        } else if key.bind_group_data.inverse_scale {
+        } else if key.bind_group_data.inverted_scale {
             Some(Face::Front)
         } else {
             Some(Face::Back)
         };
+
+        if key.bind_group_data.double_sided {
+            if let Some(frag) = &mut descriptor.fragment {
+                frag.shader_defs.push("RSM_MATERIAL_DOUBLE_SIDED".into());
+            }
+        }
 
         Ok(())
     }
@@ -116,14 +122,14 @@ impl Material for RsmMaterial {
 #[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct RsmMaterialKey {
     double_sided: bool,
-    inverse_scale: bool,
+    inverted_scale: bool,
 }
 
 impl From<&RsmMaterial> for RsmMaterialKey {
     fn from(value: &RsmMaterial) -> Self {
         Self {
             double_sided: value.double_sided,
-            inverse_scale: value.inverse_scale,
+            inverted_scale: value.inverse_scale,
         }
     }
 }

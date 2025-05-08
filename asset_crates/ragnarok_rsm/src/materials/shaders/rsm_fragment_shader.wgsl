@@ -4,7 +4,7 @@
     pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
     pbr_types::{
         PbrInput,
-        STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND,
+        STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK,
     },
 }
 
@@ -12,10 +12,14 @@
 @group(2) @binding(1) var rsm_sampler: sampler;
 
 fn rsm_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
+    #ifdef RSM_MATERIAL_DOUBLE_SIDED
+    var pbr_input = pbr_input_from_vertex_output(in, is_front, true);
+    #else
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
+    #endif
 
     pbr_input.material.reflectance = vec3(0.0);
-    pbr_input.material.flags = STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND;
+    pbr_input.material.flags = STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
 
     return pbr_input;
 }
