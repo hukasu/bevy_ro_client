@@ -369,11 +369,11 @@ impl PrimitiveList {
                 .with_inserted_indices(bevy_mesh::Indices::U16(indexes));
 
             let material = RsmMaterial {
-                texture: load_context.load(format!(
-                    "{}{}",
-                    loader.texture_path_prefix().display(),
-                    textures[usize::try_from(texture).unwrap()]
-                )),
+                texture: load_context.load(
+                    loader
+                        .texture_path_prefix()
+                        .join(textures[usize::try_from(texture).unwrap()].as_ref()),
+                ),
                 double_sided,
                 inverse_scale: false,
             };
