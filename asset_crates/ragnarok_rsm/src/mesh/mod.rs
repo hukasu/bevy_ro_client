@@ -40,11 +40,7 @@ pub struct Mesh {
     pub textures: Box<[Box<str>]>,
     pub texture_indexes: Box<[i32]>,
     pub transformation_matrix: [f32; 9],
-    pub offset: [f32; 3],
-    pub position: [f32; 3],
-    pub rotation_angle: f32,
-    pub rotation_axis: [f32; 3],
-    pub scale: [f32; 3],
+    pub transformation: Transformation,
     pub vertices: Box<[[f32; 3]]>,
     pub uvs: Box<[TextureUV]>,
     pub faces: Box<[Face]>,
@@ -62,42 +58,7 @@ impl Mesh {
 
         let transformation_matrix = Self::read_transformation_matrix(reader)?;
 
-        let (offset, position, rotation_angle, rotation_axis, scale) =
-            if version >= &Version(2, 2, 0) {
-                let offset = [0.; 3];
-                let position = [
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                ];
-                let rotation_angle = 0.;
-                let rotation_axis = [0.; 3];
-                let scale = [1.; 3];
-                (offset, position, rotation_angle, rotation_axis, scale)
-            } else {
-                let offset = [
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                ];
-                let position = [
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                ];
-                let rotation_angle = reader.read_le_f32()?;
-                let rotation_axis = [
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                ];
-                let scale = [
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                    reader.read_le_f32()?,
-                ];
-                (offset, position, rotation_angle, rotation_axis, scale)
-            };
+        let transformation = Self::read_transformation(reader, version)?;
 
         let vertices = Self::read_vertices(reader)?;
 
@@ -119,11 +80,7 @@ impl Mesh {
             textures,
             texture_indexes,
             transformation_matrix,
-            offset,
-            position,
-            rotation_angle,
-            rotation_axis,
-            scale,
+            transformation,
             vertices,
             uvs,
             faces,
@@ -183,6 +140,49 @@ impl Mesh {
             reader.read_le_f32()?,
             reader.read_le_f32()?,
         ])
+    }
+
+    fn read_transformation<R: Read>(
+        reader: &mut R,
+        version: &Version,
+    ) -> Result<Transformation, super::Error> {
+        if version >= &Version(2, 2, 0) {
+            let position = [
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+            ];
+            Ok(Transformation::Simple(position))
+        } else {
+            let offset = [
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+            ];
+            let position = [
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+            ];
+            let rotation_angle = reader.read_le_f32()?;
+            let rotation_axis = [
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+            ];
+            let scale = [
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+                reader.read_le_f32()?,
+            ];
+            Ok(Transformation::Complete {
+                offset,
+                position,
+                rotation_angle,
+                rotation_axis,
+                scale,
+            })
+        }
     }
 
     fn read_vertices<R: Read>(reader: &mut R) -> Result<Box<[[f32; 3]]>, io::Error> {
@@ -329,7 +329,7 @@ impl Mesh {
     #[cfg(feature = "bevy")]
     #[must_use]
     pub fn transformation_matrix(&self) -> Transform {
-        let offset = Vec3::from_array(self.offset);
+        let offset = self.transformation.offset();
         let trasn_matrix = Mat3::from_cols_array(&self.transformation_matrix);
         Transform::from_matrix(Mat4 {
             x_axis: trasn_matrix.x_axis.extend(0.),
@@ -348,27 +348,7 @@ impl Mesh {
     #[cfg(feature = "bevy")]
     #[must_use]
     pub fn recentered_transform(&self, mesh_bounds: &Aabb) -> Transform {
-        let translation = Vec3::from_array(self.position)
-            - Vec3::new(
-                mesh_bounds.center.x,
-                mesh_bounds.max().y,
-                mesh_bounds.center.z,
-            );
-        let rotation = {
-            let rotation_axis = Vec3::from_array(self.rotation_axis);
-            if rotation_axis.length() <= 0. {
-                Quat::default()
-            } else {
-                Quat::from_axis_angle(rotation_axis, self.rotation_angle)
-            }
-        };
-        let scale = Vec3::from_array(self.scale);
-
-        Transform {
-            translation,
-            rotation,
-            scale,
-        }
+        self.transformation.transform(mesh_bounds)
     }
 
     #[cfg(feature = "bevy")]
@@ -483,4 +463,66 @@ pub struct MeshAttributes {
     pub uv: Vec<[f32; 2]>,
     pub color: Vec<[f32; 4]>,
     pub indexes: HashMap<(i32, bool), Vec<u16>>,
+}
+
+#[derive(Debug)]
+pub enum Transformation {
+    Complete {
+        offset: [f32; 3],
+        position: [f32; 3],
+        rotation_angle: f32,
+        rotation_axis: [f32; 3],
+        scale: [f32; 3],
+    },
+    Simple([f32; 3]),
+}
+
+impl Transformation {
+    pub fn offset(&self) -> Vec3 {
+        match self {
+            Transformation::Complete {
+                offset,
+                position: _,
+                rotation_angle: _,
+                rotation_axis: _,
+                scale: _,
+            } => Vec3::from_array(*offset),
+            Transformation::Simple(_) => Vec3::ZERO,
+        }
+    }
+
+    pub fn transform(&self, mesh_bounds: &Aabb) -> Transform {
+        match self {
+            Self::Complete {
+                offset: _,
+                position,
+                rotation_angle,
+                rotation_axis,
+                scale,
+            } => {
+                let translation = Vec3::from_array(*position)
+                    - Vec3::new(
+                        mesh_bounds.center.x,
+                        mesh_bounds.max().y,
+                        mesh_bounds.center.z,
+                    );
+                let rotation = {
+                    let rotation_axis = Vec3::from_array(*rotation_axis);
+                    if rotation_axis.length() <= 0. {
+                        Quat::default()
+                    } else {
+                        Quat::from_axis_angle(rotation_axis, *rotation_angle)
+                    }
+                };
+                let scale = Vec3::from_array(*scale);
+
+                Transform {
+                    translation,
+                    rotation,
+                    scale,
+                }
+            }
+            Self::Simple(position) => Transform::from_xyz(position[0], position[1], position[2]),
+        }
+    }
 }
