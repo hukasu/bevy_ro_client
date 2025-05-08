@@ -1,17 +1,17 @@
 use std::marker::PhantomData;
 
-use bevy_asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle};
+use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, weak_handle};
 use bevy_image::Image;
 use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin};
 use bevy_reflect::Reflect;
 use bevy_render::{
+    RenderDebugFlags,
     alpha::AlphaMode,
     mesh::MeshVertexBufferLayoutRef,
     render_resource::{
         AsBindGroup, Face, RenderPipelineDescriptor, Shader, ShaderRef,
         SpecializedMeshPipelineError,
     },
-    RenderDebugFlags,
 };
 
 const RSM_VERTEX_SHADER_HANDLE: Handle<Shader> =

@@ -8,10 +8,9 @@ mod volume_box;
 #[cfg(feature = "warning")]
 pub mod warnings;
 
-use std::{
-    collections::HashSet,
-    io::{self, Read},
-};
+#[cfg(feature = "warning")]
+use std::collections::HashSet;
+use std::io::{self, Read};
 
 #[cfg(feature = "bevy")]
 use bevy_animation::{
