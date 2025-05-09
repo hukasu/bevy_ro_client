@@ -243,7 +243,7 @@ impl Rsm {
                 if err.kind().eq(&io::ErrorKind::UnexpectedEof) {
                     #[cfg(feature = "warning")]
                     warnings.push(Warning::MissingVolumeBoxSection);
-                    #[cfg(not(feature = "warning"))]
+                    #[cfg(feature = "bevy")]
                     bevy_log::warn!("RSM V{version} did not have a volume boxes section.");
 
                     [].into()
