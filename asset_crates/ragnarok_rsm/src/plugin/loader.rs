@@ -421,7 +421,7 @@ impl PrimitiveList {
         }
 
         Self {
-            transform: rsm_mesh.transformation_matrix(),
+            transform: Transform::from_matrix(rsm_mesh.transformation_matrix()),
             primitives: primitive_list,
         }
     }
