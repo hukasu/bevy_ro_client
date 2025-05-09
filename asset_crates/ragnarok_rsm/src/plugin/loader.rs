@@ -24,7 +24,7 @@ use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
-use crate::{Rsm, ShadeType, components::ModelInvertedMaterial};
+use crate::{Rsm, ShadeType, components::ModelInvertedMaterial, mesh::Textures};
 use crate::{
     components::{Model, ModelAnimation},
     mesh::Mesh,
@@ -344,10 +344,9 @@ impl PrimitiveList {
     ) -> Self {
         let mut primitive_list = Vec::new();
 
-        let textures = if rsm_mesh.textures.is_empty() {
-            rsm_textures
-        } else {
-            &rsm_mesh.textures
+        let textures = match &rsm_mesh.textures {
+            Textures::Paths(paths) => paths,
+            Textures::Indexes(_) => rsm_textures,
         };
 
         let mesh_attributes = if shade_type != ShadeType::Smooth {

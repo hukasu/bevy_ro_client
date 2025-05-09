@@ -4,6 +4,8 @@ mod rotation_key_frame;
 mod scale_key_frame;
 mod texture_animation;
 mod texture_uv;
+#[cfg(feature = "warning")]
+mod warnings;
 
 use std::{
     collections::{HashMap, hash_map::Entry},
@@ -22,23 +24,25 @@ use bevy_render::primitives::Aabb;
 #[cfg(feature = "bevy")]
 use bevy_transform::components::Transform;
 
+#[cfg(feature = "warning")]
+use ragnarok_rebuild_common::warning::Warnings;
 use ragnarok_rebuild_common::{Version, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt};
 
+#[cfg(feature = "bevy")]
+use crate::AnimationDuration;
+
+#[cfg(feature = "warning")]
+pub use self::warnings::Warning;
 pub use self::{
     face::Face, position_key_frame::PositionKeyFrame, rotation_key_frame::RotationKeyFrame,
     scale_key_frame::ScaleKeyFrame, texture_animation::TextureAnimation, texture_uv::TextureUV,
 };
-#[cfg(feature = "bevy")]
-use crate::AnimationDuration;
-
-type TexturePathsAndIndexes = (Box<[Box<str>]>, Box<[i32]>);
 
 #[derive(Debug)]
 pub struct Mesh {
     pub name: Box<str>,
     pub parent_name: Box<str>,
-    pub textures: Box<[Box<str>]>,
-    pub texture_indexes: Box<[i32]>,
+    pub textures: Textures,
     pub transformation_matrix: [f32; 9],
     pub transformation: Transformation,
     pub vertices: Box<[[f32; 3]]>,
@@ -51,10 +55,20 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn from_reader<R: Read>(reader: &mut R, version: &Version) -> Result<Self, super::Error> {
+    pub fn from_reader<R: Read>(
+        reader: &mut R,
+        version: &Version,
+        #[cfg(feature = "warning")] texture_count: usize,
+        #[cfg(feature = "warning")] warnings: &mut Warnings<super::Warning>,
+    ) -> Result<Self, super::Error> {
         let (name, parent_name) = Self::read_name(reader, version)?;
 
-        let (textures, texture_indexes) = Self::read_textures_and_texture_indexes(reader, version)?;
+        #[cfg(feature = "warning")]
+        let mut mesh_warnings = Warnings::default();
+
+        let textures = Self::read_textures_and_texture_indexes(reader, version)?;
+        #[cfg(feature = "warning")]
+        textures.warn(texture_count, &mut mesh_warnings);
 
         let transformation_matrix = Self::read_transformation_matrix(reader)?;
 
@@ -74,11 +88,15 @@ impl Mesh {
 
         let texture_animations = Self::read_texture_key_frames(reader, version)?;
 
+        #[cfg(feature = "warning")]
+        if !mesh_warnings.is_empty() {
+            warnings.push(super::Warning::MeshWarnings(name.clone(), mesh_warnings));
+        }
+
         Ok(Self {
             name,
             parent_name,
             textures,
-            texture_indexes,
             transformation_matrix,
             transformation,
             vertices,
@@ -111,12 +129,12 @@ impl Mesh {
     fn read_textures_and_texture_indexes<R: Read>(
         reader: &mut R,
         version: &Version,
-    ) -> Result<TexturePathsAndIndexes, super::Error> {
+    ) -> Result<Textures, super::Error> {
         if version >= &Version(2, 3, 0) {
             let count = reader.read_le_u32()?;
             let textures = read_n_euc_kr_strings(reader, count, None)?;
 
-            Ok((textures, (0..count as i32).collect()))
+            Ok(Textures::Paths(textures))
         } else {
             let texture_indexes = {
                 let count = reader.read_le_u32()?;
@@ -124,7 +142,7 @@ impl Mesh {
                     .map(|_| reader.read_le_i32())
                     .collect::<Result<Box<[i32]>, io::Error>>()?
             };
-            Ok(([].into(), texture_indexes))
+            Ok(Textures::Indexes(texture_indexes))
         }
     }
 
@@ -266,13 +284,19 @@ impl Mesh {
     pub fn flat_mesh(&self) -> MeshAttributes {
         let vertices = &self.vertices;
         let uvs = &self.uvs;
-        let texture_index = &self.texture_indexes;
 
         let mut mesh_attributes = MeshAttributes::default();
 
         let mut attributes = HashMap::new();
 
         for face in &self.faces {
+            let Some(texture_index) = self.textures.index(usize::from(face.texture_id)) else {
+                #[cfg(feature = "bevy")]
+                bevy_log::warn!(
+                    "Mesh face had textures that are not addressable on current architecture."
+                );
+                continue;
+            };
             for (vertex, uv) in face.vertices.iter().copied().zip(face.uv) {
                 #[expect(
                     clippy::unwrap_used,
@@ -291,18 +315,15 @@ impl Mesh {
                         );
                         mesh_attributes
                             .indexes
-                            .entry((
-                                texture_index[usize::from(face.texture_id)],
-                                face.two_side == 1,
-                            ))
+                            .entry((texture_index, face.two_side == 1))
                             .and_modify(|indexes| indexes.push(cur_len))
                             .or_insert(vec![cur_len]);
                     }
                     Entry::Occupied(o) => {
-                        let Some(entry) = mesh_attributes.indexes.get_mut(&(
-                            texture_index[usize::from(face.texture_id)],
-                            face.two_side == 1,
-                        )) else {
+                        let Some(entry) = mesh_attributes
+                            .indexes
+                            .get_mut(&(texture_index, face.two_side == 1))
+                        else {
                             unreachable!("If it is occupied then an entry must exist.");
                         };
                         entry.push(*o.get());
@@ -470,6 +491,43 @@ pub struct MeshAttributes {
     pub uv: Vec<[f32; 2]>,
     pub color: Vec<[f32; 4]>,
     pub indexes: HashMap<(i32, bool), Vec<u16>>,
+}
+
+#[derive(Debug)]
+pub enum Textures {
+    Paths(Box<[Box<str>]>),
+    Indexes(Box<[i32]>),
+}
+
+impl Textures {
+    fn index(&self, index: usize) -> Option<i32> {
+        match self {
+            Self::Paths(_) => i32::try_from(index).ok(),
+            Self::Indexes(indexes) => indexes.get(index).copied(),
+        }
+    }
+
+    #[cfg(feature = "warning")]
+    fn warn(
+        &self,
+        #[cfg(feature = "warning")] texture_count: usize,
+        #[cfg(feature = "warning")] warnings: &mut Warnings<warnings::Warning>,
+    ) {
+        if let Self::Indexes(indexes) = &self {
+            for index in indexes {
+                if *index < 0 {
+                    warnings.push(warnings::Warning::TextureOutOfBounds(texture_count, *index));
+                }
+                if let Ok(index_usize) = usize::try_from(*index) {
+                    if index_usize >= texture_count {
+                        warnings.push(warnings::Warning::TextureOutOfBounds(texture_count, *index));
+                    }
+                } else {
+                    warnings.push(warnings::Warning::CantBeAddressed(*index));
+                }
+            }
+        }
+    }
 }
 
 #[derive(Debug)]

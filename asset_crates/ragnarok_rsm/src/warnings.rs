@@ -1,5 +1,9 @@
 use std::fmt::Display;
 
+use ragnarok_rebuild_common::warning::Warnings;
+
+use crate::mesh;
+
 #[derive(Debug)]
 pub enum Warning {
     EmptyRootMeshes,
@@ -7,6 +11,7 @@ pub enum Warning {
     DuplicateRootMeshName(Box<str>),
     NonEmptyVolumeBox,
     MissingVolumeBoxSection,
+    MeshWarnings(Box<str>, Warnings<mesh::Warning>),
 }
 
 impl Display for Warning {
@@ -19,6 +24,9 @@ impl Display for Warning {
             }
             Self::NonEmptyVolumeBox => write!(f, "Has volume box."),
             Self::MissingVolumeBoxSection => write!(f, "Did not have a section for volume boxes."),
+            Self::MeshWarnings(mesh, warnings) => {
+                write!(f, "Mesh {} raised {} warnings.", mesh, warnings.len())
+            }
         }
     }
 }

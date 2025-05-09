@@ -106,7 +106,16 @@ impl Rsm {
         let meshes = {
             let count = reader.read_le_u32()?;
             (0..count)
-                .map(|_| mesh::Mesh::from_reader(reader, &version))
+                .map(|_| {
+                    mesh::Mesh::from_reader(
+                        reader,
+                        &version,
+                        #[cfg(feature = "warning")]
+                        textures.len(),
+                        #[cfg(feature = "warning")]
+                        &mut warnings,
+                    )
+                })
                 .collect::<Result<Box<[mesh::Mesh]>, self::Error>>()?
         };
 
