@@ -241,16 +241,15 @@ impl MeshList {
             );
             let current_mesh = &rsm.meshes[i];
 
-            let Some(mesh_bounds) = current_mesh.bounds() else {
-                bevy_log::warn!(
-                    "Mesh {} from model's {:?} had no vertexes.",
-                    current_mesh.name,
-                    load_context.path()
-                );
-                continue;
-            };
-
             let node_transform = if current_mesh.parent_name.is_empty() {
+                let Some(mesh_bounds) = current_mesh.bounds() else {
+                    bevy_log::warn!(
+                        "Mesh {} from model's {:?} had no vertexes.",
+                        current_mesh.name,
+                        load_context.path()
+                    );
+                    continue;
+                };
                 current_mesh.recentered_transform(&mesh_bounds)
             } else {
                 current_mesh.transform()
