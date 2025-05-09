@@ -16,7 +16,7 @@ use bevy_animation::{
     prelude::{AnimatableCurve, AnimatedField, AnimationCurve},
 };
 #[cfg(feature = "bevy")]
-use bevy_math::{Mat3, Mat4, Quat, Vec3, curve::UnevenSampleAutoCurve};
+use bevy_math::{Mat4, Quat, Vec3, curve::UnevenSampleAutoCurve};
 #[cfg(feature = "bevy")]
 use bevy_render::primitives::Aabb;
 #[cfg(feature = "bevy")]
@@ -322,27 +322,26 @@ impl Mesh {
 
         Aabb::enclosing(self.vertices.iter().map(move |vertex| {
             transform
-                .transform_point(transformation_matrix.transform_point(Vec3::from_array(*vertex)))
+                .transform_point(transformation_matrix.transform_point3(Vec3::from_array(*vertex)))
         }))
     }
 
     #[cfg(feature = "bevy")]
     #[must_use]
-    pub fn transformation_matrix(&self) -> Transform {
+    pub fn transformation_matrix(&self) -> Mat4 {
         let offset = self.transformation.offset();
-        let trasn_matrix = Mat3::from_cols_array(&self.transformation_matrix);
-        Transform::from_matrix(Mat4 {
-            x_axis: trasn_matrix.x_axis.extend(0.),
-            y_axis: trasn_matrix.y_axis.extend(0.),
-            z_axis: trasn_matrix.z_axis.extend(0.),
+        Mat4 {
+            x_axis: Vec3::from_slice(&self.transformation_matrix[0..3]).extend(0.),
+            y_axis: Vec3::from_slice(&self.transformation_matrix[3..6]).extend(0.),
+            z_axis: Vec3::from_slice(&self.transformation_matrix[6..9]).extend(0.),
             w_axis: offset.extend(1.),
-        })
+        }
     }
 
     #[cfg(feature = "bevy")]
     #[must_use]
     pub fn transform(&self) -> Transform {
-        Self::recentered_transform(self, &Aabb::from_min_max(Vec3::splat(0.), Vec3::splat(0.)))
+        self.transformation.transform()
     }
 
     #[cfg(feature = "bevy")]
