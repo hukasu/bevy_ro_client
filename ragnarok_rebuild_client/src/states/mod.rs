@@ -29,45 +29,44 @@ impl bevy::app::Plugin for Plugin {
 }
 
 fn start_animations(
-    models: Query<(
-        &ChildOf,
-        &Model,
-        &mut AnimationPlayer,
-        &mut AnimationTransitions,
-    )>,
-    animated_props: Query<(&Name, &AnimatedProp)>,
+    animated_props: Query<(&Name, &AnimatedProp, &Children)>,
+    mut models: Query<(&Model, &mut AnimationPlayer, &mut AnimationTransitions)>,
 ) {
-    for (prop, model, mut player, mut transitions) in models {
-        let Ok((rsm_name, animated_prop)) = animated_props.get(prop.parent()) else {
-            bevy::log::warn!("{} did not have `AnimatedProp`.", prop.parent());
-            continue;
-        };
+    for (name, prop, children) in animated_props {
+        for child in children {
+            if let Ok((model, mut player, mut transitions)) = models.get_mut(*child) {
+                let Some(animation) = &model.animation else {
+                    continue;
+                };
 
-        let Some(animation) = &model.animation else {
-            continue;
-        };
-
-        match animated_prop.animation_type {
-            0 => (),
-            1 => {
-                bevy::log::trace!("Starting animation of {}.", rsm_name);
-                transitions.play(
-                    &mut player,
-                    animation.animation_node_index,
-                    Duration::default(),
-                );
+                match prop.animation_type {
+                    0 => (),
+                    1 => {
+                        bevy::log::trace!("Starting animation of {}.", name);
+                        transitions
+                            .play(
+                                &mut player,
+                                animation.animation_node_index,
+                                Duration::default(),
+                            )
+                            .set_speed(prop.animation_speed);
+                    }
+                    2 => {
+                        bevy::log::trace!("Starting repeating animation of {}.", name);
+                        transitions
+                            .play(
+                                &mut player,
+                                animation.animation_node_index,
+                                Duration::default(),
+                            )
+                            .set_speed(prop.animation_speed)
+                            .repeat();
+                    }
+                    _ => unreachable!("Invalid animation type {}.", prop.animation_type),
+                }
+            } else {
+                bevy::log::warn!("Child of {} was not a prop.", name);
             }
-            2 => {
-                bevy::log::trace!("Starting repeating animation of {}.", rsm_name);
-                transitions
-                    .play(
-                        &mut player,
-                        animation.animation_node_index,
-                        Duration::default(),
-                    )
-                    .repeat();
-            }
-            _ => unreachable!("Invalid animation type {}.", animated_prop.animation_type),
         }
     }
 }
