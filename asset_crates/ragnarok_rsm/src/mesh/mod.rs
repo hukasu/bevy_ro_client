@@ -348,7 +348,15 @@ impl Mesh {
     #[cfg(feature = "bevy")]
     #[must_use]
     pub fn recentered_transform(&self, mesh_bounds: &Aabb) -> Transform {
-        self.transformation.transform(mesh_bounds)
+        let mut transform = self.transformation.transform();
+        if !matches!(self.transformation, Transformation::Simple(_)) {
+            transform.translation -= Vec3::new(
+                mesh_bounds.center.x,
+                mesh_bounds.max().y,
+                mesh_bounds.center.z,
+            );
+        }
+        transform
     }
 
     #[cfg(feature = "bevy")]
@@ -478,6 +486,7 @@ pub enum Transformation {
 }
 
 impl Transformation {
+    #[cfg(feature = "bevy")]
     pub fn offset(&self) -> Vec3 {
         match self {
             Transformation::Complete {
@@ -491,7 +500,8 @@ impl Transformation {
         }
     }
 
-    pub fn transform(&self, mesh_bounds: &Aabb) -> Transform {
+    #[cfg(feature = "bevy")]
+    pub fn transform(&self) -> Transform {
         match self {
             Self::Complete {
                 offset: _,
@@ -500,12 +510,7 @@ impl Transformation {
                 rotation_axis,
                 scale,
             } => {
-                let translation = Vec3::from_array(*position)
-                    - Vec3::new(
-                        mesh_bounds.center.x,
-                        mesh_bounds.max().y,
-                        mesh_bounds.center.z,
-                    );
+                let translation = Vec3::from_array(*position);
                 let rotation = {
                     let rotation_axis = Vec3::from_array(*rotation_axis);
                     if rotation_axis.length() <= 0. {
@@ -522,7 +527,7 @@ impl Transformation {
                     scale,
                 }
             }
-            Self::Simple(position) => Transform::from_xyz(position[0], position[1], position[2]),
+            Self::Simple(position) => Transform::from_translation(Vec3::from_array(*position)),
         }
     }
 }
