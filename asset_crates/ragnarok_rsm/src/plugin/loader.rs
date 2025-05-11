@@ -382,10 +382,14 @@ impl PrimitiveList {
                 .with_computed_smooth_normals();
 
             let texture_count = texture_cache.len();
+            let Ok(texture_id) = usize::try_from(texture) else {
+                bevy_log::warn!("Texture can't be indexed on current archtecture.");
+                continue;
+            };
             let texture = load_context.load(
                 loader
                     .texture_path_prefix()
-                    .join(textures[usize::try_from(texture).unwrap()].as_ref()),
+                    .join(textures[texture_id].as_ref()),
             );
 
             let material = texture_cache
