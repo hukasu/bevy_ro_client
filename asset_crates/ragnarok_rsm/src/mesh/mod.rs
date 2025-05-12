@@ -9,6 +9,7 @@ mod warnings;
 
 use std::{
     collections::{HashMap, hash_map::Entry},
+    hash::Hash,
     io::{self, Read},
 };
 
@@ -17,6 +18,8 @@ use bevy_animation::{
     animated_field,
     prelude::{AnimatableCurve, AnimatedField, AnimationCurve},
 };
+#[cfg(feature = "bevy")]
+use bevy_asset::RenderAssetUsages;
 #[cfg(feature = "bevy")]
 use bevy_math::{Mat4, Quat, Vec3, curve::UnevenSampleAutoCurve};
 #[cfg(feature = "bevy")]
@@ -281,11 +284,9 @@ impl Mesh {
         }
     }
 
-    pub fn flat_mesh(&self) -> MeshAttributes {
+    pub fn flat_mesh(&self) -> Primitives {
         let vertices = &self.vertices;
         let uvs = &self.uvs;
-
-        let mut mesh_attributes = MeshAttributes::default();
 
         let mut attributes = HashMap::new();
 
@@ -293,46 +294,70 @@ impl Mesh {
             let Some(texture_index) = self.textures.index(usize::from(face.texture_id)) else {
                 #[cfg(feature = "bevy")]
                 bevy_log::warn!(
-                    "Mesh face had textures that are not addressable on current architecture."
+                    "Mesh face had texture that are not addressable on current architecture."
                 );
                 continue;
             };
+
+            let normal = flat_normal(
+                &vertices[usize::from(face.vertices[0])],
+                &vertices[usize::from(face.vertices[1])],
+                &vertices[usize::from(face.vertices[2])],
+            );
+
             for (vertex, uv) in face.vertices.iter().copied().zip(face.uv) {
-                #[expect(
-                    clippy::unwrap_used,
-                    reason = "Should never have more than u16 vertexes"
-                )]
-                let cur_len = u16::try_from(attributes.len()).unwrap();
-                match attributes.entry((vertex, uv, face.texture_id, face.two_side)) {
+                match attributes.entry((texture_index, face.two_side)) {
                     Entry::Vacant(v) => {
-                        v.insert(cur_len);
-                        mesh_attributes.vertices.push(vertices[usize::from(vertex)]);
-                        mesh_attributes.uv.push(uvs[usize::from(uv)].uv);
-                        mesh_attributes.color.push(
-                            uvs[usize::from(uv)]
-                                .color
-                                .map(|channel| channel as f32 / 255.),
-                        );
-                        mesh_attributes
-                            .indexes
-                            .entry((texture_index, face.two_side == 1))
-                            .and_modify(|indexes| indexes.push(cur_len))
-                            .or_insert(vec![cur_len]);
+                        let mut indices = HashMap::new();
+                        indices.insert((vertex, uv, NormalVector(normal)), 0u16);
+                        v.insert((
+                            Primitive {
+                                texture_id: texture_index,
+                                double_sided: face.two_side != 0,
+                                vertices: vec![vertices[usize::from(vertex)]],
+                                normals: vec![normal],
+                                uv: vec![uvs[usize::from(uv)].uv],
+                                color: vec![
+                                    uvs[usize::from(uv)]
+                                        .color
+                                        .map(|channel| channel as f32 / 255.),
+                                ],
+                                indices: vec![0],
+                            },
+                            0,
+                            indices,
+                        ));
                     }
-                    Entry::Occupied(o) => {
-                        let Some(entry) = mesh_attributes
-                            .indexes
-                            .get_mut(&(texture_index, face.two_side == 1))
-                        else {
-                            unreachable!("If it is occupied then an entry must exist.");
-                        };
-                        entry.push(*o.get());
+                    Entry::Occupied(mut o) => {
+                        let (primitive, indices_count, indices) = o.get_mut();
+                        match indices.entry((vertex, uv, NormalVector(normal))) {
+                            Entry::Vacant(v) => {
+                                primitive.vertices.push(vertices[usize::from(vertex)]);
+                                primitive.normals.push(normal);
+                                primitive.uv.push(uvs[usize::from(uv)].uv);
+                                primitive.color.push(
+                                    uvs[usize::from(uv)]
+                                        .color
+                                        .map(|channel| channel as f32 / 255.),
+                                );
+
+                                *indices_count += 1;
+                                v.insert(*indices_count);
+                                primitive.indices.push(*indices_count);
+                            }
+                            Entry::Occupied(o) => primitive.indices.push(*o.get()),
+                        }
                     }
                 }
             }
         }
 
-        mesh_attributes
+        Primitives {
+            primitives: attributes
+                .into_values()
+                .map(|(primitive, _, _)| primitive)
+                .collect(),
+        }
     }
 
     #[cfg(feature = "bevy")]
@@ -486,11 +511,38 @@ impl Mesh {
 }
 
 #[derive(Debug, Default)]
-pub struct MeshAttributes {
+pub struct Primitives {
+    pub primitives: Vec<Primitive>,
+}
+
+#[derive(Debug, Default)]
+pub struct Primitive {
+    pub texture_id: i32,
+    pub double_sided: bool,
     pub vertices: Vec<[f32; 3]>,
+    pub normals: Vec<[f32; 3]>,
     pub uv: Vec<[f32; 2]>,
     pub color: Vec<[f32; 4]>,
-    pub indexes: HashMap<(i32, bool), Vec<u16>>,
+    pub indices: Vec<u16>,
+}
+
+#[cfg(feature = "bevy")]
+impl From<Primitive> for bevy_mesh::Mesh {
+    fn from(primitive: Primitive) -> Self {
+        Self::new(
+            bevy_mesh::PrimitiveTopology::TriangleList,
+            if cfg!(feature = "debug") {
+                RenderAssetUsages::all()
+            } else {
+                RenderAssetUsages::RENDER_WORLD
+            },
+        )
+        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_POSITION, primitive.vertices)
+        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_NORMAL, primitive.normals)
+        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_UV_0, primitive.uv)
+        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_COLOR, primitive.color)
+        .with_inserted_indices(bevy_mesh::Indices::U16(primitive.indices))
+    }
 }
 
 #[derive(Debug)]
@@ -586,5 +638,65 @@ impl Transformation {
             }
             Self::Simple(position) => Transform::from_translation(Vec3::from_array(*position)),
         }
+    }
+}
+
+fn flat_normal(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {
+    let v1 = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let v2 = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+
+    normalize(&cross(&v1, &v2))
+}
+
+fn cross(a: &[f32; 3], b: &[f32; 3]) -> [f32; 3] {
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
+}
+
+fn normalize(a: &[f32; 3]) -> [f32; 3] {
+    let magnitude = (a[0].powi(2) + a[1].powi(2) + a[2].powi(2)).sqrt();
+    [a[0] / magnitude, a[1] / magnitude, a[2] / magnitude]
+}
+
+#[derive(Debug, Default)]
+struct NormalVector([f32; 3]);
+
+impl PartialEq for NormalVector {
+    fn eq(&self, other: &Self) -> bool {
+        self.0[0] == other.0[0] && self.0[1] == other.0[1] && self.0[2] == other.0[2]
+    }
+}
+
+impl Eq for NormalVector {}
+
+impl Hash for NormalVector {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        state.write_i32(i32::from_be_bytes(self.0[0].to_be_bytes()));
+        state.write_i32(i32::from_be_bytes(self.0[1].to_be_bytes()));
+        state.write_i32(i32::from_be_bytes(self.0[2].to_be_bytes()));
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn cross_and_normalize() {
+        let c = cross(&[7., 12., 64.], &[324., 12., 54.]);
+        assert_eq!(c[0], -120.);
+        assert_eq!(c[1], 20358.);
+        assert_eq!(c[2], -3804.);
+        let n = normalize(&c);
+        assert_eq!(n[0], -0.005794107);
+        assert_eq!(n[1], 0.9829703);
+        assert_eq!(n[2], -0.1836732);
+        let f = flat_normal(&[0., 0., 0.], &[7., 12., 64.], &[324., 12., 54.]);
+        assert_eq!(f[0], -0.005794107);
+        assert_eq!(f[1], 0.9829703);
+        assert_eq!(f[2], -0.1836732);
     }
 }

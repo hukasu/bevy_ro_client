@@ -5,9 +5,7 @@ use bevy_animation::{
     graph::{AnimationGraph, AnimationGraphHandle},
     prelude::AnimationTransitions,
 };
-use bevy_asset::{
-    AssetLoader as BevyAssetLoader, Handle, LoadContext, RenderAssetUsages, io::Reader,
-};
+use bevy_asset::{AssetLoader as BevyAssetLoader, Handle, LoadContext, io::Reader};
 use bevy_ecs::{
     bundle::Bundle,
     entity::Entity,
@@ -17,7 +15,6 @@ use bevy_ecs::{
     world::World,
 };
 use bevy_image::Image;
-use bevy_mesh::PrimitiveTopology;
 use bevy_pbr::MeshMaterial3d;
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_render::{mesh::Mesh3d, view::Visibility};
@@ -349,40 +346,20 @@ impl PrimitiveList {
             Textures::Indexes(_) => rsm_textures,
         };
 
-        let mesh_attributes = if shade_type != ShadeType::Smooth {
-            rsm_mesh.flat_mesh()
-        } else {
+        let mesh_attributes = if shade_type == ShadeType::Smooth {
             // TODO smooth normals
             rsm_mesh.flat_mesh()
-        };
-
-        let usage = if cfg!(feature = "debug") {
-            RenderAssetUsages::all()
         } else {
-            RenderAssetUsages::RENDER_WORLD
+            rsm_mesh.flat_mesh()
         };
 
-        for (primitive, ((texture, double_sided), indexes)) in
-            mesh_attributes.indexes.into_iter().enumerate()
-        {
-            let mesh = bevy_mesh::Mesh::new(PrimitiveTopology::TriangleList, usage)
-                .with_inserted_attribute(
-                    bevy_mesh::Mesh::ATTRIBUTE_POSITION,
-                    mesh_attributes.vertices.clone(),
-                )
-                .with_inserted_attribute(
-                    bevy_mesh::Mesh::ATTRIBUTE_UV_0,
-                    mesh_attributes.uv.clone(),
-                )
-                .with_inserted_attribute(
-                    bevy_mesh::Mesh::ATTRIBUTE_COLOR,
-                    mesh_attributes.color.clone(),
-                )
-                .with_inserted_indices(bevy_mesh::Indices::U16(indexes))
-                .with_computed_smooth_normals();
+        for (id, primitive) in mesh_attributes.primitives.into_iter().enumerate() {
+            let texture_id = primitive.texture_id;
+            let double_sided = primitive.double_sided;
+            let mesh = bevy_mesh::Mesh::from(primitive);
 
             let texture_count = texture_cache.len();
-            let Ok(texture_id) = usize::try_from(texture) else {
+            let Ok(texture_id) = usize::try_from(texture_id) else {
                 bevy_log::warn!("Texture can't be indexed on current archtecture.");
                 continue;
             };
@@ -414,9 +391,9 @@ impl PrimitiveList {
                 ));
 
             primitive_list.push(PrimitiveListItem {
-                name: Name::new(format!("Primitive{}", primitive)),
+                name: Name::new(format!("Primitive{}", id)),
                 mesh: load_context
-                    .add_labeled_asset(format!("Mesh{}/Primitive{}/Mesh", i, primitive), mesh),
+                    .add_labeled_asset(format!("Mesh{}/Primitive{}/Mesh", i, id), mesh),
                 material: material.0.clone(),
                 inverted_material: material.1.clone(),
             });
