@@ -25,6 +25,7 @@ bevy = { workspace = true, features = [
     "bevy_render",
     "bevy_scene",
     "bevy_sprite",
+    "bevy_log",
     "jpeg",
     "bmp",
     "tga",
