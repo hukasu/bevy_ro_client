@@ -4790,6 +4790,7 @@ name = "ragnarok_debugger"
 version = "0.1.0"
 dependencies = [
  "ragnarok_rebuild_assets",
+ "ragnarok_rebuild_common",
  "ragnarok_rsm",
 ]
 

@@ -1,6 +1,7 @@
 use std::{io::Cursor, path::Path};
 
 use ragnarok_rebuild_assets::grf::Grf;
+use ragnarok_rebuild_common::warning::ReportWarning;
 use ragnarok_rsm::Rsm;
 
 fn main() {
@@ -28,8 +29,10 @@ fn main() {
             continue;
         };
 
-        if !rsm.warnings.is_empty() {
-            println!("{:?} {} {:#?}", rsm_filename, rsm.version, rsm.warnings);
+        let report = rsm.report().to_string();
+        if !report.is_empty() {
+            println!("{:?} {:?}", rsm_filename, rsm.version);
+            println!("{}", report);
         }
     }
 }

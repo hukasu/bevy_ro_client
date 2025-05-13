@@ -10,4 +10,5 @@ workspace = true
 
 [dependencies]
 ragnarok_rebuild_assets = { path = "../ragnarok_rebuild_assets" }
+ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rsm = { path = "../asset_crates/ragnarok_rsm", features = ["warning"] }

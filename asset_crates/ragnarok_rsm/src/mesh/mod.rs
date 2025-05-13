@@ -4,8 +4,6 @@ mod rotation_key_frame;
 mod scale_key_frame;
 mod texture_animation;
 mod texture_uv;
-#[cfg(feature = "warning")]
-mod warnings;
 
 use std::{
     collections::{HashMap, hash_map::Entry},
@@ -27,15 +25,11 @@ use bevy_render::primitives::Aabb;
 #[cfg(feature = "bevy")]
 use bevy_transform::components::Transform;
 
-#[cfg(feature = "warning")]
-use ragnarok_rebuild_common::warning::Warnings;
 use ragnarok_rebuild_common::{Version, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt};
 
 #[cfg(feature = "bevy")]
 use crate::AnimationDuration;
 
-#[cfg(feature = "warning")]
-pub use self::warnings::Warning;
 pub use self::{
     face::Face, position_key_frame::PositionKeyFrame, rotation_key_frame::RotationKeyFrame,
     scale_key_frame::ScaleKeyFrame, texture_animation::TextureAnimation, texture_uv::TextureUV,
@@ -58,20 +52,10 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    pub fn from_reader<R: Read>(
-        reader: &mut R,
-        version: &Version,
-        #[cfg(feature = "warning")] texture_count: usize,
-        #[cfg(feature = "warning")] warnings: &mut Warnings<super::Warning>,
-    ) -> Result<Self, super::Error> {
+    pub fn from_reader<R: Read>(reader: &mut R, version: &Version) -> Result<Self, super::Error> {
         let (name, parent_name) = Self::read_name(reader, version)?;
 
-        #[cfg(feature = "warning")]
-        let mut mesh_warnings = Warnings::default();
-
         let textures = Self::read_textures_and_texture_indexes(reader, version)?;
-        #[cfg(feature = "warning")]
-        textures.warn(texture_count, &mut mesh_warnings);
 
         let transformation_matrix = Self::read_transformation_matrix(reader)?;
 
@@ -90,11 +74,6 @@ impl Mesh {
         let position_key_frames = Self::read_position_key_frames(reader, version)?;
 
         let texture_animations = Self::read_texture_key_frames(reader, version)?;
-
-        #[cfg(feature = "warning")]
-        if !mesh_warnings.is_empty() {
-            warnings.push(super::Warning::MeshWarnings(name.clone(), mesh_warnings));
-        }
 
         Ok(Self {
             name,
@@ -556,28 +535,6 @@ impl Textures {
         match self {
             Self::Paths(_) => i32::try_from(index).ok(),
             Self::Indexes(indexes) => indexes.get(index).copied(),
-        }
-    }
-
-    #[cfg(feature = "warning")]
-    fn warn(
-        &self,
-        #[cfg(feature = "warning")] texture_count: usize,
-        #[cfg(feature = "warning")] warnings: &mut Warnings<warnings::Warning>,
-    ) {
-        if let Self::Indexes(indexes) = &self {
-            for index in indexes {
-                if *index < 0 {
-                    warnings.push(warnings::Warning::TextureOutOfBounds(texture_count, *index));
-                }
-                if let Ok(index_usize) = usize::try_from(*index) {
-                    if index_usize >= texture_count {
-                        warnings.push(warnings::Warning::TextureOutOfBounds(texture_count, *index));
-                    }
-                } else {
-                    warnings.push(warnings::Warning::CantBeAddressed(*index));
-                }
-            }
         }
     }
 }

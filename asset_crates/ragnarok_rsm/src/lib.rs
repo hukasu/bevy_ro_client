@@ -10,8 +10,6 @@ mod volume_box;
 #[cfg(feature = "warning")]
 pub mod warnings;
 
-#[cfg(feature = "warning")]
-use std::collections::HashSet;
 use std::io::{self, Read};
 
 #[cfg(feature = "bevy")]
@@ -28,12 +26,8 @@ use bevy_reflect::TypePath;
 #[cfg(feature = "bevy")]
 use bevy_transform::components::Transform;
 
-#[cfg(feature = "warning")]
-use ragnarok_rebuild_common::warning::Warnings;
 use ragnarok_rebuild_common::{Version, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt};
 
-#[cfg(feature = "warning")]
-use self::warnings::Warning;
 pub use self::{error::Error, volume_box::VolumeBox};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -56,15 +50,10 @@ pub struct Rsm {
     pub meshes: Box<[mesh::Mesh]>,
     pub scale_key_frames: Box<[mesh::ScaleKeyFrame]>,
     pub volume_boxes: Box<[VolumeBox]>,
-    #[cfg(feature = "warning")]
-    pub warnings: Warnings<Warning>,
 }
 
 impl Rsm {
     pub fn from_reader<R: Read>(reader: &mut R) -> Result<Self, self::Error> {
-        #[cfg(feature = "warning")]
-        let mut warnings = Warnings::default();
-
         let signature = Self::read_signature(reader)?;
         let version = Self::read_version(reader)?;
         let animation_length = reader.read_le_i32()?;
@@ -96,26 +85,12 @@ impl Rsm {
         }
 
         let textures = Self::read_textures(reader, &version)?;
-        let root_meshes = Self::read_meshs_names(
-            reader,
-            &version,
-            #[cfg(feature = "warning")]
-            &mut warnings,
-        )?;
+        let root_meshes = Self::read_meshs_names(reader, &version)?;
 
         let meshes = {
             let count = reader.read_le_u32()?;
             (0..count)
-                .map(|_| {
-                    mesh::Mesh::from_reader(
-                        reader,
-                        &version,
-                        #[cfg(feature = "warning")]
-                        textures.len(),
-                        #[cfg(feature = "warning")]
-                        &mut warnings,
-                    )
-                })
+                .map(|_| mesh::Mesh::from_reader(reader, &version))
                 .collect::<Result<Box<[mesh::Mesh]>, self::Error>>()?
         };
 
@@ -128,12 +103,7 @@ impl Rsm {
             [].into()
         };
 
-        let volume_boxes = Self::read_volume_boxes(
-            reader,
-            &version,
-            #[cfg(feature = "warning")]
-            &mut warnings,
-        )?;
+        let volume_boxes = Self::read_volume_boxes(reader, &version)?;
 
         if version >= Version(1, 5, 0) && version < Version(1, 6, 0) {
             // All V1.5 seems to have this 4 bytes at the end of file
@@ -157,8 +127,6 @@ impl Rsm {
             meshes,
             scale_key_frames,
             volume_boxes,
-            #[cfg(feature = "warning")]
-            warnings,
         })
     }
 
@@ -207,7 +175,6 @@ impl Rsm {
     fn read_meshs_names(
         mut reader: &mut dyn Read,
         version: &Version,
-        #[cfg(feature = "warning")] warnings: &mut Warnings<Warning>,
     ) -> Result<Box<[Box<str>]>, self::Error> {
         let mesh_names = if version >= &Version(2, 2, 0) {
             let count = reader.read_le_u32()?;
@@ -216,32 +183,12 @@ impl Rsm {
             read_n_euc_kr_strings(reader, 1, Some(40))?
         };
 
-        #[cfg(feature = "warning")]
-        if mesh_names.is_empty() {
-            warnings.push(Warning::EmptyRootMeshes);
-        }
-
-        #[cfg(feature = "warning")]
-        {
-            let mut set = HashSet::new();
-            let mut set2 = HashSet::new();
-            for mesh_name in &mesh_names {
-                if mesh_name.is_empty() {
-                    warnings.push(Warning::BlankRootMeshName);
-                }
-                if !set.insert(mesh_name) && set2.insert(mesh_name) {
-                    warnings.push(Warning::DuplicateRootMeshName(mesh_name.clone()));
-                }
-            }
-        }
-
         Ok(mesh_names)
     }
 
     fn read_volume_boxes<R: Read>(
         reader: &mut R,
         version: &Version,
-        #[cfg(feature = "warning")] warnings: &mut Warnings<Warning>,
     ) -> Result<Box<[VolumeBox]>, error::Error> {
         let volume_boxes = match reader.read_le_u32() {
             Ok(count) => (0..count)
@@ -250,8 +197,6 @@ impl Rsm {
             Err(err) => {
                 // V2.3 files seems to have a 50/50 on whether they have volume boxes or not
                 if err.kind().eq(&io::ErrorKind::UnexpectedEof) {
-                    #[cfg(feature = "warning")]
-                    warnings.push(Warning::MissingVolumeBoxSection);
                     #[cfg(feature = "bevy")]
                     bevy_log::warn!("RSM V{version} did not have a volume boxes section.");
 
@@ -261,11 +206,6 @@ impl Rsm {
                 }
             }
         };
-
-        #[cfg(feature = "warning")]
-        if !volume_boxes.is_empty() {
-            warnings.push(Warning::NonEmptyVolumeBox);
-        }
 
         Ok(volume_boxes)
     }
