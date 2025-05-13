@@ -23,10 +23,10 @@ impl Deref for RsmWarning<'_> {
 impl Display for RsmWarning<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.report_alpha(f)?;
+        self.report_textures(f)?;
         self.report_root_meshes(f)?;
         self.report_meshes(f)?;
         self.report_volume_boxes(f)?;
-
         Ok(())
     }
 }
@@ -35,6 +35,17 @@ impl RsmWarning<'_> {
     fn report_alpha(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if self.alpha != 0xff {
             writeln!(f, "Alpha is different from 255, was {}.", self.alpha)?;
+        }
+        Ok(())
+    }
+
+    fn report_textures(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for texture in self
+            .textures
+            .iter()
+            .filter(|texture| !texture.ends_with("tga") && !texture.ends_with("bmp"))
+        {
+            writeln!(f, "Has texture {:?} that is not BMP or TGA.", texture)?;
         }
         Ok(())
     }
@@ -91,7 +102,18 @@ impl RsmWarning<'_> {
                         }
                     }
                 }
-                Textures::Paths(_) => (),
+                Textures::Paths(paths) => {
+                    for texture in paths
+                        .iter()
+                        .filter(|texture| !texture.ends_with("tga") && !texture.ends_with("bmp"))
+                    {
+                        writeln!(
+                            f,
+                            "Mesh {:?} has texture {:?} that is not BMP or TGA.",
+                            mesh.name, texture
+                        )?;
+                    }
+                }
             }
         }
 
