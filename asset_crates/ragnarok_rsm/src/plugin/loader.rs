@@ -21,13 +21,12 @@ use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
-use crate::{Rsm, ShadeType, components::ModelInvertedMaterial, mesh::Textures};
 use crate::{
-    components::{Model, ModelAnimation},
-    mesh::Mesh,
+    Rsm, ShadeType,
+    components::{Model, ModelAnimation, ModelInvertedMaterial},
+    materials::RsmMaterial,
+    mesh::Textures,
 };
-
-use crate::materials::RsmMaterial;
 
 type TextureCache = HashMap<(Handle<Image>, bool), (Handle<RsmMaterial>, Handle<RsmMaterial>)>;
 
@@ -231,12 +230,12 @@ impl MeshList {
             else {
                 continue;
             };
-            let (i, mesh_name) = remaining_meshes.remove(pos);
+            let (mesh_index, mesh_name) = remaining_meshes.remove(pos);
             assert_eq!(
                 *mesh_to_build, mesh_name,
                 "Position had mesh name different from mesh_to_build."
             );
-            let current_mesh = &rsm.meshes[i];
+            let current_mesh = &rsm.meshes[mesh_index];
 
             let node_transform = if current_mesh.parent_name.is_empty() {
                 let Some(mesh_bounds) = current_mesh.bounds() else {
@@ -270,10 +269,8 @@ impl MeshList {
                 name: Name::new(current_mesh.name.to_string()),
                 transform: node_transform,
                 primitives: PrimitiveList::new(
-                    current_mesh,
-                    i,
-                    rsm.shade_type,
-                    &rsm.textures,
+                    rsm,
+                    mesh_index,
                     texture_cache,
                     load_context,
                     loader,
@@ -331,22 +328,22 @@ struct PrimitiveListItem {
 
 impl PrimitiveList {
     pub fn new(
-        rsm_mesh: &Mesh,
-        i: usize,
-        shade_type: ShadeType,
-        rsm_textures: &[Box<str>],
+        rsm: &Rsm,
+        mesh_index: usize,
         texture_cache: &mut TextureCache,
         load_context: &mut LoadContext,
         loader: &AssetLoader,
     ) -> Self {
         let mut primitive_list = Vec::new();
 
+        let rsm_mesh = &rsm.meshes[mesh_index];
+
         let textures = match &rsm_mesh.textures {
             Textures::Paths(paths) => paths,
-            Textures::Indexes(_) => rsm_textures,
+            Textures::Indexes(_) => &rsm.textures,
         };
 
-        let mesh_attributes = if shade_type == ShadeType::Smooth {
+        let mesh_attributes = if rsm.shade_type == ShadeType::Smooth {
             // TODO smooth normals
             rsm_mesh.flat_mesh()
         } else {
@@ -383,7 +380,7 @@ impl PrimitiveList {
                     load_context.add_labeled_asset(
                         format!("Material{}/Inverted", texture_count),
                         RsmMaterial {
-                            texture,
+                            texture: texture.clone(),
                             double_sided,
                             inverse_scale: true,
                         },
@@ -393,7 +390,7 @@ impl PrimitiveList {
             primitive_list.push(PrimitiveListItem {
                 name: Name::new(format!("Primitive{}", id)),
                 mesh: load_context
-                    .add_labeled_asset(format!("Mesh{}/Primitive{}/Mesh", i, id), mesh),
+                    .add_labeled_asset(format!("Mesh{}/Primitive{}/Mesh", mesh_index, id), mesh),
                 material: material.0.clone(),
                 inverted_material: material.1.clone(),
             });
