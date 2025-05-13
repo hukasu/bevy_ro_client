@@ -39,6 +39,7 @@ use bevy::{
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
     image::ImageSamplerDescriptor,
     log::LogPlugin,
+    pbr::PointLightShadowMap,
     prelude::ImagePlugin,
     window::{Window, WindowPlugin},
     DefaultPlugins,
@@ -93,7 +94,7 @@ fn main() {
                     }),
                     ..Default::default()
                 })
-        );
+        ).insert_resource(PointLightShadowMap {size: 16});
     app.add_plugins((
         RagnarokPlugin,
         ragnarok_rsm::plugin::Plugin {
