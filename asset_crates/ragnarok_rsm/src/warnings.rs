@@ -99,8 +99,12 @@ impl RsmWarning<'_> {
     }
 
     fn report_volume_boxes(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if !self.volume_boxes.is_empty() {
-            writeln!(f, "Volume boxes is not empty.")?;
+        if let Some(volume_boxes) = &self.volume_boxes {
+            if !volume_boxes.is_empty() {
+                writeln!(f, "Volume boxes is not empty.")?;
+            }
+        } else {
+            writeln!(f, "Did not have volume box section.")?;
         }
         Ok(())
     }

@@ -49,7 +49,7 @@ pub struct Rsm {
     pub root_meshes: Box<[Box<str>]>,
     pub meshes: Box<[mesh::Mesh]>,
     pub scale_key_frames: Box<[mesh::ScaleKeyFrame]>,
-    pub volume_boxes: Box<[VolumeBox]>,
+    pub volume_boxes: Option<Box<[VolumeBox]>>,
 }
 
 impl Rsm {
@@ -189,25 +189,22 @@ impl Rsm {
     fn read_volume_boxes<R: Read>(
         reader: &mut R,
         version: &Version,
-    ) -> Result<Box<[VolumeBox]>, error::Error> {
-        let volume_boxes = match reader.read_le_u32() {
+    ) -> Result<Option<Box<[VolumeBox]>>, error::Error> {
+        match reader.read_le_u32() {
             Ok(count) => (0..count)
                 .map(|_| VolumeBox::from_reader(reader, version))
-                .collect::<Result<Box<[VolumeBox]>, io::Error>>()?,
+                .collect::<Result<Box<[VolumeBox]>, io::Error>>()
+                .map(Some)
+                .map_err(error::Error::from),
             Err(err) => {
                 // V2.3 files seems to have a 50/50 on whether they have volume boxes or not
                 if err.kind().eq(&io::ErrorKind::UnexpectedEof) {
-                    #[cfg(feature = "bevy")]
-                    bevy_log::warn!("RSM V{version} did not have a volume boxes section.");
-
-                    [].into()
+                    Ok(None)
                 } else {
-                    return Err(self::Error::Io(err));
+                    Err(self::Error::Io(err))
                 }
             }
-        };
-
-        Ok(volume_boxes)
+        }
     }
 
     #[cfg(feature = "bevy")]
