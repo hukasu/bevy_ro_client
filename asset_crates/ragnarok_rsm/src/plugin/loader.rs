@@ -165,8 +165,9 @@ impl SceneBuilder {
 
             let mut populated = false;
 
-            if let Some(animation_curve) = rsm.scale_animation_curve() {
-                let animation_target_id = AnimationTargetId::from_name(&Name::new("root"));
+            if let Some(animation_curve) = rsm.position_animation_curve() {
+                let root_mesh = rsm.root_meshes[0].to_string();
+                let animation_target_id = AnimationTargetId::from_name(&Name::new(root_mesh));
                 animation_clip.add_curve_to_target(animation_target_id, animation_curve);
                 populated = true;
             }

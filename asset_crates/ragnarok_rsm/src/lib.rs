@@ -48,7 +48,7 @@ pub struct Rsm {
     pub textures: Box<[Box<str>]>,
     pub root_meshes: Box<[Box<str>]>,
     pub meshes: Box<[mesh::Mesh]>,
-    pub scale_key_frames: Box<[mesh::ScaleKeyFrame]>,
+    pub position_key_frames: Box<[mesh::PositionKeyFrame]>,
     pub volume_boxes: Option<Box<[VolumeBox]>>,
 }
 
@@ -94,11 +94,11 @@ impl Rsm {
                 .collect::<Result<Box<[mesh::Mesh]>, self::Error>>()?
         };
 
-        let scale_key_frames = if version < Version(1, 6, 0) {
+        let position_key_frames = if version < Version(1, 6, 0) {
             let count = reader.read_le_u32()?;
             (0..count)
-                .map(|_| mesh::ScaleKeyFrame::from_reader(reader))
-                .collect::<Result<Box<[mesh::ScaleKeyFrame]>, io::Error>>()?
+                .map(|_| mesh::PositionKeyFrame::from_reader(reader))
+                .collect::<Result<Box<[mesh::PositionKeyFrame]>, io::Error>>()?
         } else {
             [].into()
         };
@@ -125,7 +125,7 @@ impl Rsm {
             textures,
             root_meshes,
             meshes,
-            scale_key_frames,
+            position_key_frames,
             volume_boxes,
         })
     }
@@ -208,25 +208,37 @@ impl Rsm {
     }
 
     #[cfg(feature = "bevy")]
-    fn scale_animation_curve(&self) -> Option<impl AnimationCurve> {
-        if !self.scale_key_frames.is_empty() {
+    #[must_use]
+    fn position_animation_curve(&self) -> Option<impl AnimationCurve> {
+        if !self.position_key_frames.is_empty() {
+            let root_mesh = self
+                .meshes
+                .iter()
+                .find(|mesh| mesh.name == self.root_meshes[0])?;
+            let root_mesh_bounds = root_mesh.bounds()?;
+            let correction = Vec3::new(
+                root_mesh_bounds.center.x,
+                root_mesh_bounds.max().y,
+                root_mesh_bounds.center.z,
+            );
+
             match UnevenSampleAutoCurve::new(
-                self.scale_key_frames
+                self.position_key_frames
                     .iter()
                     .map(|frame| self.animation_duration.transform(frame.frame as f32))
                     .zip(
-                        self.scale_key_frames
+                        self.position_key_frames
                             .iter()
-                            .map(|frame| Vec3::from_array(frame.scale)),
+                            .map(|frame| Vec3::from_array(frame.position) - correction),
                     ),
             ) {
                 Ok(uneven_curve) => {
                     let animatable_curve =
-                        AnimatableCurve::new(animated_field!(Transform::scale), uneven_curve);
+                        AnimatableCurve::new(animated_field!(Transform::translation), uneven_curve);
                     Some(animatable_curve)
                 }
                 Err(err) => {
-                    bevy_log::error!("Failed to build scale animation due to `{err}`.");
+                    bevy_log::error!("Failed to build position animation due to `{err}`.");
                     None
                 }
             }
