@@ -209,6 +209,11 @@ impl AssetLoader {
             ))
             .with_children(|parent| {
                 for prop in rsw.models.iter() {
+                    let fix_up = if prop.filename.ends_with("rsm2") {
+                        Vec3::new(1., -1., 1.)
+                    } else {
+                        Vec3::ONE
+                    };
                     let prop_handle = load_context.load(format!(
                         "{}{}#Scene",
                         paths::MODEL_FILES_FOLDER,
@@ -229,7 +234,7 @@ impl AssetLoader {
                                 prop.rotation[0].to_radians(),
                                 prop.rotation[1].to_radians(),
                             ),
-                            scale: Vec3::from_array(prop.scale),
+                            scale: Vec3::from_array(prop.scale) * fix_up,
                         },
                     ));
                 }
