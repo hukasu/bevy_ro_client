@@ -69,11 +69,17 @@ pub struct RsmMaterial {
     /// There can be models that have N numbers of negative scale axis,
     /// if there is 1 or 3 negative scale axis, this should be `true`
     pub inverse_scale: bool,
+    /// The material might have transparency when using TGA textures
+    pub transparency: bool,
 }
 
 impl Material for RsmMaterial {
     fn alpha_mode(&self) -> AlphaMode {
-        AlphaMode::Mask(0.5)
+        if self.transparency {
+            AlphaMode::Blend
+        } else {
+            AlphaMode::Mask(0.5)
+        }
     }
 
     fn vertex_shader() -> ShaderRef {

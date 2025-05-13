@@ -366,6 +366,8 @@ impl PrimitiveList {
                     .join(textures[texture_id].as_ref()),
             );
 
+            let transparency = textures[texture_id].ends_with("tga");
+
             let material = texture_cache
                 .entry((texture.clone(), double_sided))
                 .or_insert((
@@ -375,6 +377,7 @@ impl PrimitiveList {
                             texture: texture.clone(),
                             double_sided,
                             inverse_scale: false,
+                            transparency,
                         },
                     ),
                     load_context.add_labeled_asset(
@@ -383,6 +386,7 @@ impl PrimitiveList {
                             texture: texture.clone(),
                             double_sided,
                             inverse_scale: true,
+                            transparency,
                         },
                     ),
                 ));
