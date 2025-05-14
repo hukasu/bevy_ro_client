@@ -20,7 +20,7 @@ impl bevy_asset::AssetLoader for AssetLoader {
 
         let palette = Pal::from_reader(&mut data.as_slice())?;
 
-        Ok(super::palette_to_image(&palette))
+        Ok(palette.into())
     }
 
     fn extensions(&self) -> &[&str] {
