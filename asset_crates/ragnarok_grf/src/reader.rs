@@ -3,7 +3,7 @@ use std::{
     path::Path,
 };
 
-use bevy::asset::io::{
+use bevy_asset::io::{
     AssetReader as BevyAsserReader, AssetReaderError, PathStream, Reader, VecReader,
 };
 

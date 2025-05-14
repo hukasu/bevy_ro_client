@@ -1,6 +1,6 @@
 use std::{io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::grf::Grf;
+use ragnarok_grf::Grf;
 use ragnarok_rebuild_common::warning::ReportWarning;
 use ragnarok_rsm::Rsm;
 

@@ -46,10 +46,7 @@ use bevy::{
 };
 
 use ragnarok_rebuild_bevy::{
-    assets::{
-        grf,
-        paths::{self, BASE_DATA_FOLDER},
-    },
+    assets::paths::{self, BASE_DATA_FOLDER},
     RagnarokPlugin,
 };
 
@@ -67,7 +64,8 @@ fn main() {
         .register_asset_source(
             bevy::asset::io::AssetSourceId::Default,
             bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
-                let grf = grf::AssetReader::new(std::path::Path::new("data.grf")).unwrap();
+                let grf = ragnarok_grf::reader::AssetReader::new(std::path::Path::new("data.grf"))
+                    .unwrap();
                 Box::new(grf)
             }),
         );

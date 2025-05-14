@@ -1,6 +1,8 @@
 mod entry;
 mod error;
 mod header;
+#[cfg(feature = "bevy")]
+pub mod reader;
 
 use std::{
     fmt::{Display, Formatter},
@@ -18,12 +20,11 @@ use ragnarok_rebuild_common::{
     reader_ext::{BufReaderExt, ReaderExt},
 };
 
-use crate::grf::{
+pub use self::error::Error;
+use self::{
     entry::Entry,
     header::{Header, SIZE_OF_HEADER},
 };
-
-pub use self::error::Error;
 
 pub struct Grf {
     reader: Mutex<BufReader<File>>,
