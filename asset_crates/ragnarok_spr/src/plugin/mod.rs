@@ -1,17 +1,15 @@
 mod loader;
-mod material;
 
-use bevy::asset::AssetApp;
+use bevy_asset::AssetApp;
 
-pub use self::{
-    loader::Sprite,
-    material::{SprIndexedMaterial, SprTrueColorMaterial, SprUniform},
-};
+use crate::material;
+
+pub use self::loader::Sprite;
 
 pub struct Plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
         app
             // Asset Loader
             .register_asset_loader(loader::AssetLoader)

@@ -1,19 +1,11 @@
-use bevy::{
-    asset::{Asset, Handle},
-    image::ImageSampler,
-    prelude::Image,
-    reflect::Reflect,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-        },
-    },
+use bevy_asset::{Asset, Handle, LoadContext, RenderAssetUsages};
+use bevy_image::{Image, ImageSampler};
+use bevy_reflect::Reflect;
+use bevy_render::render_resource::{
+    Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 
-use ragnarok_rebuild_assets::spr;
-
-use crate::assets::pal;
+use crate::{Error, IndexedSprite, Spr, TrueColorSprite};
 
 #[derive(Debug, Asset, Reflect)]
 pub struct Sprite {
@@ -24,20 +16,20 @@ pub struct Sprite {
 
 pub struct AssetLoader;
 
-impl bevy::asset::AssetLoader for AssetLoader {
+impl bevy_asset::AssetLoader for AssetLoader {
     type Asset = Sprite;
     type Settings = ();
-    type Error = spr::Error;
+    type Error = Error;
 
     async fn load(
         &self,
-        reader: &mut dyn bevy::asset::io::Reader,
+        reader: &mut dyn bevy_asset::io::Reader,
         _settings: &Self::Settings,
-        load_context: &mut bevy::asset::LoadContext<'_>,
+        load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         let mut data: Vec<u8> = vec![];
         reader.read_to_end(&mut data).await?;
-        let sprite = spr::Spr::from_reader(&mut data.as_slice())?;
+        let sprite = Spr::from_reader(&mut data.as_slice())?;
 
         Ok(Self::generate_sprite(load_context, sprite))
     }
@@ -48,12 +40,12 @@ impl bevy::asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    fn generate_sprite(load_context: &mut bevy::asset::LoadContext, sprite: spr::Spr) -> Sprite {
+    fn generate_sprite(load_context: &mut LoadContext, sprite: Spr) -> Sprite {
         let indexed_sprites = Self::load_indexed_sprites(load_context, &sprite.bitmap_images);
         let true_color_sprites =
             Self::load_true_color_sprites(load_context, &sprite.true_color_images);
-        let palette = load_context
-            .add_labeled_asset("Palette".to_owned(), pal::palette_to_image(&sprite.palette));
+        let palette =
+            load_context.add_labeled_asset("Palette".to_owned(), Image::from(sprite.palette));
 
         Sprite {
             indexed_sprites,
@@ -63,8 +55,8 @@ impl AssetLoader {
     }
 
     fn load_indexed_sprites(
-        load_context: &mut bevy::asset::LoadContext,
-        indexed_sprites: &[spr::IndexedSprite],
+        load_context: &mut LoadContext,
+        indexed_sprites: &[IndexedSprite],
     ) -> Vec<Handle<Image>> {
         indexed_sprites
             .iter()
@@ -101,8 +93,8 @@ impl AssetLoader {
     }
 
     fn load_true_color_sprites(
-        load_context: &mut bevy::asset::LoadContext,
-        true_color_sprites: &[spr::TrueColorSprite],
+        load_context: &mut LoadContext,
+        true_color_sprites: &[TrueColorSprite],
     ) -> Vec<Handle<Image>> {
         true_color_sprites
             .iter()

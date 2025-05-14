@@ -2,8 +2,6 @@ use std::fmt::Display;
 
 use ragnarok_rebuild_common::Version;
 
-use crate::pal;
-
 #[derive(Debug)]
 pub enum Error {
     WrongSignature,
@@ -45,10 +43,10 @@ impl Display for Error {
 
 impl std::error::Error for Error {}
 
-impl From<pal::Error> for Error {
-    fn from(value: pal::Error) -> Self {
+impl From<ragnarok_pal::Error> for Error {
+    fn from(value: ragnarok_pal::Error) -> Self {
         match value {
-            pal::Error::Io(io) => Error::Io(io),
+            ragnarok_pal::Error::Io(io) => Error::Io(io),
         }
     }
 }

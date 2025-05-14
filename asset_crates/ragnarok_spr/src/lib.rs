@@ -1,12 +1,14 @@
 mod error;
 mod indexed;
+#[cfg(feature = "bevy")]
+pub mod material;
+#[cfg(feature = "bevy")]
+pub mod plugin;
 mod true_color;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
-
-use crate::pal;
+use ragnarok_rebuild_common::{Version, reader_ext::ReaderExt};
 
 pub use self::{error::Error, indexed::IndexedSprite, true_color::TrueColorSprite};
 
@@ -19,7 +21,7 @@ pub struct Spr {
     /// Images storing ABGR bitmaps
     pub true_color_images: Box<[TrueColorSprite]>,
     /// 256 RGBA colors
-    pub palette: pal::Pal,
+    pub palette: ragnarok_pal::Pal,
 }
 
 impl Spr {
@@ -107,10 +109,10 @@ impl Spr {
         }
     }
 
-    fn load_palette(reader: &mut dyn Read) -> Result<pal::Pal, Error> {
-        match pal::Pal::from_reader(reader) {
+    fn load_palette(reader: &mut dyn Read) -> Result<ragnarok_pal::Pal, Error> {
+        match ragnarok_pal::Pal::from_reader(reader) {
             Ok(palette) => Ok(palette),
-            Err(pal::Error::Io(io)) => {
+            Err(ragnarok_pal::Error::Io(io)) => {
                 if io.kind() == std::io::ErrorKind::UnexpectedEof {
                     Err(Error::BrokenPalette)
                 } else {

@@ -99,6 +99,7 @@ fn main() {
         ragnarok_rsm::plugin::Plugin {
             texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
         },
+        ragnarok_spr::plugin::Plugin,
     ));
 
     #[cfg(not(feature = "with-inspector"))]

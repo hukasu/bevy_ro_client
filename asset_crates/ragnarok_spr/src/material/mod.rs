@@ -1,19 +1,24 @@
-use bevy::{
-    asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle},
-    color::LinearRgba,
-    math::Mat4,
-    pbr::{Material, MaterialPlugin},
-    prelude::{Image, Shader},
-    reflect::Reflect,
-    render::render_resource::{AsBindGroup, ShaderType},
+use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, weak_handle};
+use bevy_color::LinearRgba;
+use bevy_image::Image;
+use bevy_math::Mat4;
+use bevy_mesh::MeshVertexBufferLayoutRef;
+use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin};
+use bevy_reflect::Reflect;
+use bevy_render::{
+    alpha::AlphaMode,
+    render_resource::{
+        AsBindGroup, RenderPipelineDescriptor, Shader, ShaderRef, ShaderType,
+        SpecializedMeshPipelineError,
+    },
 };
 
 pub const SPR_SHADER_HANDLE: Handle<Shader> = weak_handle!("0ed8f3b1-37fa-41ad-9652-e2d32b3eeed5");
 
-pub struct Plugin;
+pub(crate) struct Plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
         app
             // Asset
             .init_asset::<SprIndexedMaterial>()
@@ -52,32 +57,32 @@ pub struct SprIndexedMaterial {
 }
 
 impl Material for SprIndexedMaterial {
-    fn alpha_mode(&self) -> bevy::prelude::AlphaMode {
-        bevy::prelude::AlphaMode::Blend
+    fn alpha_mode(&self) -> AlphaMode {
+        AlphaMode::Blend
     }
 
-    fn vertex_shader() -> bevy::render::render_resource::ShaderRef {
+    fn vertex_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
-    fn deferred_vertex_shader() -> bevy::render::render_resource::ShaderRef {
+    fn deferred_vertex_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
-    fn fragment_shader() -> bevy::render::render_resource::ShaderRef {
+    fn fragment_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
-    fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
+    fn deferred_fragment_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
     fn specialize(
-        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
-        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
-        _layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
-        _key: bevy::pbr::MaterialPipelineKey<Self>,
-    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        _pipeline: &MaterialPipeline<Self>,
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayoutRef,
+        _key: MaterialPipelineKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
         descriptor
             .vertex
             .shader_defs
@@ -103,32 +108,32 @@ pub struct SprTrueColorMaterial {
 }
 
 impl Material for SprTrueColorMaterial {
-    fn alpha_mode(&self) -> bevy::prelude::AlphaMode {
-        bevy::prelude::AlphaMode::Blend
+    fn alpha_mode(&self) -> AlphaMode {
+        AlphaMode::Blend
     }
 
-    fn vertex_shader() -> bevy::render::render_resource::ShaderRef {
+    fn vertex_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
-    fn deferred_vertex_shader() -> bevy::render::render_resource::ShaderRef {
+    fn deferred_vertex_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
-    fn fragment_shader() -> bevy::render::render_resource::ShaderRef {
+    fn fragment_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
-    fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
+    fn deferred_fragment_shader() -> ShaderRef {
         SPR_SHADER_HANDLE.into()
     }
 
     fn specialize(
-        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
-        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
-        _layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
-        _key: bevy::pbr::MaterialPipelineKey<Self>,
-    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+        _pipeline: &MaterialPipeline<Self>,
+        descriptor: &mut RenderPipelineDescriptor,
+        _layout: &MeshVertexBufferLayoutRef,
+        _key: MaterialPipelineKey<Self>,
+    ) -> Result<(), SpecializedMeshPipelineError> {
         descriptor
             .vertex
             .shader_defs
