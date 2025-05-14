@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Version(pub u8, pub u8, pub u32);
 
 impl Version {
