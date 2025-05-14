@@ -46,15 +46,3 @@ flate2 = { workspace = true }
 encoding_rs = { workspace = true }
 
 sqlx = { workspace = true }
-
-[dev-dependencies]
-wgpu = { workspace = true }
-criterion = { workspace = true }
-
-[[bench]]
-name = "load_map_from_cold_start"
-harness = false
-
-[[bench]]
-name = "create_render_device"
-harness = false
