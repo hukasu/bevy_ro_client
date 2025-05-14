@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "asset_crates/ragnarok_grf",
+    "asset_crates/ragnarok_pal",
     "asset_crates/ragnarok_rsm",
     "ragnarok_rebuild_common",
     "ragnarok_rebuild_assets",

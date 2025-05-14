@@ -1,27 +1,22 @@
-use bevy::{
-    asset::AssetApp,
-    image::ImageSampler,
-    prelude::Image,
-    render::{
-        render_asset::RenderAssetUsages,
-        render_resource::{
-            Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-        },
-    },
+use bevy_asset::{AssetApp, RenderAssetUsages};
+use bevy_image::{Image, ImageSampler};
+use bevy_render::render_resource::{
+    Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
-use ragnarok_rebuild_assets::pal;
+
+use crate::Pal;
 
 mod loader;
 
 pub struct Plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
         app.register_asset_loader(loader::AssetLoader);
     }
 }
 
-pub fn palette_to_image(palette: &pal::Pal) -> Image {
+pub fn palette_to_image(palette: &Pal) -> Image {
     Image {
         data: Some(
             palette

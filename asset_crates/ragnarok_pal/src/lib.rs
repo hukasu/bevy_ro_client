@@ -1,8 +1,10 @@
 mod error;
+#[cfg(feature = "bevy")]
+pub mod plugin;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Color};
+use ragnarok_rebuild_common::{Color, reader_ext::ReaderExt};
 
 pub use self::error::Error;
 

@@ -1,7 +1,6 @@
 pub mod act;
 pub mod gat;
 pub mod gnd;
-pub mod pal;
 pub mod paths;
 pub mod rsw;
 pub mod spr;
@@ -17,7 +16,6 @@ impl BevyPluginGroup for PluginGroup {
             .add(act::Plugin)
             .add(gat::Plugin)
             .add(gnd::Plugin)
-            .add(pal::Plugin)
             .add(rsw::Plugin)
             .add(spr::Plugin)
             .add(water_plane::Plugin)

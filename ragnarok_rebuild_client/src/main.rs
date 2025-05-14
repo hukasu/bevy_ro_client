@@ -95,6 +95,7 @@ fn main() {
         ).insert_resource(PointLightShadowMap {size: 16});
     app.add_plugins((
         RagnarokPlugin,
+        ragnarok_pal::plugin::Plugin,
         ragnarok_rsm::plugin::Plugin {
             texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
         },

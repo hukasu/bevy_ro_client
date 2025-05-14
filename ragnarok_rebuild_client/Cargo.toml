@@ -22,6 +22,7 @@ with-inspector = [
 
 [dependencies]
 ragnarok_grf = { path = "../asset_crates/ragnarok_grf", features = ["bevy"] }
+ragnarok_pal = { path = "../asset_crates/ragnarok_pal", features = ["bevy"] }
 ragnarok_rsm = { path = "../asset_crates/ragnarok_rsm", features = ["bevy"] }
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
