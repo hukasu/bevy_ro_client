@@ -1,10 +1,18 @@
 mod animation_clip;
 mod animation_event;
+#[cfg(feature = "bevy")]
+pub mod assets;
+#[cfg(feature = "bevy")]
+pub mod components;
 mod error;
+#[cfg(feature = "bevy")]
+pub mod events;
+#[cfg(feature = "bevy")]
+pub mod plugin;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
+use ragnarok_rebuild_common::{Version, reader_ext::ReaderExt};
 
 pub use self::{
     animation_clip::{AnimationClip, AnimationFrame, SpriteAnchor, SpriteLayer},

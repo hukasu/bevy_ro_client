@@ -8,7 +8,6 @@ use bevy::{
         system::{Commands, Res, ResMut},
     },
     input::common_conditions::input_just_pressed,
-    math::Vec3,
     prelude::{
         Camera, Deref, DerefMut, Entity, IntoScheduleConfigs, KeyCode, Name, NextState, Query,
         Resource, Single, Visibility, With,
@@ -23,10 +22,9 @@ use bevy_inspector_egui::{
     quick::WorldInspectorPlugin,
 };
 
-use ragnarok_rebuild_bevy::assets::{
-    act::{ActorFacing, LoadActor},
-    rsw::LoadWorld,
-};
+use ragnarok_act::components::Actor;
+use ragnarok_rebuild_bevy::assets::{paths, rsw::LoadWorld};
+use ragnarok_spr::components::Sprite;
 
 use crate::{client::entities, states::GameState};
 
@@ -143,82 +141,88 @@ fn check_loading_font(
     contexts.ctx_mut().set_fonts(font_definitons);
 }
 
-fn spawn_palette(mut commands: Commands) {
-    let world_scale = 32. / 5.;
-    let actor = commands
-        .spawn((
-            Name::new("anubis"),
-            Transform::from_xyz(0., 0., 0.).with_scale(Vec3::splat(1. / world_scale)),
-            Visibility::default(),
-            entities::Entity {},
-        ))
-        .id();
-    commands.trigger_targets(
-        LoadActor {
-            actor: "몬스터/anubis".to_owned(),
-            facing: Some(ActorFacing::SouthWest),
+fn spawn_palette(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn((
+        Name::new("anubis"),
+        Transform::from_xyz(0., 0., 0.),
+        Visibility::default(),
+        entities::Entity {},
+        Actor {
+            actor: asset_server.load(format!(
+                "{}{}",
+                paths::SPR_FILES_FOLDER,
+                "몬스터/anubis.act"
+            )),
         },
-        actor,
-    );
-    let actor = commands
-        .spawn((
-            Name::new("poring"),
-            Transform::from_xyz(0., 0., 0.).with_scale(Vec3::splat(1. / world_scale)),
-            Visibility::default(),
-            entities::Entity {},
-        ))
-        .id();
-    commands.trigger_targets(
-        LoadActor {
-            actor: "몬스터/poring".to_owned(),
-            facing: Some(ActorFacing::SouthWest),
+        Sprite(asset_server.load(format!(
+            "{}{}",
+            paths::SPR_FILES_FOLDER,
+            "몬스터/anubis.spr"
+        ))),
+    ));
+    commands.spawn((
+        Name::new("poring"),
+        Transform::from_xyz(0., 0., 0.),
+        Visibility::default(),
+        entities::Entity {},
+        Actor {
+            actor: asset_server.load(format!(
+                "{}{}",
+                paths::SPR_FILES_FOLDER,
+                "몬스터/poring.act"
+            )),
         },
-        actor,
-    );
+        Sprite(asset_server.load(format!(
+            "{}{}",
+            paths::SPR_FILES_FOLDER,
+            "몬스터/poring.spr"
+        ))),
+    ));
 
-    let actor = commands
-        .spawn((
-            Name::new("ghostring"),
-            Transform::from_xyz(0., 0., -25.).with_scale(Vec3::splat(1. / world_scale)),
-            Visibility::default(),
-            entities::Entity {},
-        ))
-        .id();
-    commands.trigger_targets(
-        LoadActor {
-            actor: "몬스터/ill_ghostring".to_owned(),
-            facing: Some(ActorFacing::SouthWest),
+    commands.spawn((
+        Name::new("ghostring"),
+        Transform::from_xyz(0., 0., -25.),
+        Visibility::default(),
+        entities::Entity {},
+        Actor {
+            actor: asset_server.load(format!(
+                "{}{}",
+                paths::SPR_FILES_FOLDER,
+                "몬스터/ill_ghostring.act"
+            )),
         },
-        actor,
-    );
-    let actor = commands
-        .spawn((
-            Name::new("ice_titan"),
-            Transform::from_xyz(0., 0., -50.).with_scale(Vec3::splat(1. / world_scale)),
-            Visibility::default(),
-            entities::Entity {},
-        ))
-        .id();
-    commands.trigger_targets(
-        LoadActor {
-            actor: "몬스터/ice_titan".to_owned(),
-            facing: Some(ActorFacing::SouthWest),
+        Sprite(asset_server.load(format!(
+            "{}{}",
+            paths::SPR_FILES_FOLDER,
+            "몬스터/ill_ghostring.spr"
+        ))),
+    ));
+    commands.spawn((
+        Name::new("ice_titan"),
+        Transform::from_xyz(0., 0., -50.),
+        Visibility::default(),
+        entities::Entity {},
+        Actor {
+            actor: asset_server.load(format!(
+                "{}{}",
+                paths::SPR_FILES_FOLDER,
+                "몬스터/ice_titan.act"
+            )),
         },
-        actor,
-    );
-    let actor = commands
-        .spawn((
-            Name::new("4_f_01"),
-            Transform::from_xyz(0., 0., -75.).with_scale(Vec3::splat(1. / world_scale)),
-            Visibility::default(),
-            entities::Entity {},
-        ))
-        .id();
-    commands.trigger_targets(
-        LoadActor {
-            actor: "npc/4_f_01".to_owned(),
-            facing: Some(ActorFacing::SouthWest),
+        Sprite(asset_server.load(format!(
+            "{}{}",
+            paths::SPR_FILES_FOLDER,
+            "몬스터/ice_titan.spr"
+        ))),
+    ));
+    commands.spawn((
+        Name::new("4_f_01"),
+        Transform::from_xyz(0., 0., -75.),
+        Visibility::default(),
+        entities::Entity {},
+        Actor {
+            actor: asset_server.load(format!("{}{}", paths::SPR_FILES_FOLDER, "npc/4_f_01.act")),
         },
-        actor,
-    );
+        Sprite(asset_server.load(format!("{}{}", paths::SPR_FILES_FOLDER, "npc/4_f_01.spr"))),
+    ));
 }

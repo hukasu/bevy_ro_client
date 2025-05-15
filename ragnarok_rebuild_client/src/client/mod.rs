@@ -1,5 +1,6 @@
 mod components;
 // TODO remove pub after organizing the debug systems
+mod audio;
 mod camera;
 pub mod entities;
 mod loading_screen;
@@ -10,7 +11,7 @@ use bevy::{
     math::{Quat, Vec3},
     prelude::{
         in_state, resource_changed, ClearColor, Commands, Entity, IntoScheduleConfigs, Name,
-        NextState, OnAdd, Query, Res, ResMut, Transform, Trigger, Visibility, With,
+        NextState, Observer, OnAdd, Query, Res, ResMut, Transform, Trigger, Visibility, With,
     },
 };
 
@@ -33,8 +34,9 @@ impl Plugin for ClientPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(ClearColor(Color::BLACK))
             // Plugins
-            .add_plugins(entities::Plugin)
+            .add_plugins(audio::Plugin)
             .add_plugins(camera::Plugin)
+            .add_plugins(entities::Plugin)
             .add_plugins(loading_screen::Plugin)
             // Startup system
             .add_systems(Startup, start_up)
@@ -46,7 +48,6 @@ impl Plugin for ClientPlugin {
             // Observers
             .add_observer(change_to_game)
             .add_observer(attach_world_to_game)
-            .add_observer(attach_entity_to_game)
             // TODO Change to observe on the the container entity
             // in 0.15
             .add_observer(attach_bgm_to_game)
@@ -72,6 +73,7 @@ fn start_up(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>
                 Name::new("Actors"),
                 Transform::default(),
                 Visibility::default(),
+                Observer::new(attach_entity_to_game),
             ));
         });
 
@@ -102,16 +104,10 @@ fn attach_world_to_game(
     commands.entity(game).add_child(trigger.target());
 }
 
-fn attach_entity_to_game(
-    trigger: Trigger<OnAdd, entities::Entity>,
-    mut commands: Commands,
-    games: Query<Entity, With<Game>>,
-) {
-    let Ok(game) = games.single().inspect_err(|err| bevy::log::error!("{err}")) else {
-        return;
-    };
-
-    commands.entity(game).add_child(trigger.target());
+fn attach_entity_to_game(trigger: Trigger<OnAdd, entities::Entity>, mut commands: Commands) {
+    commands
+        .entity(trigger.observer())
+        .add_child(trigger.target());
 }
 
 fn attach_bgm_to_game(

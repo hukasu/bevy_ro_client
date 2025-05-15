@@ -1,4 +1,3 @@
-pub mod act;
 pub mod gat;
 pub mod gnd;
 pub mod paths;
@@ -12,7 +11,6 @@ pub struct PluginGroup;
 impl BevyPluginGroup for PluginGroup {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add(act::Plugin)
             .add(gat::Plugin)
             .add(gnd::Plugin)
             .add(rsw::Plugin)

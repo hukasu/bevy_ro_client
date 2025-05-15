@@ -1,5 +1,6 @@
 [workspace]
 members = [
+    "asset_crates/ragnarok_act",
     "asset_crates/ragnarok_grf",
     "asset_crates/ragnarok_pal",
     "asset_crates/ragnarok_rsm",
@@ -18,7 +19,9 @@ bevy = { version = "0.16.0", default-features = false }
 bevy_animation = { version = "0.16.0", default-features = false }
 bevy_app = { version = "0.16.0", default-features = false }
 bevy_asset = { version = "0.16.0", default-features = false }
+bevy_audio = { version = "0.16.0", default-features = false }
 bevy_color = { version = "0.16.0", default-features = false }
+bevy_core_pipeline = { version = "0.16.0", default-features = false }
 bevy_ecs = { version = "0.16.0", default-features = false }
 bevy_gizmos = { version = "0.16.0", default-features = false }
 bevy_image = { version = "0.16.0", default-features = false }
@@ -31,6 +34,7 @@ bevy_reflect = { version = "0.16.0", default-features = false }
 bevy_render = { version = "0.16.0", default-features = false }
 bevy_scene = { version = "0.16.0", default-features = false }
 bevy_transform = { version = "0.16.0", default-features = false }
+bevy_time = { version = "0.16.0", default-features = false }
 
 bevy-inspector-egui = { version = "0.31.0" }
 bevy_flycam = { git = "https://github.com/kSDOT/bevy_flycam/", branch = "bevy-0.16.0-update" }

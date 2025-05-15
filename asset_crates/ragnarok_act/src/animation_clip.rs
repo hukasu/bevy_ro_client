@@ -1,10 +1,23 @@
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Color, Version};
+use ragnarok_rebuild_common::{Color, Version, reader_ext::ReaderExt};
 
 #[derive(Debug)]
 pub struct AnimationClip {
     pub animation_frames: Box<[AnimationFrame]>,
+}
+
+impl AnimationClip {
+    pub fn layers_and_anchors(&self) -> (usize, usize) {
+        self.animation_frames
+            .iter()
+            .fold((0, 0), |(layers, anchors), frame| {
+                (
+                    frame.sprite_layers.len().max(layers),
+                    frame.sprite_anchors.len().max(anchors),
+                )
+            })
+    }
 }
 
 #[derive(Debug)]

@@ -79,7 +79,7 @@ fn main() {
                 })
                 .set(LogPlugin {
                     level: bevy::log::Level::INFO,
-                    filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_assets={log_level},ragnarok_rebuild_common={log_level},ragnarok_rsm={log_level}"),
+                    filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_assets={log_level},ragnarok_rebuild_common={log_level},ragnarok_act={log_level},ragnarok_rsm={log_level}"),
                     custom_layer: |_| None
                 })
                 .set(ImagePlugin {
@@ -95,6 +95,9 @@ fn main() {
         ).insert_resource(PointLightShadowMap {size: 16});
     app.add_plugins((
         RagnarokPlugin,
+        ragnarok_act::plugin::Plugin {
+            audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
+        },
         ragnarok_pal::plugin::Plugin,
         ragnarok_rsm::plugin::Plugin {
             texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
