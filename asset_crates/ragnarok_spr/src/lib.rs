@@ -9,6 +9,8 @@ pub mod material;
 #[cfg(feature = "bevy")]
 pub mod plugin;
 mod true_color;
+#[cfg(feature = "warning")]
+pub mod warnings;
 
 use std::io::Read;
 

@@ -4628,6 +4628,7 @@ dependencies = [
  "ragnarok_rebuild_assets",
  "ragnarok_rebuild_common",
  "ragnarok_rsm",
+ "ragnarok_spr",
 ]
 
 [[package]]
