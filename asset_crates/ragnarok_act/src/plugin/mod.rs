@@ -1,3 +1,5 @@
+#[cfg(feature = "debug")]
+mod debug;
 mod loader;
 mod resources;
 
@@ -70,6 +72,9 @@ impl bevy_app::Plugin for Plugin {
             &IDENTITY_PLANE_HANDLE,
             Plane3d::new(Vec3::NEG_Z, Vec2::splat(0.5)).into(),
         );
+
+        #[cfg(feature = "debug")]
+        app.add_plugins(debug::Plugin);
     }
 }
 
