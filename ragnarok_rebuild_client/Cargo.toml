@@ -17,6 +17,7 @@ with-inspector = [
     "bevy/default_font",
     "bevy/file_watcher",
     "bevy/embedded_watcher",
+    "ragnarok_act/debug",
     "ragnarok_pal/debug",
     "ragnarok_rsm/debug",
 ]
