@@ -8,6 +8,7 @@ use bevy::{
     prelude::{Changed, ChildOf, Commands, Query, Res, With},
 };
 use ragnarok_act::components::{Actor, ActorLayer, ActorPlayer, SpritesheetIndex};
+use ragnarok_pal::components::Palette;
 use ragnarok_spr::{
     assets::SpriteImages,
     components::Sprite,
@@ -36,6 +37,7 @@ fn update_sprite(
     >,
     actor_players: Query<&ChildOf, With<ActorPlayer>>,
     actors: Query<&Sprite, With<Actor>>,
+    palettes: Query<&Palette, With<Actor>>,
     sprites_images: Res<Assets<SpriteImages>>,
     asset_server: Res<AssetServer>,
 ) {
@@ -61,10 +63,14 @@ fn update_sprite(
             };
             match layer.spritesheet_index {
                 SpritesheetIndex::Indexed(index) => {
+                    let palette = palettes
+                        .get(player.parent())
+                        .map(|palette| palette.0.clone())
+                        .unwrap_or_else(|_| sprite_images.palette.clone());
                     layer_commands.insert(MeshMaterial3d(asset_server.add(SprIndexedMaterial {
                         uniform,
                         index_image: sprite_images.indexed_sprites[index].clone(),
-                        palette: sprite_images.palette.clone(),
+                        palette,
                     })));
                 }
                 SpritesheetIndex::TrueColor(index) => {
