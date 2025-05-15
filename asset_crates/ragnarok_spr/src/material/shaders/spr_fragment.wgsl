@@ -42,34 +42,6 @@ fn spr_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     return pbr_input;
 }
 
-@vertex
-fn vertex(in: Vertex) -> VertexOutput {
-    var vertex_output: VertexOutput;
-
-    var dimensions = vec2<f32>(textureDimensions(spr_texture));
-    let position = vec4<f32>(
-        in.position.xy * dimensions,
-        0.0,
-        1.0
-    );
-    
-    var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
-    vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
-    vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz) + vec4(0., 0., 1. / 192., 0.);
-    
-    vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
-        in.normal,
-        in.instance_index
-    );
-    if spr_uniform.uv_flip == 1u {
-        vertex_output.uv = vec2<f32>(1. - in.uv.x, in.uv.y);
-    } else {
-        vertex_output.uv = in.uv;
-    }
-
-    return vertex_output;
-}
-
 @fragment
 fn fragment(
     in: VertexOutput,

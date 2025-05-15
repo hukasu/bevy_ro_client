@@ -12,7 +12,11 @@ use bevy_render::{
     },
 };
 
-pub const SPR_SHADER_HANDLE: Handle<Shader> = weak_handle!("0ed8f3b1-37fa-41ad-9652-e2d32b3eeed5");
+pub const SPR_VERTEX_HANDLE: Handle<Shader> = weak_handle!("27e59443-60cf-4f29-a440-db42b61bee10");
+pub const SPR_FRAGMENT_HANDLE: Handle<Shader> =
+    weak_handle!("0ed8f3b1-37fa-41ad-9652-e2d32b3eeed5");
+pub const SPR_PREPASS_FRAGMENT_HANDLE: Handle<Shader> =
+    weak_handle!("cdae7c57-514c-4416-bb0d-09d692e1d8df");
 
 pub(crate) struct Plugin;
 
@@ -31,8 +35,20 @@ impl bevy_app::Plugin for Plugin {
         // Shader handles
         load_internal_asset!(
             app,
-            SPR_SHADER_HANDLE,
-            "shaders/spr_shader.wgsl",
+            SPR_VERTEX_HANDLE,
+            "shaders/spr_vertex.wgsl",
+            Shader::from_wgsl
+        );
+        load_internal_asset!(
+            app,
+            SPR_FRAGMENT_HANDLE,
+            "shaders/spr_fragment.wgsl",
+            Shader::from_wgsl
+        );
+        load_internal_asset!(
+            app,
+            SPR_PREPASS_FRAGMENT_HANDLE,
+            "shaders/spr_prepass_fragment.wgsl",
             Shader::from_wgsl
         );
     }
@@ -60,19 +76,19 @@ impl Material for SprIndexedMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+        SPR_VERTEX_HANDLE.into()
     }
 
-    fn deferred_vertex_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+    fn prepass_vertex_shader() -> ShaderRef {
+        SPR_VERTEX_HANDLE.into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+        SPR_FRAGMENT_HANDLE.into()
     }
 
-    fn deferred_fragment_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+    fn prepass_fragment_shader() -> ShaderRef {
+        SPR_PREPASS_FRAGMENT_HANDLE.into()
     }
 
     fn specialize(
@@ -111,19 +127,19 @@ impl Material for SprTrueColorMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+        SPR_FRAGMENT_HANDLE.into()
     }
 
     fn deferred_vertex_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+        SPR_FRAGMENT_HANDLE.into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+        SPR_FRAGMENT_HANDLE.into()
     }
 
     fn deferred_fragment_shader() -> ShaderRef {
-        SPR_SHADER_HANDLE.into()
+        SPR_FRAGMENT_HANDLE.into()
     }
 
     fn specialize(
