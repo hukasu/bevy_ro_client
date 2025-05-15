@@ -1,3 +1,7 @@
+#[cfg(feature = "bevy")]
+pub mod assets;
+#[cfg(feature = "bevy")]
+pub mod components;
 mod error;
 mod indexed;
 #[cfg(feature = "bevy")]

@@ -19,7 +19,6 @@
 #endif
 
 struct SprUniform {
-    transform: mat4x4<f32>,
     uv_flip: u32,
     tint: vec4<f32>,
 }
@@ -48,7 +47,7 @@ fn vertex(in: Vertex) -> VertexOutput {
     var vertex_output: VertexOutput;
 
     var dimensions = vec2<f32>(textureDimensions(spr_texture));
-    let position = spr_uniform.transform * vec4<f32>(
+    let position = vec4<f32>(
         in.position.xy * dimensions,
         0.0,
         1.0

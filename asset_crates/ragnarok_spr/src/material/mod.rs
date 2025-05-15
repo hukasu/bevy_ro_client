@@ -41,7 +41,6 @@ impl bevy_app::Plugin for Plugin {
 
 #[derive(Debug, Clone, Reflect, ShaderType)]
 pub struct SprUniform {
-    pub transform: Mat4,
     pub uv_flip: u32,
     pub tint: LinearRgba,
 }

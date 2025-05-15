@@ -1,23 +1,15 @@
-use bevy_asset::{Asset, Handle, LoadContext, RenderAssetUsages};
+use bevy_asset::{Handle, LoadContext, RenderAssetUsages};
 use bevy_image::{Image, ImageSampler};
-use bevy_reflect::Reflect;
 use bevy_render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
 
-use crate::{Error, IndexedSprite, Spr, TrueColorSprite};
-
-#[derive(Debug, Asset, Reflect)]
-pub struct Sprite {
-    pub indexed_sprites: Vec<Handle<Image>>,
-    pub true_color_sprites: Vec<Handle<Image>>,
-    pub palette: Handle<Image>,
-}
+use crate::{Error, IndexedSprite, Spr, TrueColorSprite, assets::SpriteImages};
 
 pub struct AssetLoader;
 
 impl bevy_asset::AssetLoader for AssetLoader {
-    type Asset = Sprite;
+    type Asset = SpriteImages;
     type Settings = ();
     type Error = Error;
 
@@ -40,14 +32,14 @@ impl bevy_asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    fn generate_sprite(load_context: &mut LoadContext, sprite: Spr) -> Sprite {
+    fn generate_sprite(load_context: &mut LoadContext, sprite: Spr) -> SpriteImages {
         let indexed_sprites = Self::load_indexed_sprites(load_context, &sprite.bitmap_images);
         let true_color_sprites =
             Self::load_true_color_sprites(load_context, &sprite.true_color_images);
         let palette =
             load_context.add_labeled_asset("Palette".to_owned(), Image::from(sprite.palette));
 
-        Sprite {
+        SpriteImages {
             indexed_sprites,
             true_color_sprites,
             palette,
