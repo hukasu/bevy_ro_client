@@ -2354,9 +2354,9 @@ dependencies = [
 
 [[package]]
 name = "errno"
-version = "0.3.11"
+version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "976dd42dc7e85965fe702eb8164f21f450704bdde31faefd6471dba214cb594e"
+checksum = "cea14ef9355e3beab063703aa9dab15afd25f0667c341310c1e5274bb1d0da18"
 dependencies = [
  "libc",
  "windows-sys 0.59.0",
@@ -4605,22 +4605,17 @@ dependencies = [
  "bevy_asset",
  "bevy_audio",
  "bevy_color",
- "bevy_core_pipeline",
  "bevy_ecs",
  "bevy_gizmos",
- "bevy_image",
  "bevy_math",
  "bevy_mesh",
- "bevy_pbr",
  "bevy_platform",
  "bevy_reflect",
  "bevy_render",
  "bevy_scene",
- "bevy_time",
  "bevy_transform",
  "log",
  "ragnarok_rebuild_common",
- "serde",
 ]
 
 [[package]]
@@ -4653,6 +4648,7 @@ dependencies = [
  "bevy_app",
  "bevy_asset",
  "bevy_color",
+ "bevy_ecs",
  "bevy_image",
  "bevy_reflect",
  "bevy_render",
