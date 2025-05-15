@@ -3,6 +3,8 @@ pub mod components;
 mod error;
 #[cfg(feature = "bevy")]
 pub mod plugin;
+#[cfg(feature = "warning")]
+pub mod warnings;
 
 use std::io::Read;
 

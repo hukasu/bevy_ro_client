@@ -18,6 +18,9 @@ bevy = [
     "dep:bevy_reflect",
     "dep:bevy_render",
 ]
+# Warnings for the pal asset
+warning = ["ragnarok_rebuild_common/warning"]
+# Sets render assets to `RenderAssetUsage::all()`
 debug = []
 
 [dependencies]
