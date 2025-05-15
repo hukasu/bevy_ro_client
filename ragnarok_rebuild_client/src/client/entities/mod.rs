@@ -73,6 +73,7 @@ fn update_sprite(
                         color: sprite_images.true_color_sprites[index].clone(),
                     })));
                 }
+                SpritesheetIndex::None => (),
             }
         } else {
             bevy::log::warn!("ActorLayer {} not grandchild of Actor.", actor_layer);

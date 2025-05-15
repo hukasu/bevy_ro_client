@@ -201,21 +201,25 @@ impl AssetLoader {
                 ));
                 clip.scale
                     .push((frame_time, Vec3::new(layer.scale_u, layer.scale_v, 1.)));
-                if layer.spritesheet_cell_index >= 0 {
-                    let Ok(index) = usize::try_from(layer.spritesheet_cell_index) else {
-                        unreachable!(
-                            "Unaddresable spritesheet cell {}.",
+                let spritesheet = if layer.spritesheet_cell_index >= 0 {
+                    if let Ok(index) = usize::try_from(layer.spritesheet_cell_index) {
+                        match layer.image_type_id {
+                            0 => SpritesheetIndex::Indexed(index),
+                            1 => SpritesheetIndex::TrueColor(index),
+                            other => unreachable!("Invalid image type {}.", other),
+                        }
+                    } else {
+                        log::warn!(
+                            "Layer {} uses unaddressable spritesheet index {}.",
+                            i,
                             layer.spritesheet_cell_index
                         );
-                    };
-                    let spritesheet = match layer.image_type_id {
-                        0 => SpritesheetIndex::Indexed(index),
-                        1 => SpritesheetIndex::TrueColor(index),
-                        other => unreachable!("Invalid image type {}.", other),
-                    };
-
-                    clip.spritesheet_index.push((frame_time, spritesheet));
-                }
+                        SpritesheetIndex::None
+                    }
+                } else {
+                    SpritesheetIndex::None
+                };
+                clip.spritesheet_index.push((frame_time, spritesheet));
                 clip.uv_flip.push((frame_time, layer.is_flipped_v));
                 clip.tint.push((
                     frame_time,

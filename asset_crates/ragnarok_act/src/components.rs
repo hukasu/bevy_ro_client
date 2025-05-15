@@ -56,6 +56,7 @@ pub struct ActorAnchor;
 pub enum SpritesheetIndex {
     Indexed(usize),
     TrueColor(usize),
+    None,
 }
 
 impl Default for SpritesheetIndex {
