@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
+use ragnarok_rebuild_common::{Version, reader_ext::ReaderExt};
 
 #[derive(Debug)]
 pub struct IndexedSprite {

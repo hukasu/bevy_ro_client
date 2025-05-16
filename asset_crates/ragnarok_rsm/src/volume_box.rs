@@ -3,7 +3,7 @@ use std::io::{self, Read};
 #[cfg(feature = "bevy")]
 use bevy_reflect::Reflect;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
+use ragnarok_rebuild_common::{Version, reader_ext::ReaderExt};
 
 #[derive(Debug)]
 #[cfg_attr(feature = "bevy", derive(Reflect))]

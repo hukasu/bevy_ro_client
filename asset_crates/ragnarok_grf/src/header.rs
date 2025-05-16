@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
+use ragnarok_rebuild_common::{Version, reader_ext::ReaderExt};
 
 const GRF_SIGNATURE: &[u8] = b"Master of Magic";
 pub const SIZE_OF_HEADER: usize = 16 + 14 + 4 + 4 + 4 + 4;

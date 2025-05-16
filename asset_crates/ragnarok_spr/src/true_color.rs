@@ -1,6 +1,6 @@
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Color};
+use ragnarok_rebuild_common::{Color, reader_ext::ReaderExt};
 
 #[derive(Debug)]
 pub struct TrueColorSprite {

@@ -1,6 +1,6 @@
 use bevy_app::PostUpdate;
 use bevy_asset::Assets;
-use bevy_color::{palettes, Color};
+use bevy_color::{Color, palettes};
 use bevy_ecs::{
     entity::Entity,
     hierarchy::Children,
