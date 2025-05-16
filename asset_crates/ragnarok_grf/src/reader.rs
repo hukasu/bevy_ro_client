@@ -18,6 +18,7 @@ impl AssetReader {
 
 impl BevyAsserReader for AssetReader {
     async fn read<'a>(&'a self, path: &'a Path) -> Result<Box<dyn Reader + 'a>, AssetReaderError> {
+        log::trace!("Starting reading {}.", path.display());
         match self.grf.read_file(path) {
             Ok(data) => {
                 let reader: Box<dyn Reader> = Box::new(VecReader::new(data.to_vec()));
