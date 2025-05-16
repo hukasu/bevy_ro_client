@@ -23,6 +23,7 @@ use bevy_transform::components::Transform;
 
 use crate::{
     Rsm, ShadeType,
+    assets::RsmModel,
     components::{Model, ModelAnimation, ModelInvertedMaterial},
     materials::RsmMaterial,
     mesh::Textures,
@@ -47,7 +48,7 @@ impl AssetLoader {
 }
 
 impl BevyAssetLoader for AssetLoader {
-    type Asset = Rsm;
+    type Asset = RsmModel;
     type Settings = ();
     type Error = crate::Error;
 
@@ -62,10 +63,12 @@ impl BevyAssetLoader for AssetLoader {
 
         let rsm = crate::Rsm::from_reader(&mut data.as_slice())?;
 
-        let scene = SceneBuilder::build(&rsm, load_context, self);
-        load_context.add_labeled_asset("Scene".to_owned(), scene);
+        let scene = {
+            let scene = SceneBuilder::build(&rsm, load_context, self);
+            load_context.add_labeled_asset("Scene".to_owned(), scene)
+        };
 
-        Ok(rsm)
+        Ok(RsmModel { model: scene })
     }
 
     fn extensions(&self) -> &[&str] {

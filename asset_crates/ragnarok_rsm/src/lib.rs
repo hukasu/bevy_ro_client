@@ -1,4 +1,6 @@
 #[cfg(feature = "bevy")]
+pub mod assets;
+#[cfg(feature = "bevy")]
 pub mod components;
 mod error;
 #[cfg(feature = "bevy")]
@@ -18,11 +20,7 @@ use bevy_animation::{
     prelude::{AnimatableCurve, AnimatedField, AnimationCurve},
 };
 #[cfg(feature = "bevy")]
-use bevy_asset::Asset;
-#[cfg(feature = "bevy")]
 use bevy_math::{Vec3, curve::UnevenSampleAutoCurve};
-#[cfg(feature = "bevy")]
-use bevy_reflect::TypePath;
 #[cfg(feature = "bevy")]
 use bevy_transform::components::Transform;
 
@@ -38,7 +36,6 @@ pub enum ShadeType {
 }
 
 #[derive(Debug)]
-#[cfg_attr(feature = "bevy", derive(Asset, TypePath))]
 pub struct Rsm {
     pub signature: Box<str>,
     pub version: Version,
