@@ -1,6 +1,6 @@
 #[cfg(feature = "debug")]
 mod debug;
-pub(crate) mod loader;
+mod loader;
 
 use bevy_asset::AssetApp;
 use loader::AssetLoader;
