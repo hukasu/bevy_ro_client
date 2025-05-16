@@ -1,7 +1,4 @@
-use std::{
-    io::{Error, ErrorKind},
-    path::Path,
-};
+use std::{io::Error, path::Path};
 
 use bevy_asset::io::{
     AssetReader as BevyAsserReader, AssetReaderError, PathStream, Reader, VecReader,
@@ -28,10 +25,9 @@ impl BevyAsserReader for AssetReader {
             }
             Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
             Err(err) => Err(AssetReaderError::Io(
-                Error::new(
-                    ErrorKind::Other,
-                    format!("An error occurred while checking if path is directory. '{err}'"),
-                )
+                Error::other(format!(
+                    "An error occurred while checking if path is directory. '{err}'"
+                ))
                 .into(),
             )),
         }
@@ -49,10 +45,9 @@ impl BevyAsserReader for AssetReader {
             Ok(is_dir) => Ok(is_dir),
             Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
             Err(err) => Err(AssetReaderError::Io(
-                Error::new(
-                    ErrorKind::Other,
-                    format!("An error occurred while checking if path is directory. '{err}'"),
-                )
+                Error::other(format!(
+                    "An error occurred while checking if path is directory. '{err}'"
+                ))
                 .into(),
             )),
         }
@@ -69,10 +64,9 @@ impl BevyAsserReader for AssetReader {
             }
             Err(super::Error::FileNotFound) => Err(AssetReaderError::NotFound(path.to_owned())),
             Err(err) => Err(AssetReaderError::Io(
-                Error::new(
-                    ErrorKind::Other,
-                    format!("An error occurred while checking if path is directory. '{err}'"),
-                )
+                Error::other(format!(
+                    "An error occurred while checking if path is directory. '{err}'"
+                ))
                 .into(),
             )),
         }
