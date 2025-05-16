@@ -77,7 +77,7 @@ pub struct SceneBuilder;
 
 impl SceneBuilder {
     pub fn build(rsm: &Rsm, load_context: &mut LoadContext<'_>, loader: &AssetLoader) -> Scene {
-        bevy_log::trace!("Generating animated prop {:?}.", load_context.path());
+        log::trace!("Generating animated prop {:?}.", load_context.path());
         let mut world = World::new();
 
         let root_name = Name::new("root");
@@ -240,7 +240,7 @@ impl MeshList {
 
             let node_transform = if current_mesh.parent_name.is_empty() {
                 let Some(mesh_bounds) = current_mesh.bounds() else {
-                    bevy_log::warn!(
+                    log::warn!(
                         "Mesh {} from model's {:?} had no vertexes.",
                         current_mesh.name,
                         load_context.path()
@@ -358,7 +358,7 @@ impl PrimitiveList {
 
             let texture_count = texture_cache.len();
             let Ok(texture_id) = usize::try_from(texture_id) else {
-                bevy_log::warn!("Texture can't be indexed on current archtecture.");
+                log::warn!("Texture can't be indexed on current archtecture.");
                 continue;
             };
             let texture = load_context.load(

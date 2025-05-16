@@ -238,7 +238,7 @@ impl Rsm {
                     Some(animatable_curve)
                 }
                 Err(err) => {
-                    bevy_log::error!("Failed to build position animation due to `{err}`.");
+                    log::error!("Failed to build position animation due to `{err}`.");
                     None
                 }
             }

@@ -271,8 +271,7 @@ impl Mesh {
 
         for face in &self.faces {
             let Some(texture_index) = self.textures.index(usize::from(face.texture_id)) else {
-                #[cfg(feature = "bevy")]
-                bevy_log::warn!(
+                log::warn!(
                     "Mesh face had texture that are not addressable on current architecture."
                 );
                 continue;
@@ -406,7 +405,7 @@ impl Mesh {
                     Some(animatable_curve)
                 }
                 Err(err) => {
-                    bevy_log::error!(
+                    log::error!(
                         "Failed to build position animation of {} due to `{err}`.",
                         self.name
                     );
@@ -441,7 +440,7 @@ impl Mesh {
                     Some(animatable_curve)
                 }
                 Err(err) => {
-                    bevy_log::error!(
+                    log::error!(
                         "Failed to build rotation animation of {} due to `{err}`.",
                         self.name
                     );
@@ -476,7 +475,7 @@ impl Mesh {
                     Some(animatable_curve)
                 }
                 Err(err) => {
-                    bevy_log::error!(
+                    log::error!(
                         "Failed to build scale animation of {} due to `{err}`.",
                         self.name
                     );

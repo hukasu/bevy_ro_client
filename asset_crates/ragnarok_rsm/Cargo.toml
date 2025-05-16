@@ -17,7 +17,6 @@ bevy = [
     "dep:bevy_ecs",
     "dep:bevy_gizmos",
     "dep:bevy_image",
-    "dep:bevy_log",
     "dep:bevy_math",
     "dep:bevy_mesh",
     "dep:bevy_pbr",
@@ -42,7 +41,6 @@ bevy_color = { workspace = true, default-features = false, optional = true }
 bevy_ecs = { workspace = true, default-features = false, optional = true }
 bevy_gizmos = { workspace = true, default-features = false, optional = true }
 bevy_image = { workspace = true, default-features = false, optional = true }
-bevy_log = { workspace = true, default-features = false, optional = true }
 bevy_math = { workspace = true, default-features = false, optional = true }
 bevy_mesh = { workspace = true, default-features = false, optional = true }
 bevy_pbr = { workspace = true, default-features = false, optional = true }
