@@ -10,12 +10,11 @@ use bevy::{
     ui::{AlignSelf, BackgroundColor, FlexDirection, Node, PositionType, Val, ZIndex},
 };
 
-use components::LoadingScreen;
 use ragnarok_rebuild_bevy::assets::paths;
 
-use crate::states::GameState;
+use super::states::GameState;
 
-use self::resources::LoadingScreens;
+use self::{components::LoadingScreen, resources::LoadingScreens};
 
 const MAXIMUM_LOADING_SCREENS: usize = 16;
 
