@@ -5,8 +5,7 @@ mod inspector_egui;
 mod other {
     use bevy::{
         ecs::system::Commands,
-        math::Vec3,
-        prelude::{App, Camera3d, IntoScheduleConfigs, Startup, Transform},
+        prelude::{App, IntoScheduleConfigs, Startup},
     };
     use ragnarok_rebuild_bevy::tables;
     use ragnarok_rsw::events::LoadWorld;
@@ -109,7 +108,7 @@ fn main() {
     .insert_resource(PointLightShadowMap { size: 16 });
     app.add_plugins((
         RagnarokPlugin,
-        ragnarok_act::plugin::Plugin {
+        bevy_ragnarok_act::plugin::Plugin {
             audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
         },
         ragnarok_pal::plugin::Plugin,

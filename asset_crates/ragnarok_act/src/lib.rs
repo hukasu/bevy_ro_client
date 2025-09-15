@@ -1,14 +1,6 @@
 mod animation_clip;
 mod animation_event;
-#[cfg(feature = "bevy")]
-pub mod assets;
-#[cfg(feature = "bevy")]
-pub mod components;
 mod error;
-#[cfg(feature = "bevy")]
-pub mod events;
-#[cfg(feature = "bevy")]
-pub mod plugin;
 #[cfg(feature = "warning")]
 pub mod warnings;
 

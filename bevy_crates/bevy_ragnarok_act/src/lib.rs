@@ -1,3 +1,9 @@
+//! Builds Ragnarok's Act files to be used in Bevy
+
+pub mod assets;
+pub mod events;
+pub mod plugin;
+
 use bevy_animation::{AnimationPlayer, prelude::Animatable};
 use bevy_asset::Handle;
 use bevy_camera::visibility::Visibility;

@@ -7,7 +7,7 @@ use bevy::{
     pbr::MeshMaterial3d,
     prelude::{Changed, ChildOf, Commands, Query, Res, With},
 };
-use ragnarok_act::components::{Actor, ActorLayer, ActorPlayer, SpritesheetIndex};
+use bevy_ragnarok_act::{Actor, ActorLayer, ActorPlayer, SpritesheetIndex};
 use ragnarok_pal::components::Palette;
 use ragnarok_spr::{
     assets::SpriteImages,

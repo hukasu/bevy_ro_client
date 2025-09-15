@@ -1,7 +1,5 @@
 mod game;
 
-use std::time::Duration;
-
 use bevy::{
     pbr::MeshMaterial3d,
     prelude::{

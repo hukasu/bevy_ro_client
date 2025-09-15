@@ -16,6 +16,8 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
+bevy_ragnarok_act = { path = "bevy_crates/bevy_ragnarok_act", default-features = false }
+
 bevy = { version = "0.17.0-rc.1", default-features = false }
 bevy_animation = { version = "0.17.0-rc.1", default-features = false }
 bevy_app = { version = "0.17.0-rc.1", default-features = false }

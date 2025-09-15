@@ -25,11 +25,10 @@ use bevy_platform::collections::HashMap;
 use bevy_reflect::{FromReflect, GetTypeRegistration, Typed};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
+use ragnarok_act::{Act, AnimationClip as ActAnimationClip, AnimationEvent};
 
 use crate::{
-    Act, AnimationEvent,
-    assets::ActorAnimations,
-    components::{ActorAnchor, ActorLayer, ActorPlayer, SpritesheetIndex},
+    ActorAnchor, ActorLayer, ActorPlayer, SpritesheetIndex, assets::ActorAnimations,
     events::ActorSound,
 };
 
@@ -163,7 +162,7 @@ impl AssetLoader {
 
     fn generate_clip(
         &self,
-        clip: &crate::AnimationClip,
+        clip: &ActAnimationClip,
         events: &[AnimationEvent],
         max_layers: usize,
         max_anchors: usize,
@@ -238,24 +237,23 @@ impl AssetLoader {
                 clip.active.push((frame_time, false))
             }
 
-            if frame.animation_event_id >= 0 {
-                if let Some(event) = usize::try_from(frame.animation_event_id)
+            if frame.animation_event_id >= 0
+                && let Some(event) = usize::try_from(frame.animation_event_id)
                     .inspect_err(|_| {
                         log::error!("Can address animation event on current architecture.")
                     })
                     .ok()
                     .and_then(|id| events.get(id))
-                {
-                    match event.name.as_ref() {
-                        "atk" => (),
-                        sound => animation_clip.add_event(
-                            frame_time,
-                            ActorSound::new(
-                                Name::new(sound.to_string()),
-                                load_context.load(self.audio_path_prefix.join(sound)),
-                            ),
+            {
+                match event.name.as_ref() {
+                    "atk" => (),
+                    sound => animation_clip.add_event(
+                        frame_time,
+                        ActorSound::new(
+                            Name::new(sound.to_string()),
+                            load_context.load(self.audio_path_prefix.join(sound)),
                         ),
-                    }
+                    ),
                 }
             }
         }
@@ -362,7 +360,7 @@ struct LayerClip {
 
 #[derive(Debug)]
 pub enum AssetLoaderError {
-    Act(crate::Error),
+    Act(ragnarok_act::Error),
     Io(std::io::Error),
     UsizeConversion,
 }
@@ -385,8 +383,8 @@ impl Display for AssetLoaderError {
 
 impl std::error::Error for AssetLoaderError {}
 
-impl From<crate::Error> for AssetLoaderError {
-    fn from(value: crate::Error) -> Self {
+impl From<ragnarok_act::Error> for AssetLoaderError {
+    fn from(value: ragnarok_act::Error) -> Self {
         Self::Act(value)
     }
 }

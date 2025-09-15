@@ -1,9 +1,9 @@
 use bevy::{
     audio::{AudioPlayer, PlaybackMode, PlaybackSettings, SpatialScale, Volume},
     ecs::observer::On,
-    prelude::{ChildOf, Commands, Query, Res, Transform, Trigger},
+    prelude::{ChildOf, Commands, Query, Res, Transform},
 };
-use ragnarok_act::events::ActorSound;
+use bevy_ragnarok_act::events::ActorSound;
 use ragnarok_rebuild_bevy::audio::{AudioSettings, Sound};
 
 pub struct Plugin;

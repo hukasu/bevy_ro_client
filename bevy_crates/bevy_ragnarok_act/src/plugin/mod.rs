@@ -21,10 +21,7 @@ use bevy_scene::SceneSpawner;
 use log::trace;
 use resources::ActorSceneQueue;
 
-use crate::{
-    assets::ActorAnimations,
-    components::{Actor, ActorAnchor, ActorFacing, ActorLayer, ActorPlayer},
-};
+use crate::{Actor, ActorAnchor, ActorFacing, ActorLayer, ActorPlayer, assets::ActorAnimations};
 
 use self::loader::AssetLoader;
 

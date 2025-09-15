@@ -9,44 +9,10 @@ edition = "2024"
 workspace = true
 
 [features]
-bevy = [
-    "dep:bevy_animation",
-    "dep:bevy_app",
-    "dep:bevy_asset",
-    "dep:bevy_audio",
-    "dep:bevy_camera",
-    "dep:bevy_color",
-    "dep:bevy_ecs",
-    "dep:bevy_math",
-    "dep:bevy_mesh",
-    "dep:bevy_platform",
-    "dep:bevy_reflect",
-    "dep:bevy_render",
-    "dep:bevy_scene",
-    "dep:bevy_transform",
-]
 # Warnings while loading the act
 warning = ["ragnarok_rebuild_common/warning"]
-# Graphical debugging of meshes
-debug = ["dep:bevy_gizmos"]
 
 [dependencies]
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
-
-bevy_animation = { workspace = true, default-features = false, optional = true }
-bevy_app = { workspace = true, default-features = false, optional = true }
-bevy_asset = { workspace = true, default-features = false, optional = true }
-bevy_audio = { workspace = true, default-features = false, optional = true }
-bevy_camera = { workspace = true, default-features = false, optional = true }
-bevy_color = { workspace = true, default-features = false, optional = true }
-bevy_ecs = { workspace = true, default-features = false, optional = true }
-bevy_gizmos = { workspace = true, default-features = false, optional = true }
-bevy_math = { workspace = true, default-features = false, optional = true }
-bevy_mesh = { workspace = true, default-features = false, optional = true }
-bevy_platform = { workspace = true, default-features = false, optional = true }
-bevy_reflect = { workspace = true, default-features = false, optional = true }
-bevy_render = { workspace = true, default-features = false, optional = true }
-bevy_scene = { workspace = true, default-features = false, optional = true }
-bevy_transform = { workspace = true, default-features = false, optional = true }
 
 log = { workspace = true }

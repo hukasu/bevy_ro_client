@@ -1217,6 +1217,30 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "663636374855632fb2e61eec81a73b51c5e96a5f847a06d0628fdea30a7aa620"
 
 [[package]]
+name = "bevy_ragnarok_act"
+version = "0.1.0"
+dependencies = [
+ "bevy_animation",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_audio",
+ "bevy_camera",
+ "bevy_color",
+ "bevy_ecs",
+ "bevy_gizmos",
+ "bevy_math",
+ "bevy_mesh",
+ "bevy_platform",
+ "bevy_reflect",
+ "bevy_render",
+ "bevy_scene",
+ "bevy_transform",
+ "log",
+ "ragnarok_act",
+ "ragnarok_rebuild_common",
+]
+
+[[package]]
 name = "bevy_reflect"
 version = "0.17.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4440,21 +4464,6 @@ checksum = "019b4b213425016d7d84a153c4c73afb0946fbb4840e4eece7ba8848b9d6da22"
 name = "ragnarok_act"
 version = "0.1.0"
 dependencies = [
- "bevy_animation",
- "bevy_app",
- "bevy_asset",
- "bevy_audio",
- "bevy_camera",
- "bevy_color",
- "bevy_ecs",
- "bevy_gizmos",
- "bevy_math",
- "bevy_mesh",
- "bevy_platform",
- "bevy_reflect",
- "bevy_render",
- "bevy_scene",
- "bevy_transform",
  "log",
  "ragnarok_rebuild_common",
 ]
@@ -4533,7 +4542,7 @@ name = "ragnarok_rebuild_client"
 version = "0.1.0"
 dependencies = [
  "bevy",
- "ragnarok_act",
+ "bevy_ragnarok_act",
  "ragnarok_grf",
  "ragnarok_pal",
  "ragnarok_rebuild_bevy",

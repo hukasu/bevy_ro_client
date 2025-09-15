@@ -13,12 +13,11 @@ use bevy::{
     app::{Startup, Update},
     asset::AssetServer,
     color::Color,
-    ecs::children,
+    ecs::{children, lifecycle::Add, observer::On},
     math::{Quat, Vec3},
     prelude::{
         in_state, resource_changed, ClearColor, Commands, Entity, IntoScheduleConfigs, Name,
-        NextState, Observer, OnAdd, Query, Res, ResMut, SpawnRelated, Transform, Trigger,
-        Visibility, With,
+        NextState, Observer, Query, Res, ResMut, SpawnRelated, Transform, Visibility, With,
     },
 };
 
@@ -97,7 +96,7 @@ fn skip_login(
 }
 
 fn attach_world_to_game(
-    trigger: Trigger<OnAdd, World>,
+    event: On<Add, World>,
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
@@ -105,17 +104,15 @@ fn attach_world_to_game(
         return;
     };
 
-    commands.entity(game).add_child(trigger.entity);
+    commands.entity(game).add_child(event.entity);
 }
 
-fn attach_entity_to_game(trigger: Trigger<OnAdd, entities::Entity>, mut commands: Commands) {
-    commands
-        .entity(trigger.observer())
-        .add_child(trigger.entity);
+fn attach_entity_to_game(event: On<Add, entities::Entity>, mut commands: Commands) {
+    commands.entity(event.observer()).add_child(event.entity);
 }
 
 fn attach_bgm_to_game(
-    trigger: Trigger<OnAdd, Bgm>,
+    event: On<Add, Bgm>,
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
@@ -123,11 +120,11 @@ fn attach_bgm_to_game(
         return;
     };
 
-    commands.entity(game).add_child(trigger.entity);
+    commands.entity(game).add_child(event.entity);
 }
 
 fn attach_sound_to_game(
-    trigger: Trigger<OnAdd, Sound>,
+    event: On<Add, Sound>,
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
@@ -135,7 +132,7 @@ fn attach_sound_to_game(
         return;
     };
 
-    commands.entity(game).add_child(trigger.entity);
+    commands.entity(game).add_child(event.entity);
 }
 
 fn update_world_transform(
