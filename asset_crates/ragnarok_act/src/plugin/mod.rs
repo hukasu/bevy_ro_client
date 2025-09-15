@@ -1,5 +1,5 @@
 #[cfg(feature = "debug")]
-mod debug;
+pub mod debug;
 mod loader;
 mod resources;
 
