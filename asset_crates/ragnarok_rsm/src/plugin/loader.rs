@@ -3,9 +3,9 @@ use std::path::{Path, PathBuf};
 use bevy_animation::{
     AnimationClip, AnimationPlayer, AnimationTarget, AnimationTargetId,
     graph::{AnimationGraph, AnimationGraphHandle},
-    prelude::AnimationTransitions,
 };
 use bevy_asset::{AssetLoader as BevyAssetLoader, Handle, LoadContext, io::Reader};
+use bevy_camera::visibility::Visibility;
 use bevy_ecs::{
     bundle::Bundle,
     entity::Entity,
@@ -15,9 +15,9 @@ use bevy_ecs::{
     world::World,
 };
 use bevy_image::Image;
+use bevy_mesh::Mesh3d;
 use bevy_pbr::MeshMaterial3d;
 use bevy_platform::collections::{HashMap, HashSet};
-use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
@@ -148,7 +148,6 @@ impl SceneBuilder {
 
         (
             AnimationPlayer::default(),
-            AnimationTransitions::new(),
             AnimationGraphHandle(
                 load_context.add_labeled_asset("AnimationGraph".to_string(), animation_graph),
             ),
@@ -203,10 +202,12 @@ impl SceneBuilder {
     }
 }
 
+#[derive(Clone)]
 struct MeshList {
     meshes: Vec<MeshListItem>,
 }
 
+#[derive(Clone)]
 struct MeshListItem {
     name: Name,
     transform: Transform,
@@ -297,19 +298,19 @@ impl MeshList {
 }
 
 impl SpawnableList<ChildOf> for MeshList {
-    fn spawn(self, world: &mut World, entity: Entity) {
-        for item in self.meshes {
+    fn spawn(this: bevy_ecs::ptr::MovingPtr<'_, Self>, world: &mut World, entity: Entity) {
+        for item in &this.meshes {
             let animation_target = AnimationTarget {
                 id: AnimationTargetId::from_name(&item.name),
                 player: item.animation_player,
             };
             world.spawn((
                 ChildOf(entity),
-                item.name,
+                item.name.clone(),
                 item.transform,
                 Visibility::default(),
                 animation_target,
-                Children::spawn((item.primitives, item.children)),
+                Children::spawn((item.primitives.clone(), item.children.clone())),
             ));
         }
     }
@@ -318,11 +319,14 @@ impl SpawnableList<ChildOf> for MeshList {
         self.meshes.len()
     }
 }
+
+#[derive(Clone)]
 struct PrimitiveList {
     transform: Transform,
     primitives: Vec<PrimitiveListItem>,
 }
 
+#[derive(Clone)]
 struct PrimitiveListItem {
     name: Name,
     mesh: Handle<bevy_mesh::Mesh>,
@@ -412,13 +416,13 @@ impl PrimitiveList {
 }
 
 impl SpawnableList<ChildOf> for PrimitiveList {
-    fn spawn(self, world: &mut World, entity: Entity) {
+    fn spawn(this: bevy_ecs::ptr::MovingPtr<'_, Self>, world: &mut World, entity: Entity) {
         world.spawn((
             ChildOf(entity),
             Name::new("Primitives"),
-            self.transform,
+            this.transform,
             Visibility::default(),
-            Children::spawn(SpawnIter(self.primitives.into_iter().map(|item| {
+            Children::spawn(SpawnIter(this.primitives.clone().into_iter().map(|item| {
                 (
                     item.name,
                     Mesh3d(item.mesh),

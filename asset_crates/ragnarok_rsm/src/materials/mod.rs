@@ -1,25 +1,16 @@
 use std::marker::PhantomData;
 
-use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, weak_handle};
+use bevy_asset::{Asset, AssetApp, Handle, embedded_asset};
 use bevy_image::Image;
+use bevy_mesh::MeshVertexBufferLayoutRef;
 use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin};
 use bevy_reflect::Reflect;
 use bevy_render::{
     RenderDebugFlags,
     alpha::AlphaMode,
-    mesh::MeshVertexBufferLayoutRef,
-    render_resource::{
-        AsBindGroup, Face, RenderPipelineDescriptor, Shader, ShaderRef,
-        SpecializedMeshPipelineError,
-    },
+    render_resource::{AsBindGroup, Face, RenderPipelineDescriptor, SpecializedMeshPipelineError},
 };
-
-const RSM_VERTEX_SHADER_HANDLE: Handle<Shader> =
-    weak_handle!("6f222d4d-294c-4d81-b766-0f49d6d03320");
-const RSM_PREPASS_SHADER_HANDLE: Handle<Shader> =
-    weak_handle!("c017affd-8ac8-40cc-8948-03aeff34d07e");
-const RSM_FRAGMENT_SHADER_HANDLE: Handle<Shader> =
-    weak_handle!("d13565d8-8786-4a32-a975-1d5f63c5f7ec");
+use bevy_shader::ShaderRef;
 
 pub struct Plugin;
 
@@ -36,24 +27,9 @@ impl bevy_app::Plugin for Plugin {
                 debug_flags: RenderDebugFlags::empty(),
                 _marker: PhantomData,
             });
-        load_internal_asset!(
-            app,
-            RSM_FRAGMENT_SHADER_HANDLE,
-            "shaders/rsm_fragment_shader.wgsl",
-            Shader::from_wgsl
-        );
-        load_internal_asset!(
-            app,
-            RSM_PREPASS_SHADER_HANDLE,
-            "shaders/rsm_prepass_shader.wgsl",
-            Shader::from_wgsl
-        );
-        load_internal_asset!(
-            app,
-            RSM_VERTEX_SHADER_HANDLE,
-            "shaders/rsm_vertex_shader.wgsl",
-            Shader::from_wgsl
-        );
+        embedded_asset!(app, "shaders/rsm_fragment_shader.wgsl");
+        embedded_asset!(app, "shaders/rsm_prepass_shader.wgsl");
+        embedded_asset!(app, "shaders/rsm_vertex_shader.wgsl");
     }
 }
 
@@ -83,23 +59,23 @@ impl Material for RsmMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        RSM_VERTEX_SHADER_HANDLE.into()
+        "embedded://ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        RSM_VERTEX_SHADER_HANDLE.into()
+        "embedded://ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        RSM_FRAGMENT_SHADER_HANDLE.into()
+        "embedded://ragnarok_rsm/materials/shaders/rsm_fragment_shader.wgsl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        RSM_PREPASS_SHADER_HANDLE.into()
+        "embedded://ragnarok_rsm/materials/shaders/rsm_prepass_shader.wgsl".into()
     }
 
     fn specialize(
-        _pipeline: &MaterialPipeline<Self>,
+        _pipeline: &MaterialPipeline,
         descriptor: &mut RenderPipelineDescriptor,
         _layout: &MeshVertexBufferLayoutRef,
         key: MaterialPipelineKey<Self>,
@@ -115,10 +91,10 @@ impl Material for RsmMaterial {
             Some(Face::Back)
         };
 
-        if key.bind_group_data.double_sided {
-            if let Some(frag) = &mut descriptor.fragment {
-                frag.shader_defs.push("RSM_MATERIAL_DOUBLE_SIDED".into());
-            }
+        if key.bind_group_data.double_sided
+            && let Some(frag) = &mut descriptor.fragment
+        {
+            frag.shader_defs.push("RSM_MATERIAL_DOUBLE_SIDED".into());
         }
 
         Ok(())

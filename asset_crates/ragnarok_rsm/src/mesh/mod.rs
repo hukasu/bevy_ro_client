@@ -19,9 +19,9 @@ use bevy_animation::{
 #[cfg(feature = "bevy")]
 use bevy_asset::RenderAssetUsages;
 #[cfg(feature = "bevy")]
-use bevy_math::{Mat4, Quat, Vec3, curve::UnevenSampleAutoCurve};
+use bevy_camera::primitives::Aabb;
 #[cfg(feature = "bevy")]
-use bevy_render::primitives::Aabb;
+use bevy_math::{Mat4, Quat, Vec3, curve::UnevenSampleAutoCurve};
 #[cfg(feature = "bevy")]
 use bevy_transform::components::Transform;
 

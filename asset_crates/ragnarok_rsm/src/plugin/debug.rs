@@ -1,5 +1,6 @@
 use bevy_app::PostUpdate;
 use bevy_asset::Assets;
+use bevy_camera::visibility::{ViewVisibility, VisibilitySystems};
 use bevy_color::{Color, palettes};
 use bevy_ecs::{
     entity::Entity,
@@ -12,11 +13,8 @@ use bevy_ecs::{
 };
 use bevy_gizmos::gizmos::Gizmos;
 use bevy_math::Vec3;
+use bevy_mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues};
 use bevy_reflect::Reflect;
-use bevy_render::{
-    mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues},
-    view::{ViewVisibility, VisibilitySystems},
-};
 use bevy_transform::components::GlobalTransform;
 
 const NORMAL_GIZMOS_LENGHT: f32 = 0.5;
