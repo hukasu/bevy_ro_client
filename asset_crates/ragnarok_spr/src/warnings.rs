@@ -35,7 +35,7 @@ impl Display for SprReport<'_> {
                     .any(|index| non_zero_transparency.contains(index))
             })
         {
-            writeln!(f, "Uses transparency.").unwrap();
+            writeln!(f, "Uses transparency.")?;
         }
 
         let close_to_key = close_to_key_palette(&self.palette).collect::<Vec<_>>();
@@ -47,7 +47,7 @@ impl Display for SprReport<'_> {
                     .any(|index| close_to_key.contains(index))
             })
         {
-            writeln!(f, "Uses colors close to key.").unwrap();
+            writeln!(f, "Uses colors close to key.")?;
         }
 
         if self.palette.colors[0].alpha != 0 {
@@ -55,8 +55,7 @@ impl Display for SprReport<'_> {
                 f,
                 "Has palette key with non-zero alpha of {}.",
                 self.palette.colors[0].alpha
-            )
-            .unwrap();
+            )?;
         }
 
         Ok(())
