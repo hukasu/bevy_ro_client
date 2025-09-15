@@ -67,7 +67,11 @@ impl Default for SpritesheetIndex {
 
 impl Animatable for SpritesheetIndex {
     fn blend(mut inputs: impl Iterator<Item = bevy_animation::prelude::BlendInput<Self>>) -> Self {
-        unsafe { inputs.next().unwrap_unchecked().value }
+        if let Some(input) = inputs.next() {
+            input.value
+        } else {
+            panic!("SpritesheetIndex was empty")
+        }
     }
 
     fn interpolate(a: &Self, _b: &Self, _time: f32) -> Self {
