@@ -1,12 +1,9 @@
-use bevy_animation::{
-    AnimationPlayer,
-    prelude::{Animatable, AnimationTransitions},
-};
+use bevy_animation::{AnimationPlayer, prelude::Animatable};
 use bevy_asset::Handle;
+use bevy_camera::visibility::Visibility;
 use bevy_color::LinearRgba;
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
 use bevy_reflect::{Reflect, prelude::ReflectDefault};
-use bevy_render::view::Visibility;
 use bevy_transform::components::Transform;
 
 use crate::assets::ActorAnimations;
@@ -35,7 +32,7 @@ pub enum ActorFacing {
 
 #[derive(Debug, Default, Clone, Copy, Component, Reflect)]
 #[reflect(Clone, Component)]
-#[require(AnimationPlayer, AnimationTransitions)]
+#[require(AnimationPlayer)]
 pub struct ActorPlayer;
 
 #[derive(Debug, Default, Clone, Copy, Component, Reflect)]

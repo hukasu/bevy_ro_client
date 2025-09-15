@@ -3,23 +3,25 @@ pub mod debug;
 mod loader;
 mod resources;
 
-use std::time::Duration;
-
-use bevy_animation::{AnimationPlayer, graph::AnimationNodeIndex, prelude::AnimationTransitions};
-use bevy_app::{Animation, PostUpdate, Update};
-use bevy_asset::{AssetApp, Assets, Handle, weak_handle};
+use bevy_animation::{
+    AnimationPlayer,
+    graph::{AnimationGraphHandle, AnimationNodeIndex},
+};
+use bevy_app::{AnimationSystems, PostUpdate, Update};
+use bevy_asset::{AssetApp, Assets, Handle, uuid_handle};
+use bevy_camera::visibility::{Visibility, VisibilitySystems};
 use bevy_ecs::{
     entity::Entity,
-    observer::Trigger,
+    lifecycle::Add,
+    observer::On,
     query::{Changed, With},
     schedule::IntoScheduleConfigs,
     system::{Local, Query, Res, ResMut},
-    world::OnAdd,
 };
 use bevy_math::{Vec2, Vec3, prelude::Plane3d};
 use bevy_mesh::Mesh;
-use bevy_render::view::{Visibility, VisibilitySystems};
 use bevy_scene::SceneSpawner;
+use log::trace;
 use resources::ActorSceneQueue;
 
 use crate::{
@@ -29,7 +31,7 @@ use crate::{
 
 use self::loader::AssetLoader;
 
-const IDENTITY_PLANE_HANDLE: Handle<Mesh> = weak_handle!("e19c5b46-5ee0-452a-8d60-1d8b0da1fdf3");
+const IDENTITY_PLANE_HANDLE: Handle<Mesh> = uuid_handle!("e19c5b46-5ee0-452a-8d60-1d8b0da1fdf3");
 
 pub struct Plugin {
     pub audio_path_prefix: std::path::PathBuf,
@@ -64,22 +66,24 @@ impl bevy_app::Plugin for Plugin {
             .add_systems(
                 PostUpdate,
                 update_visibility
-                    .after(Animation)
+                    .after(AnimationSystems)
                     .before(VisibilitySystems::CheckVisibility),
             );
 
-        app.world_mut().resource_mut::<Assets<Mesh>>().insert(
+        if let Err(err) = app.world_mut().resource_mut::<Assets<Mesh>>().insert(
             &IDENTITY_PLANE_HANDLE,
             Plane3d::new(Vec3::NEG_Z, Vec2::splat(0.5)).into(),
-        );
+        ) {
+            panic!("{err}");
+        };
 
         #[cfg(feature = "debug")]
         app.add_plugins(debug::Plugin);
     }
 }
 
-fn spawn_actor_scene(trigger: Trigger<OnAdd, Actor>, mut queue: ResMut<ActorSceneQueue>) {
-    queue.push(trigger.target());
+fn spawn_actor_scene(event: On<Add, Actor>, mut queue: ResMut<ActorSceneQueue>) {
+    queue.push(event.entity);
 }
 
 fn update_actor_scene_queue_condition(queue: Res<ActorSceneQueue>) -> bool {
@@ -93,6 +97,7 @@ fn update_actor_scene_queue(
     actors: Query<&Actor>,
     actor_animations: Res<Assets<ActorAnimations>>,
 ) {
+    trace!("Draining {} from actor scene queue.", queue.len());
     for item in queue.drain(..) {
         if let Ok(actor) = actors.get(item) {
             if let Some(animation) = actor_animations.get(actor.actor.id()) {
@@ -107,16 +112,15 @@ fn update_actor_scene_queue(
 }
 
 fn start_idle_animation(
-    trigger: Trigger<OnAdd, ActorPlayer>,
-    mut actors: Query<(Entity, &mut AnimationPlayer, &mut AnimationTransitions), With<ActorPlayer>>,
+    event: On<Add, ActorPlayer>,
+    mut actors: Query<&mut AnimationPlayer, With<ActorPlayer>>,
 ) {
-    let Ok((entity, mut player, mut transitions)) = actors.get_mut(trigger.target()) else {
+    let actor = event.entity;
+    let Ok(mut player) = actors.get_mut(actor) else {
         unreachable!("Should have components at this point.");
     };
-    log::trace!("Starting animation of {}.", entity);
-    transitions
-        .play(player.as_mut(), AnimationNodeIndex::new(1), Duration::ZERO)
-        .repeat();
+    trace!("Starting animation of {}.", actor);
+    player.play(AnimationNodeIndex::new(1)).repeat();
 }
 
 fn update_visibility(mut actors: Query<(&mut Visibility, &ActorLayer), Changed<ActorLayer>>) {
@@ -125,5 +129,9 @@ fn update_visibility(mut actors: Query<(&mut Visibility, &ActorLayer), Changed<A
             true => *vis = Visibility::Inherited,
             false => *vis = Visibility::Hidden,
         }
+        trace!(
+            "Layer {:?} had its visibility set to {:?}.",
+            layer.spritesheet_index, vis
+        );
     }
 }

@@ -8,9 +8,10 @@ use bevy_animation::{
     AnimationClip, AnimationPlayer, AnimationTarget, AnimationTargetId, animated_field,
     gltf_curves::SteppedKeyframeCurve,
     graph::{AnimationGraph, AnimationGraphHandle},
-    prelude::{AnimatableCurve, AnimatableProperty, AnimatedField, AnimationTransitions},
+    prelude::{AnimatableCurve, AnimatableProperty, AnimatedField},
 };
 use bevy_asset::{Handle, LoadContext, io::Reader};
+use bevy_camera::visibility::Visibility;
 use bevy_color::{Color, LinearRgba};
 use bevy_ecs::{
     hierarchy::Children,
@@ -19,9 +20,9 @@ use bevy_ecs::{
     world::World,
 };
 use bevy_math::{Quat, Vec3};
+use bevy_mesh::Mesh3d;
 use bevy_platform::collections::HashMap;
 use bevy_reflect::{FromReflect, GetTypeRegistration, Typed};
-use bevy_render::{mesh::Mesh3d, view::Visibility};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
@@ -99,7 +100,6 @@ impl AssetLoader {
             Transform::from_scale(Vec3::splat(ACTOR_SCALE_FACTOR)),
             Visibility::default(),
             AnimationPlayer::default(),
-            AnimationTransitions::default(),
             AnimationGraphHandle(animation_graph),
             Children::spawn((
                 SpawnIter((0..max_layers).map(move |i| {
