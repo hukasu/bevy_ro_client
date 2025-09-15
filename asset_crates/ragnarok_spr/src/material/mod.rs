@@ -76,7 +76,6 @@ impl Material for SprIndexedMaterial {
         _layout: &MeshVertexBufferLayoutRef,
         _key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
-        println!("{:?}", descriptor.vertex.shader_defs);
         descriptor
             .vertex
             .shader_defs
