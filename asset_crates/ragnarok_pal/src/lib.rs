@@ -76,6 +76,7 @@ impl From<Pal> for Image {
             } else {
                 RenderAssetUsages::RENDER_WORLD
             },
+            ..Default::default()
         }
     }
 }
