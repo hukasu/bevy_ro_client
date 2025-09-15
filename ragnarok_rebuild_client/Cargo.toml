@@ -10,8 +10,8 @@ workspace = true
 
 [features]
 with-inspector = [
-    "bevy-inspector-egui",
-    "bevy_flycam",
+    # "bevy-inspector-egui",
+    # "bevy_flycam",
     # "iyes_perf_ui",
     "ragnarok_rebuild_bevy/debug",
     "bevy/default_font",
@@ -27,21 +27,35 @@ ragnarok_act = { path = "../asset_crates/ragnarok_act", features = ["bevy"] }
 ragnarok_grf = { path = "../asset_crates/ragnarok_grf", features = ["bevy"] }
 ragnarok_pal = { path = "../asset_crates/ragnarok_pal", features = ["bevy"] }
 ragnarok_rsm = { path = "../asset_crates/ragnarok_rsm", features = ["bevy"] }
+ragnarok_rsw = { path = "../asset_crates/ragnarok_rsw", features = ["bevy"] }
 ragnarok_spr = { path = "../asset_crates/ragnarok_spr", features = ["bevy"] }
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
 
 bevy = { workspace = true, default-features = false, features = [
+    "bevy_animation",
+    "bevy_pbr",
+    "bevy_post_process",
+    "bevy_remote",
+    "bevy_render",
+    "bevy_scene",
+    "bevy_sprite_render",
     "bevy_state",
     "bevy_text",
     "bevy_ui",
     "bevy_window",
+    "bevy_winit",
     "wayland",
-    "trace",
+    "animation",
     "multi_threaded",
+    "reflect_auto_register",
+    "sysinfo_plugin",
+    "tonemapping_luts",
+    "trace",
+    "zstd_rust",
 ] }
-bevy-inspector-egui = { workspace = true, optional = true }
-bevy_flycam = { workspace = true, optional = true }
+# bevy-inspector-egui = { workspace = true, optional = true }
+# bevy_flycam = { workspace = true, optional = true }
 # iyes_perf_ui = { workspace = true, optional = true }
 
 tungstenite = { workspace = true }

@@ -3,8 +3,11 @@ use bevy::{
     audio::SpatialListener,
     ecs::schedule::common_conditions::{not, resource_exists},
     math::bounding::RayCast3d,
+    pbr::{Atmosphere, AtmosphereSettings},
+    post_process::bloom::Bloom,
     prelude::{Camera, Camera3d, Commands, GlobalTransform, IntoScheduleConfigs, Query, With},
-    window::{PrimaryWindow, Window},
+    render::view::Hdr,
+    window::{CursorOptions, PrimaryWindow, Window},
 };
 use ragnarok_rebuild_bevy::assets::gat::TileRayCast;
 
@@ -26,15 +29,25 @@ impl bevy::app::Plugin for Plugin {
 }
 
 fn create_camera(mut commands: Commands) {
-    commands.spawn((Camera3d::default(), SpatialListener::default()));
+    commands.spawn((
+        Camera3d::default(),
+        Camera {
+            ..Default::default()
+        },
+        Hdr,
+        Atmosphere::EARTH,
+        AtmosphereSettings {
+            scene_units_to_m: 5.,
+            ..Default::default()
+        },
+        Bloom::NATURAL,
+        SpatialListener::default(),
+    ));
 }
 
-fn is_mouse_free(windows: Query<&Window, With<PrimaryWindow>>) -> bool {
-    if let Ok(primary_window) = windows.single() {
-        matches!(
-            primary_window.cursor_options.grab_mode,
-            bevy::window::CursorGrabMode::None
-        )
+fn is_mouse_free(windows: Query<&CursorOptions, With<PrimaryWindow>>) -> bool {
+    if let Ok(cursor_option) = windows.single() {
+        matches!(cursor_option.grab_mode, bevy::window::CursorGrabMode::None)
     } else {
         // If there is no window, there is no mouse
         false

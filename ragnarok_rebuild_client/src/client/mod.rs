@@ -4,33 +4,38 @@ mod audio;
 mod camera;
 pub mod entities;
 mod loading_screen;
+pub mod resources;
+pub mod states;
+
+use std::path::PathBuf;
 
 use bevy::{
-    app::{Plugin, Startup, Update},
+    app::{Startup, Update},
+    asset::AssetServer,
     color::Color,
+    ecs::children,
     math::{Quat, Vec3},
     prelude::{
         in_state, resource_changed, ClearColor, Commands, Entity, IntoScheduleConfigs, Name,
-        NextState, Observer, OnAdd, Query, Res, ResMut, Transform, Trigger, Visibility, With,
+        NextState, Observer, OnAdd, Query, Res, ResMut, SpawnRelated, Transform, Trigger,
+        Visibility, With,
     },
 };
 
 use ragnarok_rebuild_bevy::{
-    assets::{
-        gnd,
-        rsw::{self, LoadWorld, WorldLoaded},
-    },
+    assets::{gnd, paths},
     audio::{Bgm, Sound},
     WorldTransform,
 };
-
-use crate::states::GameState;
+use ragnarok_rsw::components::World;
+use resources::LoadingWorld;
+use states::GameState;
 
 use self::components::Game;
 
-pub struct ClientPlugin;
+pub struct Plugin;
 
-impl Plugin for ClientPlugin {
+impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(ClearColor(Color::BLACK))
             // Plugins
@@ -38,6 +43,7 @@ impl Plugin for ClientPlugin {
             .add_plugins(camera::Plugin)
             .add_plugins(entities::Plugin)
             .add_plugins(loading_screen::Plugin)
+            .add_plugins(states::Plugin)
             // Startup system
             .add_systems(Startup, start_up)
             .add_systems(Update, skip_login.run_if(in_state(GameState::Login)))
@@ -46,7 +52,6 @@ impl Plugin for ClientPlugin {
                 update_world_transform.run_if(resource_changed::<gnd::GroundScale>),
             )
             // Observers
-            .add_observer(change_to_game)
             .add_observer(attach_world_to_game)
             // TODO Change to observe on the the container entity
             // in 0.15
@@ -56,44 +61,43 @@ impl Plugin for ClientPlugin {
 }
 
 fn start_up(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>) {
-    commands
-        .spawn((
-            Name::new("RagnarokOnline"),
-            components::Game,
-            Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI)),
-            Visibility::default(),
-        ))
-        .with_children(|builder| {
-            builder.spawn((
+    commands.spawn((
+        Name::new("RagnarokOnline"),
+        components::Game,
+        Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI)),
+        Visibility::default(),
+        children![
+            (
                 Name::new("Playing sounds"),
                 Transform::default(),
                 Visibility::default(),
-            ));
-            builder.spawn((
+            ),
+            (
                 Name::new("Actors"),
                 Transform::default(),
                 Visibility::default(),
                 Observer::new(attach_entity_to_game),
-            ));
-        });
+            )
+        ],
+    ));
 
     next_state.set(GameState::Login);
 }
 
-fn skip_login(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>) {
-    commands.trigger(LoadWorld {
-        world: "prontera.rsw".into(),
+fn skip_login(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut next_state: ResMut<NextState<GameState>>,
+) {
+    commands.insert_resource(LoadingWorld {
+        world: asset_server.load(PathBuf::from(paths::WORLD_FILES_FOLDER).join("prontera.rsw")),
     });
 
     next_state.set(GameState::MapChange);
 }
 
-fn change_to_game(_trigger: Trigger<WorldLoaded>, mut next_state: ResMut<NextState<GameState>>) {
-    next_state.set(GameState::Game);
-}
-
 fn attach_world_to_game(
-    trigger: Trigger<OnAdd, rsw::World>,
+    trigger: Trigger<OnAdd, World>,
     mut commands: Commands,
     games: Query<Entity, With<Game>>,
 ) {
@@ -101,13 +105,13 @@ fn attach_world_to_game(
         return;
     };
 
-    commands.entity(game).add_child(trigger.target());
+    commands.entity(game).add_child(trigger.entity);
 }
 
 fn attach_entity_to_game(trigger: Trigger<OnAdd, entities::Entity>, mut commands: Commands) {
     commands
         .entity(trigger.observer())
-        .add_child(trigger.target());
+        .add_child(trigger.entity);
 }
 
 fn attach_bgm_to_game(
@@ -119,7 +123,7 @@ fn attach_bgm_to_game(
         return;
     };
 
-    commands.entity(game).add_child(trigger.target());
+    commands.entity(game).add_child(trigger.entity);
 }
 
 fn attach_sound_to_game(
@@ -131,7 +135,7 @@ fn attach_sound_to_game(
         return;
     };
 
-    commands.entity(game).add_child(trigger.target());
+    commands.entity(game).add_child(trigger.entity);
 }
 
 fn update_world_transform(

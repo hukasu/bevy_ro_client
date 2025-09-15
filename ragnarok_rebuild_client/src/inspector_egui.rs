@@ -16,11 +16,11 @@ use bevy::{
     transform::components::Transform,
 };
 
-use bevy_flycam::FlyCam;
-use bevy_inspector_egui::{
-    bevy_egui::{EguiPlugin, EguiPrimaryContextPass},
-    quick::WorldInspectorPlugin,
-};
+// use bevy_flycam::FlyCam;
+// use bevy_inspector_egui::{
+//     bevy_egui::{EguiPlugin, EguiPrimaryContextPass},
+//     quick::WorldInspectorPlugin,
+// };
 
 use ragnarok_act::components::Actor;
 use ragnarok_rebuild_bevy::assets::paths;
@@ -34,26 +34,29 @@ pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins((EguiPlugin::default(), WorldInspectorPlugin::default()))
+        app
+        // .add_plugins((EguiPlugin::default(), WorldInspectorPlugin::default()))
             .insert_resource(TeleportTextBox(String::new()))
             .add_systems(Startup, init_font_loading)
-            .add_systems(
-                Update,
-                check_loading_font.run_if(resource_exists::<LoadingFont>),
-            )
-            .add_systems(EguiPrimaryContextPass, teleport_windows);
+            // .add_systems(
+            //     Update,
+            //     check_loading_font.run_if(resource_exists::<LoadingFont>),
+            // )
+            // .add_systems(EguiPrimaryContextPass, teleport_windows)
+            ;
 
         // FlyCam
-        app.add_plugins(bevy_flycam::NoCameraPlayerPlugin)
-            .insert_resource(bevy_flycam::MovementSettings::default())
-            .add_systems(
-                Update,
-                toggle_flycam.run_if(input_just_pressed(KeyCode::KeyF)),
-            );
+        // app.add_plugins(bevy_flycam::NoCameraPlayerPlugin)
+        //     .insert_resource(bevy_flycam::MovementSettings::default())
+        //     .add_systems(
+        //         Update,
+        //         toggle_flycam.run_if(input_just_pressed(KeyCode::KeyF)),
+        //     );
 
-        app.add_plugins(iyes_perf_ui::PerfUiPlugin)
+        app
+            // .add_plugins(iyes_perf_ui::PerfUiPlugin)
             .add_plugins(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
-            .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin)
+            .add_plugins(bevy::diagnostic::EntityCountDiagnosticsPlugin::default())
             .add_plugins(bevy::diagnostic::SystemInformationDiagnosticsPlugin);
 
         app.add_systems(PostStartup, spawn_palette);
@@ -63,43 +66,43 @@ impl bevy::app::Plugin for Plugin {
 #[derive(Debug, Resource, Deref, DerefMut)]
 struct TeleportTextBox(pub String);
 
-fn teleport_windows(
-    mut contexts: bevy_inspector_egui::bevy_egui::EguiContexts,
-    mut commands: Commands,
-    mut text_box: ResMut<TeleportTextBox>,
-    mut next_state: ResMut<NextState<GameState>>,
-    asset_server: Res<AssetServer>,
-) {
-    if let Ok(ctx) = contexts.ctx_mut() {
-        bevy_inspector_egui::bevy_egui::egui::Window::new("Teleport").show(ctx, |ui| {
-            ui.label("Destination");
-            let text = (**text_box).clone();
-            if ui.text_edit_singleline(&mut **text_box).lost_focus() && !text.is_empty() {
-                next_state.set(GameState::MapChange);
-                commands.insert_resource(LoadingWorld {
-                    world: asset_server.load(PathBuf::from(paths::WORLD_FILES_FOLDER).join(text)),
-                });
-                text_box.clear();
-            }
-        });
-    }
-}
-
-fn toggle_flycam(
-    mut commands: Commands,
-    camera: Single<Entity, With<Camera>>,
-    flycams: Query<&FlyCam>,
-) {
-    if flycams.contains(*camera) {
-        commands.entity(*camera).remove::<FlyCam>();
-    } else {
-        commands.entity(*camera).insert(FlyCam);
-    }
-}
-
-// fn spawn_perf_ui(mut commands: Commands) {
-//     commands.spawn(iyes_perf_ui::entries::PerfUiBundle::default());
+// fn teleport_windows(
+//     mut contexts: bevy_inspector_egui::bevy_egui::EguiContexts,
+//     mut commands: Commands,
+//     mut text_box: ResMut<TeleportTextBox>,
+//     mut next_state: ResMut<NextState<GameState>>,
+//     asset_server: Res<AssetServer>,
+// ) {
+//     if let Ok(ctx) = contexts.ctx_mut() {
+//         bevy_inspector_egui::bevy_egui::egui::Window::new("Teleport").show(ctx, |ui| {
+//             ui.label("Destination");
+//             let text = (**text_box).clone();
+//             if ui.text_edit_singleline(&mut **text_box).lost_focus() && !text.is_empty() {
+//                 next_state.set(GameState::MapChange);
+//                 commands.insert_resource(LoadingWorld {
+//                     world: asset_server.load(PathBuf::from(paths::WORLD_FILES_FOLDER).join(text)),
+//                 });
+//                 text_box.clear();
+//             }
+//         });
+//     }
 // }
+
+// fn toggle_flycam(
+//     mut commands: Commands,
+//     camera: Single<Entity, With<Camera>>,
+//     flycams: Query<&FlyCam>,
+// ) {
+//     if flycams.contains(*camera) {
+//         commands.entity(*camera).remove::<FlyCam>();
+//     } else {
+//         commands.entity(*camera).insert(FlyCam);
+//     }
+// }
+
+// // fn spawn_perf_ui(mut commands: Commands) {
+// //     commands.spawn(iyes_perf_ui::entries::PerfUiBundle::default());
+// // }
 
 #[derive(Debug, Resource)]
 struct LoadingFont(Handle<Font>);
@@ -109,36 +112,36 @@ fn init_font_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.insert_resource(LoadingFont(font));
 }
 
-fn check_loading_font(
-    mut commands: Commands,
-    mut contexts: bevy_inspector_egui::bevy_egui::EguiContexts,
-    loading_font: Res<LoadingFont>,
-    fonts: Res<Assets<Font>>,
-) {
-    let Some(font) = fonts.get(&loading_font.0) else {
-        return;
-    };
+// fn check_loading_font(
+//     mut commands: Commands,
+//     mut contexts: bevy_inspector_egui::bevy_egui::EguiContexts,
+//     loading_font: Res<LoadingFont>,
+//     fonts: Res<Assets<Font>>,
+// ) {
+//     let Some(font) = fonts.get(&loading_font.0) else {
+//         return;
+//     };
 
-    commands.remove_resource::<LoadingFont>();
+//     commands.remove_resource::<LoadingFont>();
 
-    let font_data = Arc::new(bevy_inspector_egui::egui::FontData::from_owned(
-        Vec::from_iter(font.data.iter().copied()),
-    ));
-    let mut font_definitons = bevy_inspector_egui::egui::FontDefinitions::default();
-    font_definitons
-        .font_data
-        .insert(FONT_NAME.to_owned(), font_data);
+//     let font_data = Arc::new(bevy_inspector_egui::egui::FontData::from_owned(
+//         Vec::from_iter(font.data.iter().copied()),
+//     ));
+//     let mut font_definitons = bevy_inspector_egui::egui::FontDefinitions::default();
+//     font_definitons
+//         .font_data
+//         .insert(FONT_NAME.to_owned(), font_data);
 
-    let font_family = bevy_inspector_egui::egui::FontFamily::Proportional;
-    let Some(font_family_store) = font_definitons.families.get_mut(&font_family) else {
-        return;
-    };
-    font_family_store.insert(0, FONT_NAME.to_owned());
+//     let font_family = bevy_inspector_egui::egui::FontFamily::Proportional;
+//     let Some(font_family_store) = font_definitons.families.get_mut(&font_family) else {
+//         return;
+//     };
+//     font_family_store.insert(0, FONT_NAME.to_owned());
 
-    if let Ok(ctx) = contexts.ctx_mut() {
-        ctx.set_fonts(font_definitons)
-    };
-}
+//     if let Ok(ctx) = contexts.ctx_mut() {
+//         ctx.set_fonts(font_definitons)
+//     };
+// }
 
 fn spawn_palette(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((

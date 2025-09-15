@@ -5,16 +5,15 @@ use std::time::Duration;
 use bevy::{
     pbr::MeshMaterial3d,
     prelude::{
-        AnimationPlayer, AnimationTransitions, AppExtStates, ChildOf, Children, Entity, Name,
-        OnEnter, Query, Transform,
+        AnimationPlayer, AppExtStates, ChildOf, Children, Entity, Name, OnEnter, Query, Transform,
     },
 };
 
-use ragnarok_rebuild_bevy::assets::rsw::AnimatedProp;
 use ragnarok_rsm::{
     components::{Model, ModelInvertedMaterial},
     materials::RsmMaterial,
 };
+use ragnarok_rsw::components::AnimatedProp;
 
 pub use self::game::GameState;
 pub struct Plugin;
@@ -30,11 +29,11 @@ impl bevy::app::Plugin for Plugin {
 
 fn start_animations(
     animated_props: Query<(&Name, &AnimatedProp, &Children)>,
-    mut models: Query<(&Model, &mut AnimationPlayer, &mut AnimationTransitions)>,
+    mut models: Query<(&Model, &mut AnimationPlayer)>,
 ) {
     for (name, prop, children) in animated_props {
         for child in children {
-            if let Ok((model, mut player, mut transitions)) = models.get_mut(*child) {
+            if let Ok((model, mut player)) = models.get_mut(*child) {
                 let Some(animation) = &model.animation else {
                     continue;
                 };
@@ -43,22 +42,14 @@ fn start_animations(
                     0 => (),
                     1 => {
                         bevy::log::trace!("Starting animation of {}.", name);
-                        transitions
-                            .play(
-                                &mut player,
-                                animation.animation_node_index,
-                                Duration::default(),
-                            )
+                        player
+                            .play(animation.animation_node_index)
                             .set_speed(prop.animation_speed);
                     }
                     2 => {
                         bevy::log::trace!("Starting repeating animation of {}.", name);
-                        transitions
-                            .play(
-                                &mut player,
-                                animation.animation_node_index,
-                                Duration::default(),
-                            )
+                        player
+                            .play(animation.animation_node_index)
                             .set_speed(prop.animation_speed)
                             .repeat();
                     }

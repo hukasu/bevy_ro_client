@@ -1,5 +1,6 @@
 use bevy::{
     audio::{AudioPlayer, PlaybackMode, PlaybackSettings, SpatialScale, Volume},
+    ecs::observer::On,
     prelude::{ChildOf, Commands, Query, Res, Transform, Trigger},
 };
 use ragnarok_act::events::ActorSound;
@@ -14,25 +15,23 @@ impl bevy::app::Plugin for Plugin {
 }
 
 fn play_actor_sound(
-    trigger: Trigger<ActorSound>,
+    actor_sound: On<ActorSound>,
     mut commands: Commands,
     transforms: Query<&Transform>,
     parents: Query<&ChildOf>,
     audio_settings: Res<AudioSettings>,
 ) {
-    let event = trigger.event();
-
     // The animation player is 1 level deeper than the entity
     let parent = parents
-        .get(trigger.target())
+        .get(actor_sound.trigger().animation_player)
         .map(|childof| childof.parent())
-        .unwrap_or(trigger.target());
+        .unwrap_or(actor_sound.trigger().animation_player);
 
     commands.spawn((
-        event.name().clone(),
+        actor_sound.name().clone(),
         Sound,
         transforms.get(parent).copied().unwrap_or_default(),
-        AudioPlayer(event.sound().clone()),
+        AudioPlayer(actor_sound.sound().clone()),
         PlaybackSettings {
             mode: PlaybackMode::Despawn,
             volume: Volume::Linear(audio_settings.effects_volume),
@@ -41,6 +40,7 @@ fn play_actor_sound(
             spatial: true,
             spatial_scale: Some(SpatialScale::new(5. / 50.)),
             muted: false,
+            ..Default::default()
         },
     ));
 }

@@ -1,7 +1,6 @@
 mod client;
 #[cfg(feature = "with-inspector")]
 mod inspector_egui;
-mod states;
 #[cfg(not(feature = "with-inspector"))]
 mod other {
     use bevy::{
@@ -9,7 +8,8 @@ mod other {
         math::Vec3,
         prelude::{App, Camera3d, IntoScheduleConfigs, Startup, Transform},
     };
-    use ragnarok_rebuild_bevy::{assets::rsw::LoadWorld, tables};
+    use ragnarok_rebuild_bevy::tables;
+    use ragnarok_rsw::events::LoadWorld;
 
     pub struct Plugin;
 
@@ -23,11 +23,6 @@ mod other {
     }
 
     fn spawn_camera(mut commands: Commands) {
-        commands.spawn((
-            Camera3d::default(),
-            Transform::from_xyz(0., 500., 30.).looking_at(Vec3::new(0., 0., 0.), Vec3::NEG_Z),
-        ));
-
         commands.trigger(LoadWorld {
             world: "prontera.rsw".into(),
         });
@@ -38,9 +33,10 @@ use bevy::{
     app::{App, PluginGroup, PluginGroupBuilder},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
     image::ImageSamplerDescriptor,
+    light::PointLightShadowMap,
     log::LogPlugin,
-    pbr::PointLightShadowMap,
     prelude::ImagePlugin,
+    remote::RemotePlugin,
     window::{Window, WindowPlugin},
     DefaultPlugins,
 };
@@ -71,28 +67,46 @@ fn main() {
         );
     // Plugins
     app.add_plugins(
-            DefaultPlugins
-                .build()
-                .set(AssetPlugin {
-                    file_path: BASE_DATA_FOLDER.to_owned(),
+        DefaultPlugins
+            .build()
+            .set(AssetPlugin {
+                file_path: BASE_DATA_FOLDER.to_owned(),
+                ..Default::default()
+            })
+            .set(LogPlugin {
+                level: bevy::log::Level::INFO,
+                filter: [
+                    "wgpu=error".to_owned(),
+                    "naga=warn".to_owned(),
+                    format!("ragnarok_rebuild_client={log_level}"),
+                    format!("ragnarok_rebuild_bevy={log_level}"),
+                    format!("ragnarok_rebuild_assets={log_level}"),
+                    format!("ragnarok_rebuild_common={log_level}"),
+                    format!("ragnarok_act={log_level}"),
+                    format!("ragnarok_grf={log_level}"),
+                    format!("ragnarok_pal={log_level}"),
+                    format!("ragnarok_rsm={log_level}"),
+                    format!("ragnarok_rsw={log_level}"),
+                    format!("ragnarok_spr={log_level}"),
+                ]
+                .join(","),
+                custom_layer: |_| None,
+                ..Default::default()
+            })
+            .set(ImagePlugin {
+                default_sampler: ImageSamplerDescriptor::nearest(),
+            })
+            .set(WindowPlugin {
+                primary_window: Some(Window {
+                    title: "Ragnarok Rebuild".into(),
+                    present_mode: bevy::window::PresentMode::AutoNoVsync,
                     ..Default::default()
-                })
-                .set(LogPlugin {
-                    level: bevy::log::Level::INFO,
-                    filter: format!("wgpu=error,naga=warn,ragnarok_rebuild_client={log_level},ragnarok_rebuild_bevy={log_level},ragnarok_rebuild_assets={log_level},ragnarok_rebuild_common={log_level},ragnarok_act={log_level},ragnarok_rsm={log_level}"),
-                    custom_layer: |_| None
-                })
-                .set(ImagePlugin {
-                    default_sampler: ImageSamplerDescriptor::nearest()
-                }).set(WindowPlugin {
-                    primary_window: Some(Window {
-                        title: "Ragnarok Rebuild".into(),
-                        present_mode: bevy::window::PresentMode::AutoNoVsync,
-                        ..Default::default()
-                    }),
-                    ..Default::default()
-                })
-        ).insert_resource(PointLightShadowMap {size: 16});
+                }),
+                ..Default::default()
+            }),
+    )
+    .add_plugins(RemotePlugin::default())
+    .insert_resource(PointLightShadowMap { size: 16 });
     app.add_plugins((
         RagnarokPlugin,
         ragnarok_act::plugin::Plugin {
@@ -101,6 +115,12 @@ fn main() {
         ragnarok_pal::plugin::Plugin,
         ragnarok_rsm::plugin::Plugin {
             texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
+        },
+        ragnarok_rsw::plugin::Plugin {
+            model_path_prefix: paths::MODEL_FILES_FOLDER.into(),
+            ground_path_prefix: paths::GROUND_FILES_FOLDER.into(),
+            altitude_path_prefix: paths::ALTITUDE_FILES_FOLDER.into(),
+            sound_path_prefix: paths::WAV_FILES_FOLDER.into(),
         },
         ragnarok_spr::plugin::Plugin,
     ));
@@ -123,8 +143,6 @@ struct ClientPlugins;
 
 impl bevy::app::PluginGroup for ClientPlugins {
     fn build(self) -> bevy::app::PluginGroupBuilder {
-        PluginGroupBuilder::start::<Self>()
-            .add(client::ClientPlugin)
-            .add(states::Plugin)
+        PluginGroupBuilder::start::<Self>().add(client::Plugin)
     }
 }
