@@ -3,10 +3,7 @@ pub mod debug;
 mod loader;
 mod resources;
 
-use bevy_animation::{
-    AnimationPlayer,
-    graph::{AnimationGraphHandle, AnimationNodeIndex},
-};
+use bevy_animation::{AnimationPlayer, graph::AnimationNodeIndex};
 use bevy_app::{AnimationSystems, PostUpdate, Update};
 use bevy_asset::{AssetApp, Assets, Handle, uuid_handle};
 use bevy_camera::visibility::{Visibility, VisibilitySystems};

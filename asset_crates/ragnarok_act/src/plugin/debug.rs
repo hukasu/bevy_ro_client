@@ -3,12 +3,11 @@ use bevy_asset::AssetServer;
 use bevy_color::palettes;
 use bevy_ecs::{
     entity::Entity,
-    prelude::resource_exists_and_changed,
     query::{With, Without},
     reflect::ReflectResource,
     resource::Resource,
     schedule::{IntoScheduleConfigs, common_conditions::not},
-    system::{Commands, Local, Populated, Query, Res},
+    system::{Commands, Populated, Res},
 };
 use bevy_gizmos::{GizmoAsset, retained::Gizmo};
 use bevy_math::Isometry3d;
