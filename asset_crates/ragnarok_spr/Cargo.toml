@@ -20,6 +20,7 @@ bevy = [
     "dep:bevy_pbr",
     "dep:bevy_reflect",
     "dep:bevy_render",
+    "dep:bevy_shader",
 ]
 # Warnings for the spr asset
 warning = ["ragnarok_rebuild_common/warning"]
@@ -40,3 +41,4 @@ bevy_mesh = { workspace = true, default-features = false, optional = true }
 bevy_pbr = { workspace = true, default-features = false, optional = true }
 bevy_reflect = { workspace = true, default-features = false, optional = true }
 bevy_render = { workspace = true, default-features = false, optional = true }
+bevy_shader = { workspace = true, default-features = false, optional = true }

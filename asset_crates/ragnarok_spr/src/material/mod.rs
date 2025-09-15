@@ -1,4 +1,4 @@
-use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, weak_handle};
+use bevy_asset::{Asset, AssetApp, Handle, embedded_asset};
 use bevy_color::LinearRgba;
 use bevy_image::Image;
 use bevy_mesh::MeshVertexBufferLayoutRef;
@@ -7,16 +7,10 @@ use bevy_reflect::Reflect;
 use bevy_render::{
     alpha::AlphaMode,
     render_resource::{
-        AsBindGroup, RenderPipelineDescriptor, Shader, ShaderRef, ShaderType,
-        SpecializedMeshPipelineError,
+        AsBindGroup, RenderPipelineDescriptor, ShaderType, SpecializedMeshPipelineError,
     },
 };
-
-pub const SPR_VERTEX_HANDLE: Handle<Shader> = weak_handle!("27e59443-60cf-4f29-a440-db42b61bee10");
-pub const SPR_FRAGMENT_HANDLE: Handle<Shader> =
-    weak_handle!("0ed8f3b1-37fa-41ad-9652-e2d32b3eeed5");
-pub const SPR_PREPASS_FRAGMENT_HANDLE: Handle<Shader> =
-    weak_handle!("cdae7c57-514c-4416-bb0d-09d692e1d8df");
+use bevy_shader::ShaderRef;
 
 pub(crate) struct Plugin;
 
@@ -33,24 +27,9 @@ impl bevy_app::Plugin for Plugin {
             .add_plugins(MaterialPlugin::<SprTrueColorMaterial>::default());
 
         // Shader handles
-        load_internal_asset!(
-            app,
-            SPR_VERTEX_HANDLE,
-            "shaders/spr_vertex.wgsl",
-            Shader::from_wgsl
-        );
-        load_internal_asset!(
-            app,
-            SPR_FRAGMENT_HANDLE,
-            "shaders/spr_fragment.wgsl",
-            Shader::from_wgsl
-        );
-        load_internal_asset!(
-            app,
-            SPR_PREPASS_FRAGMENT_HANDLE,
-            "shaders/spr_prepass_fragment.wgsl",
-            Shader::from_wgsl
-        );
+        embedded_asset!(app, "shaders/spr_vertex.wgsl");
+        embedded_asset!(app, "shaders/spr_fragment.wgsl");
+        embedded_asset!(app, "shaders/spr_prepass_fragment.wgsl");
     }
 }
 
@@ -76,27 +55,28 @@ impl Material for SprIndexedMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        SPR_VERTEX_HANDLE.into()
+        "embedded://ragnarok_spr/material/shaders/spr_vertex.wgsl".into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        SPR_VERTEX_HANDLE.into()
+        "embedded://ragnarok_spr/material/shaders/spr_vertex.wgsl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        SPR_FRAGMENT_HANDLE.into()
+        "embedded://ragnarok_spr/material/shaders/spr_fragment.wgsl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        SPR_PREPASS_FRAGMENT_HANDLE.into()
+        "embedded://ragnarok_spr/material/shaders/spr_prepass_fragment.wgsl".into()
     }
 
     fn specialize(
-        _pipeline: &MaterialPipeline<Self>,
+        _pipeline: &MaterialPipeline,
         descriptor: &mut RenderPipelineDescriptor,
         _layout: &MeshVertexBufferLayoutRef,
         _key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
+        println!("{:?}", descriptor.vertex.shader_defs);
         descriptor
             .vertex
             .shader_defs
@@ -127,23 +107,23 @@ impl Material for SprTrueColorMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        SPR_FRAGMENT_HANDLE.into()
+        "embedded://ragnarok_spr/assets/shaders/spr_vertex.wgsl".into()
     }
 
-    fn deferred_vertex_shader() -> ShaderRef {
-        SPR_FRAGMENT_HANDLE.into()
+    fn prepass_vertex_shader() -> ShaderRef {
+        "embedded://ragnarok_spr/assets/shaders/spr_vertex.wgsl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        SPR_FRAGMENT_HANDLE.into()
+        "embedded://ragnarok_spr/assets/shaders/spr_fragment.wgsl".into()
     }
 
-    fn deferred_fragment_shader() -> ShaderRef {
-        SPR_FRAGMENT_HANDLE.into()
+    fn prepass_fragment_shader() -> ShaderRef {
+        "embedded://ragnarok_spr/assets/shaders/spr_prepass_fragment.wgsl".into()
     }
 
     fn specialize(
-        _pipeline: &MaterialPipeline<Self>,
+        _pipeline: &MaterialPipeline,
         descriptor: &mut RenderPipelineDescriptor,
         _layout: &MeshVertexBufferLayoutRef,
         _key: MaterialPipelineKey<Self>,

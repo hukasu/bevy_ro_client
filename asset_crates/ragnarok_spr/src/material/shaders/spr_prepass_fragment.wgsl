@@ -8,14 +8,14 @@ struct SprUniform {
     tint: vec4<f32>,
 }
 
-@group(2) @binding(0) var<uniform> spr_uniform: SprUniform;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> spr_uniform: SprUniform;
 
 #ifdef SPR_INDEXED_PIPELINE
-@group(2) @binding(1) var spr_texture: texture_2d<u32>;
-@group(2) @binding(2) var spr_palette: texture_1d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var spr_texture: texture_2d<u32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var spr_palette: texture_1d<f32>;
 #else ifdef SPR_TRUE_COLOR_PIPELINE
-@group(2) @binding(1) var spr_texture: texture_2d<f32>;
-@group(2) @binding(2) var spr_sampler: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var spr_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var spr_sampler: sampler;
 #endif
 
 @fragment

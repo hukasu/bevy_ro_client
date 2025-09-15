@@ -77,6 +77,7 @@ impl AssetLoader {
                     } else {
                         RenderAssetUsages::RENDER_WORLD
                     },
+                    ..Default::default()
                 };
 
                 load_context.add_labeled_asset(format!("IndexedSprite{}", index), image)
@@ -121,6 +122,7 @@ impl AssetLoader {
                     } else {
                         RenderAssetUsages::RENDER_WORLD
                     },
+                    ..Default::default()
                 };
 
                 load_context.add_labeled_asset(format!("TrueColorSprite{}", index), image)
