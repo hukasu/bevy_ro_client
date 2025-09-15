@@ -12,31 +12,36 @@ members = [
     "ragnarok_rebuild_client",
     # "ragnarok_rebuild_server",
     "ragnarok_debugger",
+    # Examples
+    "examples/*",
 ]
 resolver = "2"
 
 [workspace.dependencies]
-bevy = { version = "0.16.1", default-features = false }
-bevy_animation = { version = "0.16.1", default-features = false }
-bevy_app = { version = "0.16.1", default-features = false }
-bevy_asset = { version = "0.16.1", default-features = false }
-bevy_audio = { version = "0.16.1", default-features = false }
-bevy_color = { version = "0.16.2", default-features = false }
-bevy_core_pipeline = { version = "0.16.1", default-features = false }
-bevy_ecs = { version = "0.16.1", default-features = false }
-bevy_gizmos = { version = "0.16.1", default-features = false }
-bevy_image = { version = "0.16.1", default-features = false }
-bevy_math = { version = "0.16.1", default-features = false }
-bevy_mesh = { version = "0.16.1", default-features = false }
-bevy_pbr = { version = "0.16.1", default-features = false }
-bevy_platform = { version = "0.16.1", default-features = false }
-bevy_reflect = { version = "0.16.1", default-features = false }
-bevy_render = { version = "0.16.1", default-features = false }
-bevy_scene = { version = "0.16.1", default-features = false }
-bevy_transform = { version = "0.16.1", default-features = false }
-bevy_time = { version = "0.16.1", default-features = false }
+bevy = { version = "0.17.0-rc.1", default-features = false }
+bevy_animation = { version = "0.17.0-rc.1", default-features = false }
+bevy_app = { version = "0.17.0-rc.1", default-features = false }
+bevy_asset = { version = "0.17.0-rc.1", default-features = false }
+bevy_audio = { version = "0.17.0-rc.1", default-features = false }
+bevy_camera = { version = "0.17.0-rc.1", default-features = false }
+bevy_color = { version = "0.17.0-rc.1", default-features = false }
+bevy_core_pipeline = { version = "0.17.0-rc.1", default-features = false }
+bevy_ecs = { version = "0.17.0-rc.1", default-features = false }
+bevy_gizmos = { version = "0.17.0-rc.1", default-features = false }
+bevy_image = { version = "0.17.0-rc.1", default-features = false }
+bevy_math = { version = "0.17.0-rc.1", default-features = false }
+bevy_mesh = { version = "0.17.0-rc.1", default-features = false }
+bevy_pbr = { version = "0.17.0-rc.1", default-features = false }
+bevy_platform = { version = "0.17.0-rc.1", default-features = false }
+bevy_reflect = { version = "0.17.0-rc.1", default-features = false }
+bevy_render = { version = "0.17.0-rc.1", default-features = false }
+bevy_scene = { version = "0.17.0-rc.1", default-features = false }
+bevy_shader = { version = "0.17.0-rc.1", default-features = false }
+bevy_transform = { version = "0.17.0-rc.1", default-features = false }
+bevy_time = { version = "0.17.0-rc.1", default-features = false }
 
-bevy-inspector-egui = { version = "0.32.0" }
+bevy_egui = { version = "0.36.0" }
+bevy-inspector-egui = { version = "0.33.1" }
 bevy_flycam = { version = "0.16.1" }
 iyes_perf_ui = { version = "0.5.0" }
 
