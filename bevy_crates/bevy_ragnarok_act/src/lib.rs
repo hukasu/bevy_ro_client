@@ -1,4 +1,4 @@
-//! Builds Ragnarok's Act files to be used in Bevy
+//! Builds Ragnarok Online's Act files to be used in Bevy
 
 pub mod assets;
 pub mod events;
