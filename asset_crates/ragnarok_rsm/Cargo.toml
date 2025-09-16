@@ -34,6 +34,7 @@ warning = ["ragnarok_rebuild_common/warning"]
 debug = []
 
 [dependencies]
+ragnarok_grf = { path = "../ragnarok_grf", optional = true }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 bevy_animation = { workspace = true, default-features = false, optional = true }
@@ -61,3 +62,7 @@ log = { workspace = true }
 serde = { workspace = true }
 flate2 = { workspace = true }
 encoding_rs = { workspace = true }
+
+[[bin]]
+name = "rsm_debug"
+required-features = ["warning", "ragnarok_grf"]
