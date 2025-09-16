@@ -1,5 +1,6 @@
 use bevy_asset::{Handle, LoadContext, RenderAssetUsages};
 use bevy_image::{Image, ImageSampler};
+use bevy_ragnarok_pal::pal_to_image;
 use bevy_render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
@@ -38,7 +39,7 @@ impl AssetLoader {
         let true_color_sprites =
             Self::load_true_color_sprites(load_context, &sprite.true_color_images);
         let palette =
-            load_context.add_labeled_asset("Palette".to_owned(), Image::from(sprite.palette));
+            load_context.add_labeled_asset("Palette".to_owned(), pal_to_image(sprite.palette));
 
         SpriteImages {
             indexed_sprites,

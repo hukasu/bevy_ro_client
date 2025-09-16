@@ -1,5 +1,5 @@
 [package]
-name = "bevy_ragnarok_spr"
+name = "bevy_ragnarok_pal"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,12 +9,11 @@ edition = "2024"
 workspace = true
 
 [features]
-# Graphical debugging of meshes
+# Sets render assets to `RenderAssetUsage::all()`
 debug = []
 
 [dependencies]
-bevy_ragnarok_pal = { workspace = true }
-ragnarok_spr = { path = "../../asset_crates/ragnarok_spr" }
+ragnarok_pal = { path = "../../asset_crates/ragnarok_pal" }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 bevy_app = { workspace = true, default-features = false }
@@ -22,9 +21,5 @@ bevy_asset = { workspace = true, default-features = false }
 bevy_color = { workspace = true, default-features = false }
 bevy_ecs = { workspace = true, default-features = false }
 bevy_image = { workspace = true, default-features = false }
-bevy_math = { workspace = true, default-features = false }
-bevy_mesh = { workspace = true, default-features = false }
-bevy_pbr = { workspace = true, default-features = false }
 bevy_reflect = { workspace = true, default-features = false }
 bevy_render = { workspace = true, default-features = false }
-bevy_shader = { workspace = true, default-features = false }

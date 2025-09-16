@@ -1,13 +1,14 @@
 use bevy_image::Image;
+use ragnarok_pal::{Error, Pal};
 
-use crate::Pal;
+use crate::pal_to_image;
 
 pub struct AssetLoader;
 
 impl bevy_asset::AssetLoader for AssetLoader {
     type Asset = Image;
     type Settings = ();
-    type Error = crate::Error;
+    type Error = Error;
 
     async fn load(
         &self,
@@ -20,7 +21,7 @@ impl bevy_asset::AssetLoader for AssetLoader {
 
         let palette = Pal::from_reader(&mut data.as_slice())?;
 
-        Ok(palette.into())
+        Ok(pal_to_image(palette))
     }
 
     fn extensions(&self) -> &[&str] {

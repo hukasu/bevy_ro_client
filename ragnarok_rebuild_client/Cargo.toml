@@ -18,15 +18,15 @@ with-inspector = [
   "bevy/file_watcher",
   "bevy/embedded_watcher",
   "bevy_ragnarok_act/debug",
-  "ragnarok_pal/debug",
+  "bevy_ragnarok_pal/debug",
   "ragnarok_rsm/debug",
 ]
 
 [dependencies]
 bevy_ragnarok_act = { workspace = true }
+bevy_ragnarok_pal = { workspace = true }
 bevy_ragnarok_spr = { workspace = true }
 ragnarok_grf = { path = "../asset_crates/ragnarok_grf", features = ["bevy"] }
-ragnarok_pal = { path = "../asset_crates/ragnarok_pal", features = ["bevy"] }
 ragnarok_rsm = { path = "../asset_crates/ragnarok_rsm", features = ["bevy"] }
 ragnarok_rsw = { path = "../asset_crates/ragnarok_rsw", features = ["bevy"] }
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }

@@ -32,10 +32,12 @@ format:
 clippy:
     @just ragnarok_act
     @just ragnarok_grf
+    @just ragnarok_pal
     @just ragnarok_spr
 
     @just bevy_ragnarok_act
     @just bevy_ragnarok_grf
+    @just bevy_ragnarok_pal
     @just bevy_ragnarok_spr
 
 [group("clippy")]
@@ -50,6 +52,13 @@ ragnarok_grf:
     cargo clippy -p ragnarok_grf --no-default-features
     cargo clippy -p ragnarok_grf
     cargo clippy -p ragnarok_grf --all-features
+
+[group("clippy")]
+ragnarok_pal:
+    cargo clippy -p ragnarok_pal --no-default-features
+    cargo clippy -p ragnarok_pal --no-default-features --features="warning"
+    cargo clippy -p ragnarok_pal
+    cargo clippy -p ragnarok_pal --all-features
 
 [group("clippy")]
 ragnarok_spr:
@@ -70,6 +79,13 @@ bevy_ragnarok_grf:
     cargo clippy -p bevy_ragnarok_grf --no-default-features
     cargo clippy -p bevy_ragnarok_grf
     cargo clippy -p bevy_ragnarok_grf --all-features
+
+[group("clippy")]
+bevy_ragnarok_pal:
+    cargo clippy -p bevy_ragnarok_pal --no-default-features
+    cargo clippy -p bevy_ragnarok_pal --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_pal
+    cargo clippy -p bevy_ragnarok_pal --all-features
 
 [group("clippy")]
 bevy_ragnarok_spr:

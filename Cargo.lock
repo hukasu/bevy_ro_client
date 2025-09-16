@@ -1254,6 +1254,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_ragnarok_pal"
+version = "0.1.0"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_color",
+ "bevy_ecs",
+ "bevy_image",
+ "bevy_reflect",
+ "bevy_render",
+ "ragnarok_pal",
+ "ragnarok_rebuild_common",
+]
+
+[[package]]
 name = "bevy_ragnarok_spr"
 version = "0.1.0"
 dependencies = [
@@ -1265,10 +1280,10 @@ dependencies = [
  "bevy_math",
  "bevy_mesh",
  "bevy_pbr",
+ "bevy_ragnarok_pal",
  "bevy_reflect",
  "bevy_render",
  "bevy_shader",
- "ragnarok_pal",
  "ragnarok_rebuild_common",
  "ragnarok_spr",
 ]
@@ -4516,13 +4531,6 @@ dependencies = [
 name = "ragnarok_pal"
 version = "0.1.0"
 dependencies = [
- "bevy_app",
- "bevy_asset",
- "bevy_color",
- "bevy_ecs",
- "bevy_image",
- "bevy_reflect",
- "bevy_render",
  "ragnarok_grf",
  "ragnarok_rebuild_common",
 ]
@@ -4564,8 +4572,8 @@ dependencies = [
  "bevy",
  "bevy_ragnarok_act",
  "bevy_ragnarok_grf",
+ "bevy_ragnarok_pal",
  "bevy_ragnarok_spr",
- "ragnarok_pal",
  "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
  "ragnarok_rsm",

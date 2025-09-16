@@ -1,6 +1,6 @@
 use bevy_asset::AssetApp;
 
-use crate::components::Palette;
+use crate::Palette;
 
 mod loader;
 
