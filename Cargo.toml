@@ -11,7 +11,6 @@ members = [
     "ragnarok_rebuild_bevy",
     "ragnarok_rebuild_client",
     # "ragnarok_rebuild_server",
-    "ragnarok_debugger",
 ]
 resolver = "2"
 

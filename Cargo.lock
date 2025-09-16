@@ -4485,20 +4485,8 @@ name = "ragnarok_act"
 version = "0.1.0"
 dependencies = [
  "log",
- "ragnarok_rebuild_common",
-]
-
-[[package]]
-name = "ragnarok_debugger"
-version = "0.1.0"
-dependencies = [
- "ragnarok_act",
  "ragnarok_grf",
- "ragnarok_pal",
- "ragnarok_rebuild_assets",
  "ragnarok_rebuild_common",
- "ragnarok_rsm",
- "ragnarok_spr",
 ]
 
 [[package]]
@@ -4524,6 +4512,7 @@ dependencies = [
  "bevy_image",
  "bevy_reflect",
  "bevy_render",
+ "ragnarok_grf",
  "ragnarok_rebuild_common",
 ]
 
@@ -4614,6 +4603,7 @@ dependencies = [
  "encoding_rs",
  "flate2",
  "log",
+ "ragnarok_grf",
  "ragnarok_rebuild_common",
  "serde",
 ]
@@ -4652,6 +4642,7 @@ dependencies = [
 name = "ragnarok_spr"
 version = "0.1.0"
 dependencies = [
+ "ragnarok_grf",
  "ragnarok_pal",
  "ragnarok_rebuild_common",
 ]
