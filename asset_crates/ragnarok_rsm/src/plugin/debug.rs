@@ -17,7 +17,7 @@ use bevy_mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues};
 use bevy_reflect::Reflect;
 use bevy_transform::components::GlobalTransform;
 
-const NORMAL_GIZMOS_LENGHT: f32 = 0.5;
+const NORMAL_GIZMOS_LENGTH: f32 = 0.5;
 
 pub struct Plugin;
 
@@ -89,7 +89,7 @@ fn show_rsm_vertex_normal(
                     let direction =
                         (global_transform.transform_point(vertex + normal) - start).normalize();
                     let color = Color::srgb_from_array(direction.to_array());
-                    gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
+                    gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGTH), color);
                 }
             } else {
                 for (v, n) in vertex.iter().zip(normals) {
@@ -99,7 +99,7 @@ fn show_rsm_vertex_normal(
                     let direction =
                         (global_transform.transform_point(vertex + normal) - start).normalize();
                     let color = Color::srgb_from_array(direction.to_array());
-                    gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
+                    gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGTH), color);
                 }
             }
         }

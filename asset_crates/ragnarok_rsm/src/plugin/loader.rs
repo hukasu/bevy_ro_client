@@ -245,7 +245,7 @@ impl MeshList {
             let node_transform = if current_mesh.parent_name.is_empty() {
                 let Some(mesh_bounds) = current_mesh.bounds() else {
                     log::warn!(
-                        "Mesh {} from model's {:?} had no vertexes.",
+                        "Mesh {} from model's {:?} had no vertices.",
                         current_mesh.name,
                         load_context.path()
                     );
@@ -365,7 +365,7 @@ impl PrimitiveList {
 
             let texture_count = texture_cache.len();
             let Ok(texture_id) = usize::try_from(texture_id) else {
-                log::warn!("Texture can't be indexed on current archtecture.");
+                log::warn!("Texture can't be indexed on current architecture.");
                 continue;
             };
             let texture = load_context.load(
