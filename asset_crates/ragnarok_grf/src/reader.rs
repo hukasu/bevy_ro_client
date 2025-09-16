@@ -1,7 +1,7 @@
 use std::{io::Error, path::Path};
 
 use bevy_asset::io::{
-    AssetReader as BevyAsserReader, AssetReaderError, PathStream, Reader, VecReader,
+    AssetReader as BevyAssetReader, AssetReaderError, PathStream, Reader, VecReader,
 };
 
 pub struct AssetReader {
@@ -16,7 +16,7 @@ impl AssetReader {
     }
 }
 
-impl BevyAsserReader for AssetReader {
+impl BevyAssetReader for AssetReader {
     async fn read<'a>(&'a self, path: &'a Path) -> Result<Box<dyn Reader + 'a>, AssetReaderError> {
         log::trace!("Starting reading {}.", path.display());
         match self.grf.read_file(path) {
