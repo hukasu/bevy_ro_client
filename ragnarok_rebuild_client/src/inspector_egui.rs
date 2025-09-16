@@ -127,19 +127,19 @@ fn init_font_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
 //     let font_data = Arc::new(bevy_inspector_egui::egui::FontData::from_owned(
 //         Vec::from_iter(font.data.iter().copied()),
 //     ));
-//     let mut font_definitons = bevy_inspector_egui::egui::FontDefinitions::default();
-//     font_definitons
+//     let mut font_definitions = bevy_inspector_egui::egui::FontDefinitions::default();
+//     font_definitions
 //         .font_data
 //         .insert(FONT_NAME.to_owned(), font_data);
 
 //     let font_family = bevy_inspector_egui::egui::FontFamily::Proportional;
-//     let Some(font_family_store) = font_definitons.families.get_mut(&font_family) else {
+//     let Some(font_family_store) = font_definitions.families.get_mut(&font_family) else {
 //         return;
 //     };
 //     font_family_store.insert(0, FONT_NAME.to_owned());
 
 //     if let Ok(ctx) = contexts.ctx_mut() {
-//         ctx.set_fonts(font_definitons)
+//         ctx.set_fonts(font_definitions)
 //     };
 // }
 
