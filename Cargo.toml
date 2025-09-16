@@ -6,6 +6,8 @@ members = [
   "asset_crates/ragnarok_rsm",
   "asset_crates/ragnarok_rsw",
   "asset_crates/ragnarok_spr",
+  "bevy_crates/bevy_ragnarok_act",
+  "bevy_crates/bevy_ragnarok_spr",
   "ragnarok_rebuild_common",
   "ragnarok_rebuild_assets",
   "ragnarok_rebuild_bevy",
