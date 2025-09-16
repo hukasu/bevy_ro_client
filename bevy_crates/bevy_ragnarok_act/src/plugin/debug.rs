@@ -14,7 +14,7 @@ use bevy_math::Isometry3d;
 use bevy_reflect::{Reflect, prelude::ReflectDefault};
 use log::info;
 
-use crate::components::{ActorAnchor, ActorLayer};
+use crate::{ActorAnchor, ActorLayer};
 
 pub struct Plugin;
 
