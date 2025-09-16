@@ -55,19 +55,19 @@ impl Material for SprIndexedMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/material/shaders/spr_vertex.wgsl".into()
+        "embedded://bevy_ragnarok_spr/material/shaders/spr_vertex.wgsl".into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/material/shaders/spr_vertex.wgsl".into()
+        "embedded://bevy_ragnarok_spr/material/shaders/spr_vertex.wgsl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/material/shaders/spr_fragment.wgsl".into()
+        "embedded://bevy_ragnarok_spr/material/shaders/spr_fragment.wgsl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/material/shaders/spr_prepass_fragment.wgsl".into()
+        "embedded://bevy_ragnarok_spr/material/shaders/spr_prepass_fragment.wgsl".into()
     }
 
     fn specialize(
@@ -106,19 +106,19 @@ impl Material for SprTrueColorMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/assets/shaders/spr_vertex.wgsl".into()
+        "embedded://bevy_ragnarok_spr/assets/shaders/spr_vertex.wgsl".into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/assets/shaders/spr_vertex.wgsl".into()
+        "embedded://bevy_ragnarok_spr/assets/shaders/spr_vertex.wgsl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/assets/shaders/spr_fragment.wgsl".into()
+        "embedded://bevy_ragnarok_spr/assets/shaders/spr_fragment.wgsl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        "embedded://ragnarok_spr/assets/shaders/spr_prepass_fragment.wgsl".into()
+        "embedded://bevy_ragnarok_spr/assets/shaders/spr_prepass_fragment.wgsl".into()
     }
 
     fn specialize(
