@@ -59,8 +59,8 @@ fn main() {
         .register_asset_source(
             bevy::asset::io::AssetSourceId::Default,
             bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
-                let grf = ragnarok_grf::reader::AssetReader::new(std::path::Path::new("data.grf"))
-                    .unwrap();
+                let grf =
+                    bevy_ragnarok_grf::AssetReader::new(std::path::Path::new("data.grf")).unwrap();
                 Box::new(grf)
             }),
         );
