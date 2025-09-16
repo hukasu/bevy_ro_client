@@ -1,28 +1,10 @@
-#[cfg(feature = "bevy")]
-pub mod assets;
-#[cfg(feature = "bevy")]
-pub mod components;
 mod error;
-#[cfg(feature = "bevy")]
-pub mod materials;
 pub mod mesh;
-#[cfg(feature = "bevy")]
-pub mod plugin;
 mod volume_box;
 #[cfg(feature = "warning")]
 pub mod warnings;
 
-use std::io::{self, Read};
-
-#[cfg(feature = "bevy")]
-use bevy_animation::{
-    animated_field,
-    prelude::{AnimatableCurve, AnimatedField, AnimationCurve},
-};
-#[cfg(feature = "bevy")]
-use bevy_math::{Vec3, curve::UnevenSampleAutoCurve};
-#[cfg(feature = "bevy")]
-use bevy_transform::components::Transform;
+use std::io::Read;
 
 use ragnarok_rebuild_common::{Version, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt};
 
@@ -95,7 +77,7 @@ impl Rsm {
             let count = reader.read_le_u32()?;
             (0..count)
                 .map(|_| mesh::PositionKeyFrame::from_reader(reader))
-                .collect::<Result<Box<[mesh::PositionKeyFrame]>, io::Error>>()?
+                .collect::<Result<Box<[mesh::PositionKeyFrame]>, std::io::Error>>()?
         } else {
             [].into()
         };
@@ -190,57 +172,17 @@ impl Rsm {
         match reader.read_le_u32() {
             Ok(count) => (0..count)
                 .map(|_| VolumeBox::from_reader(reader, version))
-                .collect::<Result<Box<[VolumeBox]>, io::Error>>()
+                .collect::<Result<Box<[VolumeBox]>, std::io::Error>>()
                 .map(Some)
                 .map_err(error::Error::from),
             Err(err) => {
                 // V2.3 files seems to have a 50/50 on whether they have volume boxes or not
-                if err.kind().eq(&io::ErrorKind::UnexpectedEof) {
+                if err.kind().eq(&std::io::ErrorKind::UnexpectedEof) {
                     Ok(None)
                 } else {
                     Err(self::Error::Io(err))
                 }
             }
-        }
-    }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    fn position_animation_curve(&self) -> Option<impl AnimationCurve> {
-        if !self.position_key_frames.is_empty() {
-            let root_mesh = self
-                .meshes
-                .iter()
-                .find(|mesh| mesh.name == self.root_meshes[0])?;
-            let root_mesh_bounds = root_mesh.bounds()?;
-            let correction = Vec3::new(
-                root_mesh_bounds.center.x,
-                root_mesh_bounds.max().y,
-                root_mesh_bounds.center.z,
-            );
-
-            match UnevenSampleAutoCurve::new(
-                self.position_key_frames
-                    .iter()
-                    .map(|frame| self.animation_duration.transform(frame.frame as f32))
-                    .zip(
-                        self.position_key_frames
-                            .iter()
-                            .map(|frame| Vec3::from_array(frame.position) - correction),
-                    ),
-            ) {
-                Ok(uneven_curve) => {
-                    let animatable_curve =
-                        AnimatableCurve::new(animated_field!(Transform::translation), uneven_curve);
-                    Some(animatable_curve)
-                }
-                Err(err) => {
-                    log::error!("Failed to build position animation due to `{err}`.");
-                    None
-                }
-            }
-        } else {
-            None
         }
     }
 }

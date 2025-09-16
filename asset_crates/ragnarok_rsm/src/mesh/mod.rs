@@ -11,24 +11,7 @@ use std::{
     io::{self, Read},
 };
 
-#[cfg(feature = "bevy")]
-use bevy_animation::{
-    animated_field,
-    prelude::{AnimatableCurve, AnimatedField, AnimationCurve},
-};
-#[cfg(feature = "bevy")]
-use bevy_asset::RenderAssetUsages;
-#[cfg(feature = "bevy")]
-use bevy_camera::primitives::Aabb;
-#[cfg(feature = "bevy")]
-use bevy_math::{Mat4, Quat, Vec3, curve::UnevenSampleAutoCurve};
-#[cfg(feature = "bevy")]
-use bevy_transform::components::Transform;
-
 use ragnarok_rebuild_common::{Version, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt};
-
-#[cfg(feature = "bevy")]
-use crate::AnimationDuration;
 
 pub use self::{
     face::Face, position_key_frame::PositionKeyFrame, rotation_key_frame::RotationKeyFrame,
@@ -337,155 +320,6 @@ impl Mesh {
                 .collect(),
         }
     }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    pub fn bounds(&self) -> Option<Aabb> {
-        let transformation_matrix = self.transformation_matrix();
-        let transform = self.transform();
-
-        Aabb::enclosing(self.vertices.iter().map(move |vertex| {
-            transform
-                .transform_point(transformation_matrix.transform_point3(Vec3::from_array(*vertex)))
-        }))
-    }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    pub fn transformation_matrix(&self) -> Mat4 {
-        let offset = self.transformation.offset();
-        Mat4 {
-            x_axis: Vec3::from_slice(&self.transformation_matrix[0..3]).extend(0.),
-            y_axis: Vec3::from_slice(&self.transformation_matrix[3..6]).extend(0.),
-            z_axis: Vec3::from_slice(&self.transformation_matrix[6..9]).extend(0.),
-            w_axis: offset.extend(1.),
-        }
-    }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    pub fn transform(&self) -> Transform {
-        self.transformation.transform()
-    }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    pub fn recentered_transform(&self, mesh_bounds: &Aabb) -> Transform {
-        let mut transform = self.transformation.transform();
-        if !matches!(self.transformation, Transformation::Simple(_)) {
-            transform.translation -= Vec3::new(
-                mesh_bounds.center.x,
-                mesh_bounds.max().y,
-                mesh_bounds.center.z,
-            );
-        }
-        transform
-    }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    pub fn position_animation_curve(
-        &self,
-        animation_duration: AnimationDuration,
-    ) -> Option<impl AnimationCurve> {
-        if !self.position_key_frames.is_empty() {
-            match UnevenSampleAutoCurve::new(
-                self.position_key_frames
-                    .iter()
-                    .map(|frame| animation_duration.transform(frame.frame as f32))
-                    .zip(
-                        self.position_key_frames
-                            .iter()
-                            .map(|frame| Vec3::from_array(frame.position)),
-                    ),
-            ) {
-                Ok(uneven_curve) => {
-                    let animatable_curve =
-                        AnimatableCurve::new(animated_field!(Transform::translation), uneven_curve);
-                    Some(animatable_curve)
-                }
-                Err(err) => {
-                    log::error!(
-                        "Failed to build position animation of {} due to `{err}`.",
-                        self.name
-                    );
-                    None
-                }
-            }
-        } else {
-            None
-        }
-    }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    pub fn rotation_animation_curve(
-        &self,
-        animation_duration: AnimationDuration,
-    ) -> Option<impl AnimationCurve> {
-        if !self.rotation_key_frames.is_empty() {
-            match UnevenSampleAutoCurve::new(
-                self.rotation_key_frames
-                    .iter()
-                    .map(|frame| animation_duration.transform(frame.frame as f32))
-                    .zip(
-                        self.rotation_key_frames
-                            .iter()
-                            .map(|frame| Quat::from_array(frame.quaternion)),
-                    ),
-            ) {
-                Ok(uneven_curve) => {
-                    let animatable_curve =
-                        AnimatableCurve::new(animated_field!(Transform::rotation), uneven_curve);
-                    Some(animatable_curve)
-                }
-                Err(err) => {
-                    log::error!(
-                        "Failed to build rotation animation of {} due to `{err}`.",
-                        self.name
-                    );
-                    None
-                }
-            }
-        } else {
-            None
-        }
-    }
-
-    #[cfg(feature = "bevy")]
-    #[must_use]
-    pub fn scale_animation_curve(
-        &self,
-        animation_duration: AnimationDuration,
-    ) -> Option<impl AnimationCurve> {
-        if !self.scale_key_frames.is_empty() {
-            match UnevenSampleAutoCurve::new(
-                self.scale_key_frames
-                    .iter()
-                    .map(|frame| animation_duration.transform(frame.frame as f32))
-                    .zip(
-                        self.scale_key_frames
-                            .iter()
-                            .map(|frame| Vec3::from_array(frame.scale)),
-                    ),
-            ) {
-                Ok(uneven_curve) => {
-                    let animatable_curve =
-                        AnimatableCurve::new(animated_field!(Transform::scale), uneven_curve);
-                    Some(animatable_curve)
-                }
-                Err(err) => {
-                    log::error!(
-                        "Failed to build scale animation of {} due to `{err}`.",
-                        self.name
-                    );
-                    None
-                }
-            }
-        } else {
-            None
-        }
-    }
 }
 
 #[derive(Debug, Default)]
@@ -502,25 +336,6 @@ pub struct Primitive {
     pub uv: Vec<[f32; 2]>,
     pub color: Vec<[f32; 4]>,
     pub indices: Vec<u16>,
-}
-
-#[cfg(feature = "bevy")]
-impl From<Primitive> for bevy_mesh::Mesh {
-    fn from(primitive: Primitive) -> Self {
-        Self::new(
-            bevy_mesh::PrimitiveTopology::TriangleList,
-            if cfg!(feature = "debug") {
-                RenderAssetUsages::all()
-            } else {
-                RenderAssetUsages::RENDER_WORLD
-            },
-        )
-        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_POSITION, primitive.vertices)
-        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_NORMAL, primitive.normals)
-        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_UV_0, primitive.uv)
-        .with_inserted_attribute(bevy_mesh::Mesh::ATTRIBUTE_COLOR, primitive.color)
-        .with_inserted_indices(bevy_mesh::Indices::U16(primitive.indices))
-    }
 }
 
 #[derive(Debug)]
@@ -548,53 +363,6 @@ pub enum Transformation {
         scale: [f32; 3],
     },
     Simple([f32; 3]),
-}
-
-impl Transformation {
-    #[cfg(feature = "bevy")]
-    pub fn offset(&self) -> Vec3 {
-        match self {
-            Transformation::Complete {
-                offset,
-                position: _,
-                rotation_angle: _,
-                rotation_axis: _,
-                scale: _,
-            } => Vec3::from_array(*offset),
-            Transformation::Simple(_) => Vec3::ZERO,
-        }
-    }
-
-    #[cfg(feature = "bevy")]
-    pub fn transform(&self) -> Transform {
-        match self {
-            Self::Complete {
-                offset: _,
-                position,
-                rotation_angle,
-                rotation_axis,
-                scale,
-            } => {
-                let translation = Vec3::from_array(*position);
-                let rotation = {
-                    let rotation_axis = Vec3::from_array(*rotation_axis);
-                    if rotation_axis.length() <= 0. {
-                        Quat::default()
-                    } else {
-                        Quat::from_axis_angle(rotation_axis, *rotation_angle)
-                    }
-                };
-                let scale = Vec3::from_array(*scale);
-
-                Transform {
-                    translation,
-                    rotation,
-                    scale,
-                }
-            }
-            Self::Simple(position) => Transform::from_translation(Vec3::from_array(*position)),
-        }
-    }
 }
 
 fn flat_normal(a: &[f32; 3], b: &[f32; 3], c: &[f32; 3]) -> [f32; 3] {

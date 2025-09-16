@@ -59,19 +59,19 @@ impl Material for RsmMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        "embedded://ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
+        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        "embedded://ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
+        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://ragnarok_rsm/materials/shaders/rsm_fragment_shader.wgsl".into()
+        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_fragment_shader.wgsl".into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        "embedded://ragnarok_rsm/materials/shaders/rsm_prepass_shader.wgsl".into()
+        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_prepass_shader.wgsl".into()
     }
 
     fn specialize(

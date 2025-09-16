@@ -48,7 +48,7 @@ pub struct RsmDebug {
 
 fn show_rsm_vertex_normal(
     mut gizmos: Gizmos,
-    models: Query<Entity, With<crate::components::Model>>,
+    models: Query<Entity, With<crate::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
     model_primitives: Query<(&Mesh3d, &ViewVisibility)>,
@@ -112,7 +112,7 @@ fn show_rsm_vertex_normal_condition(show_rsm_vertex_normal: Res<RsmDebug>) -> bo
 
 fn show_rsm_edges(
     mut gizmos: Gizmos,
-    models: Query<Entity, With<crate::components::Model>>,
+    models: Query<Entity, With<crate::Model>>,
     children: Query<&Children>,
     global_transforms: Query<&GlobalTransform>,
     model_primitives: Query<(&Mesh3d, &ViewVisibility)>,

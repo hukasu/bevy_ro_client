@@ -112,7 +112,7 @@ fn main() {
             audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
         },
         bevy_ragnarok_pal::plugin::Plugin,
-        ragnarok_rsm::plugin::Plugin {
+        bevy_ragnarok_rsm::plugin::Plugin {
             texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
         },
         ragnarok_rsw::plugin::Plugin {

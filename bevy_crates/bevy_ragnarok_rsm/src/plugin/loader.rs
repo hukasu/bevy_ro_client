@@ -20,13 +20,13 @@ use bevy_pbr::MeshMaterial3d;
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
+use ragnarok_rsm::{Rsm, ShadeType, mesh::Textures};
 
 use crate::{
-    Rsm, ShadeType,
+    Model, ModelAnimation, ModelInvertedMaterial,
     assets::RsmModel,
-    components::{Model, ModelAnimation, ModelInvertedMaterial},
+    extensions::{RsmExt, RsmMeshExt, RsmPrimitiveExt},
     materials::RsmMaterial,
-    mesh::Textures,
 };
 
 type TextureCache = HashMap<(Handle<Image>, bool), (Handle<RsmMaterial>, Handle<RsmMaterial>)>;
@@ -50,7 +50,7 @@ impl AssetLoader {
 impl BevyAssetLoader for AssetLoader {
     type Asset = RsmModel;
     type Settings = ();
-    type Error = crate::Error;
+    type Error = ragnarok_rsm::Error;
 
     async fn load(
         &self,
@@ -61,7 +61,7 @@ impl BevyAssetLoader for AssetLoader {
         let mut data: Vec<u8> = vec![];
         reader.read_to_end(&mut data).await?;
 
-        let rsm = crate::Rsm::from_reader(&mut data.as_slice())?;
+        let rsm = ragnarok_rsm::Rsm::from_reader(&mut data.as_slice())?;
 
         let scene = {
             let scene = SceneBuilder::build(&rsm, load_context, self);
@@ -361,7 +361,7 @@ impl PrimitiveList {
         for (id, primitive) in mesh_attributes.primitives.into_iter().enumerate() {
             let texture_id = primitive.texture_id;
             let double_sided = primitive.double_sided;
-            let mesh = bevy_mesh::Mesh::from(primitive);
+            let mesh = primitive.into_mesh();
 
             let texture_count = texture_cache.len();
             let Ok(texture_id) = usize::try_from(texture_id) else {

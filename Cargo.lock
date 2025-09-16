@@ -1269,6 +1269,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_ragnarok_rsm"
+version = "0.1.0"
+dependencies = [
+ "bevy_animation",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_camera",
+ "bevy_color",
+ "bevy_ecs",
+ "bevy_gizmos",
+ "bevy_image",
+ "bevy_math",
+ "bevy_mesh",
+ "bevy_pbr",
+ "bevy_platform",
+ "bevy_reflect",
+ "bevy_render",
+ "bevy_scene",
+ "bevy_shader",
+ "bevy_transform",
+ "log",
+ "ragnarok_rsm",
+]
+
+[[package]]
 name = "bevy_ragnarok_spr"
 version = "0.1.0"
 dependencies = [
@@ -4573,10 +4598,10 @@ dependencies = [
  "bevy_ragnarok_act",
  "bevy_ragnarok_grf",
  "bevy_ragnarok_pal",
+ "bevy_ragnarok_rsm",
  "bevy_ragnarok_spr",
  "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
- "ragnarok_rsm",
  "ragnarok_rsw",
  "serde",
  "toml",
@@ -4602,29 +4627,9 @@ dependencies = [
 name = "ragnarok_rsm"
 version = "0.1.0"
 dependencies = [
- "bevy_animation",
- "bevy_app",
- "bevy_asset",
- "bevy_camera",
- "bevy_color",
- "bevy_ecs",
- "bevy_gizmos",
- "bevy_image",
- "bevy_math",
- "bevy_mesh",
- "bevy_pbr",
- "bevy_platform",
- "bevy_reflect",
- "bevy_render",
- "bevy_scene",
- "bevy_shader",
- "bevy_transform",
- "encoding_rs",
- "flate2",
  "log",
  "ragnarok_grf",
  "ragnarok_rebuild_common",
- "serde",
 ]
 
 [[package]]

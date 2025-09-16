@@ -7,10 +7,7 @@ use bevy::{
     },
 };
 
-use ragnarok_rsm::{
-    components::{Model, ModelInvertedMaterial},
-    materials::RsmMaterial,
-};
+use bevy_ragnarok_rsm::{materials::RsmMaterial, Model, ModelInvertedMaterial};
 use ragnarok_rsw::components::AnimatedProp;
 
 pub use self::game::GameState;
