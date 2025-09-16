@@ -10,16 +10,16 @@ workspace = true
 
 [features]
 with-inspector = [
-    # "bevy-inspector-egui",
-    # "bevy_flycam",
-    # "iyes_perf_ui",
-    "ragnarok_rebuild_bevy/debug",
-    "bevy/default_font",
-    "bevy/file_watcher",
-    "bevy/embedded_watcher",
-    "bevy_ragnarok_act/debug",
-    "ragnarok_pal/debug",
-    "ragnarok_rsm/debug",
+  # "bevy-inspector-egui",
+  # "bevy_flycam",
+  # "iyes_perf_ui",
+  "ragnarok_rebuild_bevy/debug",
+  "bevy/default_font",
+  "bevy/file_watcher",
+  "bevy/embedded_watcher",
+  "bevy_ragnarok_act/debug",
+  "ragnarok_pal/debug",
+  "ragnarok_rsm/debug",
 ]
 
 [dependencies]
@@ -33,26 +33,26 @@ ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
 
 bevy = { workspace = true, default-features = false, features = [
-    "bevy_animation",
-    "bevy_pbr",
-    "bevy_post_process",
-    "bevy_remote",
-    "bevy_render",
-    "bevy_scene",
-    "bevy_sprite_render",
-    "bevy_state",
-    "bevy_text",
-    "bevy_ui",
-    "bevy_window",
-    "bevy_winit",
-    "wayland",
-    "animation",
-    "multi_threaded",
-    "reflect_auto_register",
-    "sysinfo_plugin",
-    "tonemapping_luts",
-    "trace",
-    "zstd_rust",
+  "bevy_animation",
+  "bevy_pbr",
+  "bevy_post_process",
+  "bevy_remote",
+  "bevy_render",
+  "bevy_scene",
+  "bevy_sprite_render",
+  "bevy_state",
+  "bevy_text",
+  "bevy_ui",
+  "bevy_window",
+  "bevy_winit",
+  "wayland",
+  "animation",
+  "multi_threaded",
+  "reflect_auto_register",
+  "sysinfo_plugin",
+  "tonemapping_luts",
+  "trace",
+  "zstd_rust",
 ] }
 # bevy-inspector-egui = { workspace = true, optional = true }
 # bevy_flycam = { workspace = true, optional = true }

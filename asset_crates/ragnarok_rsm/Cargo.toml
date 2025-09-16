@@ -10,23 +10,23 @@ workspace = true
 
 [features]
 bevy = [
-    "dep:bevy_animation",
-    "dep:bevy_app",
-    "dep:bevy_asset",
-    "dep:bevy_camera",
-    "dep:bevy_color",
-    "dep:bevy_ecs",
-    "dep:bevy_gizmos",
-    "dep:bevy_image",
-    "dep:bevy_math",
-    "dep:bevy_mesh",
-    "dep:bevy_pbr",
-    "dep:bevy_platform",
-    "dep:bevy_reflect",
-    "dep:bevy_render",
-    "dep:bevy_scene",
-    "dep:bevy_shader",
-    "dep:bevy_transform",
+  "dep:bevy_animation",
+  "dep:bevy_app",
+  "dep:bevy_asset",
+  "dep:bevy_camera",
+  "dep:bevy_color",
+  "dep:bevy_ecs",
+  "dep:bevy_gizmos",
+  "dep:bevy_image",
+  "dep:bevy_math",
+  "dep:bevy_mesh",
+  "dep:bevy_pbr",
+  "dep:bevy_platform",
+  "dep:bevy_reflect",
+  "dep:bevy_render",
+  "dep:bevy_scene",
+  "dep:bevy_shader",
+  "dep:bevy_transform",
 ]
 # Warnings while loading the rsm
 warning = ["ragnarok_rebuild_common/warning"]
@@ -54,7 +54,7 @@ bevy_render = { workspace = true, default-features = false, optional = true }
 bevy_scene = { workspace = true, default-features = false, optional = true }
 bevy_shader = { workspace = true, default-features = false, optional = true }
 bevy_transform = { workspace = true, default-features = false, features = [
-    "bevy-support",
+  "bevy-support",
 ], optional = true }
 
 log = { workspace = true }

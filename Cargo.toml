@@ -1,16 +1,16 @@
 [workspace]
 members = [
-    "asset_crates/ragnarok_act",
-    "asset_crates/ragnarok_grf",
-    "asset_crates/ragnarok_pal",
-    "asset_crates/ragnarok_rsm",
-    "asset_crates/ragnarok_rsw",
-    "asset_crates/ragnarok_spr",
-    "ragnarok_rebuild_common",
-    "ragnarok_rebuild_assets",
-    "ragnarok_rebuild_bevy",
-    "ragnarok_rebuild_client",
-    # "ragnarok_rebuild_server",
+  "asset_crates/ragnarok_act",
+  "asset_crates/ragnarok_grf",
+  "asset_crates/ragnarok_pal",
+  "asset_crates/ragnarok_rsm",
+  "asset_crates/ragnarok_rsw",
+  "asset_crates/ragnarok_spr",
+  "ragnarok_rebuild_common",
+  "ragnarok_rebuild_assets",
+  "ragnarok_rebuild_bevy",
+  "ragnarok_rebuild_client",
+  # "ragnarok_rebuild_server",
 ]
 resolver = "2"
 
@@ -61,9 +61,9 @@ flate2 = "1.1.2"
 encoding_rs = "0.8.35"
 
 sqlx = { version = "0.8.6", features = [
-    "runtime-async-std",
-    "postgres",
-    "uuid",
+  "runtime-async-std",
+  "postgres",
+  "uuid",
 ] }
 
 wgpu = "25.0.2"

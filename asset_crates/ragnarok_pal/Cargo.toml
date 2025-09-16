@@ -10,13 +10,13 @@ workspace = true
 
 [features]
 bevy = [
-    "dep:bevy_app",
-    "dep:bevy_asset",
-    "dep:bevy_color",
-    "dep:bevy_ecs",
-    "dep:bevy_image",
-    "dep:bevy_reflect",
-    "dep:bevy_render",
+  "dep:bevy_app",
+  "dep:bevy_asset",
+  "dep:bevy_color",
+  "dep:bevy_ecs",
+  "dep:bevy_image",
+  "dep:bevy_reflect",
+  "dep:bevy_render",
 ]
 # Warnings for the pal asset
 warning = ["ragnarok_rebuild_common/warning"]
