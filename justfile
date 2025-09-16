@@ -16,6 +16,7 @@ rsm_debug:
 spr_debug:
     cargo run --bin spr_debug --features="warning ragnarok_grf"
 
+#[default]
 [group("ci")]
 default:
     @just format
@@ -32,6 +33,9 @@ clippy:
     @just ragnarok_act
     @just ragnarok_spr
 
+    @just bevy_ragnarok_act
+    @just bevy_ragnarok_spr
+
 [group("clippy")]
 ragnarok_act:
     cargo clippy -p ragnarok_act --no-default-features
@@ -45,3 +49,17 @@ ragnarok_spr:
     cargo clippy -p ragnarok_spr --no-default-features --features="warning"
     cargo clippy -p ragnarok_spr
     cargo clippy -p ragnarok_spr --all-features
+
+[group("clippy")]
+bevy_ragnarok_act:
+    cargo clippy -p bevy_ragnarok_act --no-default-features
+    cargo clippy -p bevy_ragnarok_act --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_act
+    cargo clippy -p bevy_ragnarok_act --all-features
+
+[group("clippy")]
+bevy_ragnarok_spr:
+    cargo clippy -p bevy_ragnarok_spr --no-default-features
+    cargo clippy -p bevy_ragnarok_spr --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_spr
+    cargo clippy -p bevy_ragnarok_spr --all-features
