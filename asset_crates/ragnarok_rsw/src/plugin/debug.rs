@@ -66,7 +66,7 @@ fn directional_light_debug(
     children: Query<&Children>,
     directional_lights: Query<(&GlobalTransform, &DirectionalLight)>,
 ) {
-    const DIRECTIONAL_LIGHT_GIZMO_LENGHT: f32 = 5.;
+    const DIRECTIONAL_LIGHT_GIZMO_LENGTH: f32 = 5.;
 
     let Ok(world) = worlds.single() else {
         return;
@@ -89,25 +89,25 @@ fn directional_light_debug(
 
     gizmos.rect(
         Isometry3d::new(translation, rotation),
-        Vec2::splat(DIRECTIONAL_LIGHT_GIZMO_LENGHT / 2.),
+        Vec2::splat(DIRECTIONAL_LIGHT_GIZMO_LENGTH / 2.),
         color,
     );
     for x in [
-        -DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+        -DIRECTIONAL_LIGHT_GIZMO_LENGTH,
         0.,
-        DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+        DIRECTIONAL_LIGHT_GIZMO_LENGTH,
     ] {
         for y in [
-            -DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+            -DIRECTIONAL_LIGHT_GIZMO_LENGTH,
             0.,
-            DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+            DIRECTIONAL_LIGHT_GIZMO_LENGTH,
         ] {
             gizmos.arrow(
                 directional_light_pos.transform_point(Vec3::new(x, y, 0.)),
                 directional_light_pos.transform_point(Vec3::new(
                     x,
                     y,
-                    -DIRECTIONAL_LIGHT_GIZMO_LENGHT,
+                    -DIRECTIONAL_LIGHT_GIZMO_LENGTH,
                 )),
                 color,
             );
@@ -125,7 +125,7 @@ fn point_light_debug(
     children: Query<&Children>,
     lights: Query<(&GlobalTransform, &PointLight)>,
 ) {
-    const POINT_LIGHT_GIZMO_LENGHT: f32 = 1.;
+    const POINT_LIGHT_GIZMO_LENGTH: f32 = 1.;
     const POINT_LIGHT_RANGE_THRESHOLD: f32 = 5.;
 
     let Ok((world, world_info)) = worlds.single() else {
@@ -163,9 +163,9 @@ fn point_light_debug(
         } else {
             1.
         };
-        gizmos.sphere(translation, POINT_LIGHT_GIZMO_LENGHT * scale_factor, color);
+        gizmos.sphere(translation, POINT_LIGHT_GIZMO_LENGTH * scale_factor, color);
         // Poles
-        let pole_offset = Vec3::new(0., POINT_LIGHT_GIZMO_LENGHT, 0.);
+        let pole_offset = Vec3::new(0., POINT_LIGHT_GIZMO_LENGTH, 0.);
         gizmos.line(
             translation + pole_offset * scale_factor,
             translation + (pole_offset * 2.) * scale_factor,
@@ -177,7 +177,7 @@ fn point_light_debug(
             color,
         );
 
-        let equator_offset = Vec3::new(POINT_LIGHT_GIZMO_LENGHT, 0., 0.);
+        let equator_offset = Vec3::new(POINT_LIGHT_GIZMO_LENGTH, 0., 0.);
         for y in [0., 1., 2., 3., 4., 5., 6., 7., 8.] {
             for z in [-1., 0., 1.] {
                 let transform = Transform::from_rotation(Quat::from_euler(

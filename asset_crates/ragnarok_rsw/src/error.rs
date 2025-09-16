@@ -22,7 +22,7 @@ impl std::fmt::Display for Error {
             Self::UnknownVersion(version) => {
                 write!(f, "The version '{version}' is unknown.")
             }
-            Self::Io(err) => write!(f, "An IO error occured while reading RSW. '{err}'"),
+            Self::Io(err) => write!(f, "An IO error occurred while reading RSW. '{err}'"),
             Self::UnknownObjectType(obj_type) => {
                 write!(f, "RSW had an object of unknown type ({obj_type}).")
             }
