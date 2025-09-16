@@ -24,6 +24,7 @@ warning = ["ragnarok_rebuild_common/warning"]
 debug = []
 
 [dependencies]
+ragnarok_grf = { path = "../ragnarok_grf", optional = true }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 bevy_app = { workspace = true, default-features = false, optional = true }
@@ -33,3 +34,7 @@ bevy_ecs = { workspace = true, default-features = false, optional = true }
 bevy_image = { workspace = true, default-features = false, optional = true }
 bevy_reflect = { workspace = true, default-features = false, optional = true }
 bevy_render = { workspace = true, default-features = false, optional = true }
+
+[[bin]]
+name = "pal_debug"
+required-features = ["warning", "ragnarok_grf"]
