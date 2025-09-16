@@ -1,0 +1,30 @@
+[package]
+name = "bevy_ragnarok_spr"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lints]
+workspace = true
+
+[features]
+# Graphical debugging of meshes
+debug = []
+
+[dependencies]
+ragnarok_pal = { path = "../../asset_crates/ragnarok_pal" }
+ragnarok_spr = { path = "../../asset_crates/ragnarok_spr" }
+ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
+
+bevy_app = { workspace = true, default-features = false }
+bevy_asset = { workspace = true, default-features = false }
+bevy_color = { workspace = true, default-features = false }
+bevy_ecs = { workspace = true, default-features = false }
+bevy_image = { workspace = true, default-features = false }
+bevy_math = { workspace = true, default-features = false }
+bevy_mesh = { workspace = true, default-features = false }
+bevy_pbr = { workspace = true, default-features = false }
+bevy_reflect = { workspace = true, default-features = false }
+bevy_render = { workspace = true, default-features = false }
+bevy_shader = { workspace = true, default-features = false }

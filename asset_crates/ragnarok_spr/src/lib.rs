@@ -1,13 +1,5 @@
-#[cfg(feature = "bevy")]
-pub mod assets;
-#[cfg(feature = "bevy")]
-pub mod components;
 mod error;
 mod indexed;
-#[cfg(feature = "bevy")]
-pub mod material;
-#[cfg(feature = "bevy")]
-pub mod plugin;
 mod true_color;
 #[cfg(feature = "warning")]
 pub mod warnings;

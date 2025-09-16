@@ -3,8 +3,9 @@ use bevy_image::{Image, ImageSampler};
 use bevy_render::render_resource::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
 };
+use ragnarok_spr::{Error, IndexedSprite, Spr, TrueColorSprite};
 
-use crate::{Error, IndexedSprite, Spr, TrueColorSprite, assets::SpriteImages};
+use crate::assets::SpriteImages;
 
 pub struct AssetLoader;
 

@@ -1241,6 +1241,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_ragnarok_spr"
+version = "0.1.0"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_color",
+ "bevy_ecs",
+ "bevy_image",
+ "bevy_math",
+ "bevy_mesh",
+ "bevy_pbr",
+ "bevy_reflect",
+ "bevy_render",
+ "bevy_shader",
+ "ragnarok_pal",
+ "ragnarok_rebuild_common",
+ "ragnarok_spr",
+]
+
+[[package]]
 name = "bevy_reflect"
 version = "0.17.0-rc.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4543,13 +4563,13 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_ragnarok_act",
+ "bevy_ragnarok_spr",
  "ragnarok_grf",
  "ragnarok_pal",
  "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
  "ragnarok_rsm",
  "ragnarok_rsw",
- "ragnarok_spr",
  "serde",
  "toml",
  "tungstenite",
@@ -4632,17 +4652,6 @@ dependencies = [
 name = "ragnarok_spr"
 version = "0.1.0"
 dependencies = [
- "bevy_app",
- "bevy_asset",
- "bevy_color",
- "bevy_ecs",
- "bevy_image",
- "bevy_math",
- "bevy_mesh",
- "bevy_pbr",
- "bevy_reflect",
- "bevy_render",
- "bevy_shader",
  "ragnarok_pal",
  "ragnarok_rebuild_common",
 ]

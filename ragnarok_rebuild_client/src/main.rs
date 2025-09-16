@@ -121,7 +121,7 @@ fn main() {
             altitude_path_prefix: paths::ALTITUDE_FILES_FOLDER.into(),
             sound_path_prefix: paths::WAV_FILES_FOLDER.into(),
         },
-        ragnarok_spr::plugin::Plugin,
+        bevy_ragnarok_spr::plugin::Plugin,
     ));
 
     #[cfg(not(feature = "with-inspector"))]

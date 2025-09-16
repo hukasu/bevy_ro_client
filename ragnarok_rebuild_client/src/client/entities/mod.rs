@@ -8,12 +8,12 @@ use bevy::{
     prelude::{Changed, ChildOf, Commands, Query, Res, With},
 };
 use bevy_ragnarok_act::{Actor, ActorLayer, ActorPlayer, SpritesheetIndex};
-use ragnarok_pal::components::Palette;
-use ragnarok_spr::{
+use bevy_ragnarok_spr::{
     assets::SpriteImages,
-    components::Sprite,
     material::{SprIndexedMaterial, SprTrueColorMaterial, SprUniform},
+    Sprite,
 };
+use ragnarok_pal::components::Palette;
 
 pub use self::components::Entity;
 
