@@ -1241,6 +1241,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_ragnarok_grf"
+version = "0.1.0"
+dependencies = [
+ "bevy_asset",
+ "encoding_rs",
+ "flate2",
+ "futures",
+ "log",
+ "ragnarok_grf",
+ "ragnarok_rebuild_common",
+]
+
+[[package]]
 name = "bevy_ragnarok_spr"
 version = "0.1.0"
 dependencies = [
@@ -4493,10 +4506,8 @@ dependencies = [
 name = "ragnarok_grf"
 version = "0.1.0"
 dependencies = [
- "bevy_asset",
  "encoding_rs",
  "flate2",
- "futures",
  "log",
  "ragnarok_rebuild_common",
 ]
@@ -4552,8 +4563,8 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_ragnarok_act",
+ "bevy_ragnarok_grf",
  "bevy_ragnarok_spr",
- "ragnarok_grf",
  "ragnarok_pal",
  "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",

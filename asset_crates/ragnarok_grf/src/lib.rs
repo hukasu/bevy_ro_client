@@ -1,8 +1,6 @@
 mod entry;
 mod error;
 mod header;
-#[cfg(feature = "bevy")]
-pub mod reader;
 
 use std::{
     fmt::{Display, Formatter},

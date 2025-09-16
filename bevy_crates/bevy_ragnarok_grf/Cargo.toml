@@ -1,5 +1,5 @@
 [package]
-name = "ragnarok_grf"
+name = "bevy_ragnarok_grf"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,9 +9,13 @@ edition = "2024"
 workspace = true
 
 [dependencies]
+ragnarok_grf = { path = "../../asset_crates/ragnarok_grf" }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
+
+bevy_asset = { workspace = true, default-features = false }
 
 log = { workspace = true }
 
 flate2 = { workspace = true }
 encoding_rs = { workspace = true }
+futures = { workspace = true }
