@@ -27,8 +27,8 @@ bevy_ragnarok_grf = { workspace = true }
 bevy_ragnarok_act = { workspace = true }
 bevy_ragnarok_pal = { workspace = true }
 bevy_ragnarok_rsm = { workspace = true }
+bevy_ragnarok_rsw = { workspace = true }
 bevy_ragnarok_spr = { workspace = true }
-ragnarok_rsw = { path = "../asset_crates/ragnarok_rsw", features = ["bevy"] }
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
 

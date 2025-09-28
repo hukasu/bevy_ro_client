@@ -4,7 +4,7 @@ use bevy::{
     reflect::Reflect,
 };
 
-use ragnarok_rsw::assets::RswWorld;
+use bevy_ragnarok_rsw::assets::RswWorld;
 
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]

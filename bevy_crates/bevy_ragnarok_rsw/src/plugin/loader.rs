@@ -15,14 +15,11 @@ use bevy_math::{EulerRot, Quat, Vec3};
 use bevy_scene::{Scene, SceneRoot};
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
+use ragnarok_rsw::{Model, Rsw};
 
 use crate::{
-    Model, Rsw,
+    AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
     assets::RswWorld,
-    components::{
-        AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound,
-        World,
-    },
 };
 
 pub struct AssetLoader {
@@ -39,7 +36,7 @@ pub struct AssetLoader {
 impl bevy_asset::AssetLoader for AssetLoader {
     type Asset = RswWorld;
     type Settings = ();
-    type Error = crate::Error;
+    type Error = ragnarok_rsw::Error;
 
     async fn load(
         &self,

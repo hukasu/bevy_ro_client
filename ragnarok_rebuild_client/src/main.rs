@@ -7,8 +7,8 @@ mod other {
         ecs::system::Commands,
         prelude::{App, IntoScheduleConfigs, Startup},
     };
+    use bevy_ragnarok_rsw::events::LoadWorld;
     use ragnarok_rebuild_bevy::tables;
-    use ragnarok_rsw::events::LoadWorld;
 
     pub struct Plugin;
 
@@ -115,7 +115,7 @@ fn main() {
         bevy_ragnarok_rsm::plugin::Plugin {
             texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
         },
-        ragnarok_rsw::plugin::Plugin {
+        bevy_ragnarok_rsw::plugin::Plugin {
             model_path_prefix: paths::MODEL_FILES_FOLDER.into(),
             ground_path_prefix: paths::GROUND_FILES_FOLDER.into(),
             altitude_path_prefix: paths::ALTITUDE_FILES_FOLDER.into(),

@@ -8,7 +8,7 @@ use bevy::{
 };
 
 use bevy_ragnarok_rsm::{materials::RsmMaterial, Model, ModelInvertedMaterial};
-use ragnarok_rsw::components::AnimatedProp;
+use bevy_ragnarok_rsw::AnimatedProp;
 
 pub use self::game::GameState;
 pub struct Plugin;

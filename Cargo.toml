@@ -24,6 +24,7 @@ bevy_ragnarok_act = { path = "bevy_crates/bevy_ragnarok_act", default-features =
 bevy_ragnarok_grf = { path = "bevy_crates/bevy_ragnarok_grf", default-features = false }
 bevy_ragnarok_pal = { path = "bevy_crates/bevy_ragnarok_pal", default-features = false }
 bevy_ragnarok_rsm = { path = "bevy_crates/bevy_ragnarok_rsm", default-features = false }
+bevy_ragnarok_rsw = { path = "bevy_crates/bevy_ragnarok_rsw", default-features = false }
 bevy_ragnarok_spr = { path = "bevy_crates/bevy_ragnarok_spr", default-features = false }
 
 bevy = { version = "0.17.0-rc.1", default-features = false }

@@ -21,12 +21,12 @@ use bevy::{
     },
 };
 
+use bevy_ragnarok_rsw::World;
 use ragnarok_rebuild_bevy::{
     assets::{gnd, paths},
     audio::{Bgm, Sound},
     WorldTransform,
 };
-use ragnarok_rsw::components::World;
 use resources::LoadingWorld;
 use states::GameState;
 

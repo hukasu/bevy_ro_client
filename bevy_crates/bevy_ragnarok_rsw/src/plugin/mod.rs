@@ -7,7 +7,10 @@ use std::path::PathBuf;
 
 use bevy_asset::AssetApp;
 
-use crate::{assets::RswWorld, components};
+use crate::{
+    AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
+    assets::RswWorld,
+};
 
 use self::loader::AssetLoader;
 
@@ -29,12 +32,12 @@ impl bevy_app::Plugin for Plugin {
             .init_asset::<RswWorld>()
             .register_asset_reflect::<RswWorld>()
             // Register Types
-            .register_type::<components::World>()
-            .register_type::<components::DiffuseLight>()
-            .register_type::<components::AnimatedProp>()
-            .register_type::<components::EnvironmentalLight>()
-            .register_type::<components::EnvironmentalEffect>()
-            .register_type::<components::EnvironmentalSound>()
+            .register_type::<World>()
+            .register_type::<DiffuseLight>()
+            .register_type::<AnimatedProp>()
+            .register_type::<EnvironmentalLight>()
+            .register_type::<EnvironmentalEffect>()
+            .register_type::<EnvironmentalSound>()
             // Register AssetLoader
             .register_asset_loader(AssetLoader {
                 model_path_prefix: self.model_path_prefix.clone(),

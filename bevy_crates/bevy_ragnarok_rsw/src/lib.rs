@@ -1,27 +1,26 @@
-#[cfg(feature = "audio")]
-use bevy::{asset::Handle, audio::AudioSource, time::Timer, transform::components::Transform};
-use bevy::{
-    ecs::{component::Component, reflect::ReflectComponent},
-    reflect::Reflect,
-};
+pub mod assets;
+pub mod events;
+pub mod plugin;
+
+use bevy_asset::Handle;
+use bevy_audio::AudioSource;
+use bevy_ecs::{component::Component, reflect::ReflectComponent};
+use bevy_reflect::Reflect;
+use bevy_time::Timer;
+use bevy_transform::components::Transform;
 
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
-/// A World contains a Ground, a [`DirectionalLight`](bevy::pbr::DirectionalLight), multiple [`AnimatedProp`],
-/// multiple [`PointLight`](bevy::pbr::PointLight), and multiple [`EnvironmentalSound`]s
-pub struct World {
-    pub has_lights: bool,
-    pub has_sounds: bool,
-    pub has_effects: bool,
-    pub quad_tree: super::QuadTree,
-}
+/// A World contains a Ground, a [`DirectionalLight`](bevy_pbr::DirectionalLight), multiple [`AnimatedProp`],
+/// multiple [`PointLight`](bevy_pbr::PointLight), and multiple [`EnvironmentalSound`]s
+pub struct World;
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
 /// A diffuse light that illuminated the [`World`]
 pub struct DiffuseLight;
 
-#[derive(Debug, Default, Component, Reflect)]
+#[derive(Debug, Default, Clone, Copy, Component, Reflect)]
 #[reflect(Component)]
 /// An animated prop that is part of the [`World`]
 pub struct AnimatedProp {
@@ -36,7 +35,6 @@ pub struct EnvironmentalLight {
     pub range: f32,
 }
 
-#[cfg(feature = "audio")]
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
 /// Environmental sound that plays in the [`World`]

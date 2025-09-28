@@ -1,17 +1,9 @@
-#[cfg(feature = "bevy")]
-pub mod assets;
 mod bounding_box;
-#[cfg(feature = "bevy")]
-pub mod components;
 mod effect;
 mod error;
-#[cfg(feature = "bevy")]
-pub mod events;
 mod light;
 mod lighting_params;
 mod model;
-#[cfg(feature = "bevy")]
-pub mod plugin;
 mod quad_tree;
 mod sound;
 
