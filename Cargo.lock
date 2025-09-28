@@ -4568,6 +4568,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "ragnarok_gat"
+version = "0.1.0"
+dependencies = [
+ "ragnarok_grf",
+ "ragnarok_rebuild_common",
+ "serde",
+]
+
+[[package]]
 name = "ragnarok_grf"
 version = "0.1.0"
 dependencies = [

@@ -3,6 +3,10 @@ act_debug:
     cargo run --bin act_debug --features="warning ragnarok_grf"
 
 [group("asset_debug")]
+gat_debug:
+    cargo run --bin gat_debug --features="warning ragnarok_grf"
+
+[group("asset_debug")]
 pal_debug:
     cargo run --bin pal_debug --features="warning ragnarok_grf"
 
@@ -33,6 +37,7 @@ format:
 [group("ci")]
 clippy:
     @just ragnarok_act
+    @just ragnarok_gat
     @just ragnarok_grf
     @just ragnarok_pal
     @just ragnarok_rsm
@@ -52,6 +57,13 @@ ragnarok_act $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_act --bins --lib --tests --no-default-features --features="warning"
     cargo clippy -p ragnarok_act --bins --lib --tests
     cargo clippy -p ragnarok_act --bins --lib --tests --all-features
+
+[group("clippy")]
+ragnarok_gat $RUSTFLAGS="-Dwarnings":
+    cargo clippy -p ragnarok_gat --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_gat --bins --lib --tests --no-default-features --features="warning"
+    cargo clippy -p ragnarok_gat --bins --lib --tests
+    cargo clippy -p ragnarok_gat --bins --lib --tests --all-features
 
 [group("clippy")]
 ragnarok_grf $RUSTFLAGS="-Dwarnings":

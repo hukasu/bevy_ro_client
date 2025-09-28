@@ -1,0 +1,23 @@
+[package]
+name = "ragnarok_gat"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lints]
+workspace = true
+
+[features]
+# Warnings for the pal asset
+warning = ["ragnarok_rebuild_common/warning"]
+
+[dependencies]
+ragnarok_grf = { path = "../ragnarok_grf", optional = true }
+ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
+
+serde = { workspace = true }
+
+[[bin]]
+name = "gat_debug"
+required-features = ["warning", "ragnarok_grf"]

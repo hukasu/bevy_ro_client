@@ -1,9 +1,11 @@
 mod error;
 mod tile;
+#[cfg(feature = "warning")]
+pub mod warnings;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::{reader_ext::ReaderExt, Version};
+use ragnarok_rebuild_common::{Version, reader_ext::ReaderExt};
 
 pub use self::{
     error::Error,

@@ -1,6 +1,7 @@
 [workspace]
 members = [
   "asset_crates/ragnarok_act",
+  "asset_crates/ragnarok_gat",
   "asset_crates/ragnarok_grf",
   "asset_crates/ragnarok_pal",
   "asset_crates/ragnarok_rsm",
@@ -20,6 +21,8 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
+ragnarok_gat = { path = "asset_crates/ragnarok_gat", default-features = false }
+
 bevy_ragnarok_act = { path = "bevy_crates/bevy_ragnarok_act", default-features = false }
 bevy_ragnarok_grf = { path = "bevy_crates/bevy_ragnarok_grf", default-features = false }
 bevy_ragnarok_pal = { path = "bevy_crates/bevy_ragnarok_pal", default-features = false }
