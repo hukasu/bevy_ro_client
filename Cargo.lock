@@ -4664,6 +4664,7 @@ dependencies = [
  "encoding_rs",
  "flate2",
  "log",
+ "ragnarok_grf",
  "ragnarok_rebuild_common",
  "serde",
 ]
