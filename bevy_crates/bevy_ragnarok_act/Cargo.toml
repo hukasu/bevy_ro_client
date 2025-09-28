@@ -14,7 +14,7 @@ debug = ["dep:bevy_gizmos"]
 
 [dependencies]
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
-ragnarok_act = { path = "../../asset_crates/ragnarok_act" }
+ragnarok_act = { workspace = true }
 
 bevy_animation = { workspace = true, default-features = false }
 bevy_app = { workspace = true, default-features = false }

@@ -22,6 +22,7 @@ members = [
 resolver = "2"
 
 [workspace.dependencies]
+ragnarok_act = { path = "asset_crates/ragnarok_act", default-features = false }
 ragnarok_gat = { path = "asset_crates/ragnarok_gat", default-features = false }
 
 bevy_ragnarok_act = { path = "bevy_crates/bevy_ragnarok_act", default-features = false }
