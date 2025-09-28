@@ -38,12 +38,14 @@ clippy:
     @just ragnarok_grf
     @just ragnarok_pal
     @just ragnarok_rsm
+    @just ragnarok_rsw
     @just ragnarok_spr
 
     @just bevy_ragnarok_act
     @just bevy_ragnarok_grf
     @just bevy_ragnarok_pal
     @just bevy_ragnarok_rsm
+    @just bevy_ragnarok_rsw
     @just bevy_ragnarok_spr
 
 [group("clippy")]
@@ -72,6 +74,13 @@ ragnarok_rsm:
     cargo clippy -p ragnarok_rsm --no-default-features --features="warning"
     cargo clippy -p ragnarok_rsm
     cargo clippy -p ragnarok_rsm --all-features
+
+[group("clippy")]
+ragnarok_rsw:
+    cargo clippy -p ragnarok_rsw --no-default-features
+    cargo clippy -p ragnarok_rsw --no-default-features --features="warning"
+    cargo clippy -p ragnarok_rsw
+    cargo clippy -p ragnarok_rsw --all-features
 
 [group("clippy")]
 ragnarok_spr:
@@ -106,6 +115,13 @@ bevy_ragnarok_rsm:
     cargo clippy -p bevy_ragnarok_rsm --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_rsm
     cargo clippy -p bevy_ragnarok_rsm --all-features
+
+[group("clippy")]
+bevy_ragnarok_rsw:
+    cargo clippy -p bevy_ragnarok_rsw --no-default-features
+    cargo clippy -p bevy_ragnarok_rsw --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_rsw
+    cargo clippy -p bevy_ragnarok_rsw --all-features
 
 [group("clippy")]
 bevy_ragnarok_spr:
