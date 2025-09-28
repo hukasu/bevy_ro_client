@@ -13,6 +13,10 @@ rsm_debug:
     cargo run --bin rsm_debug --features="warning ragnarok_grf"
 
 [group("asset_debug")]
+rsw_debug:
+    cargo run --bin rsw_debug --features="warning ragnarok_grf"
+
+[group("asset_debug")]
 spr_debug:
     cargo run --bin spr_debug --features="warning ragnarok_grf"
 

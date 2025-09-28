@@ -1,6 +1,8 @@
 use std::{collections::BTreeSet, fmt::Write, io::Cursor, path::Path};
 
-use ragnarok_rebuild_assets::{grf::Grf, rsw};
+use ragnarok_grf::Grf;
+use ragnarok_rebuild_common::warning::ReportWarning;
+use ragnarok_rsw::{Light, Model, Rsw};
 
 fn main() {
     let Ok(grf) = Grf::new(Path::new("data.grf")).inspect_err(|err| println!("{err}")) else {
@@ -22,7 +24,7 @@ fn main() {
         else {
             continue;
         };
-        let Ok(rsw) = rsw::Rsw::from_reader(&mut Cursor::new(&rsw_content))
+        let Ok(rsw) = Rsw::from_reader(&mut Cursor::new(&rsw_content))
             .inspect_err(|err| println!("{rsw_filename:?}: {err}"))
         else {
             continue;
@@ -35,7 +37,7 @@ fn main() {
     }
 }
 
-fn debug_rsw(rsw: &rsw::Rsw) -> Option<String> {
+fn debug_rsw(rsw: &Rsw) -> Option<String> {
     let header = || format!("\t{:?}\n", rsw.version);
     let mut debug = None;
 
@@ -62,7 +64,7 @@ fn debug_rsw(rsw: &rsw::Rsw) -> Option<String> {
     debug
 }
 
-fn debug_model(model: &rsw::Model) -> Option<String> {
+fn debug_model(model: &Model) -> Option<String> {
     const INDENT: &str = "\t";
     let header = || format!("{INDENT}Model \"{}\"\n", model.name);
     let mut debug = None;
@@ -108,13 +110,13 @@ fn debug_model(model: &rsw::Model) -> Option<String> {
     debug
 }
 
-fn debug_lights(lights: &[rsw::Light]) -> Option<String> {
+fn debug_lights(lights: &[Light]) -> Option<String> {
     const THRESHOLD: f32 = 1.;
     const INDENT: &str = "\t";
     let header = String::new;
     let mut debug = None;
 
-    let mut light_positions: Vec<&rsw::Light> = Vec::new();
+    let mut light_positions: Vec<&Light> = Vec::new();
     for light in lights.iter() {
         if let Some(repeated) = light_positions.iter().find(|other| {
             ((other.position[0] - light.position[0]).powi(2)
