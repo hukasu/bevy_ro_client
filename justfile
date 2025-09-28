@@ -1,5 +1,3 @@
-export RUSTFLAGS := "-Dwarnings"
-
 [group("asset_debug")]
 act_debug:
     cargo run --bin act_debug --features="warning ragnarok_grf"
@@ -49,82 +47,82 @@ clippy:
     @just bevy_ragnarok_spr
 
 [group("clippy")]
-ragnarok_act:
+ragnarok_act $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_act --no-default-features
     cargo clippy -p ragnarok_act --no-default-features --features="warning"
     cargo clippy -p ragnarok_act
     cargo clippy -p ragnarok_act --all-features
 
 [group("clippy")]
-ragnarok_grf:
+ragnarok_grf $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_grf --no-default-features
     cargo clippy -p ragnarok_grf
     cargo clippy -p ragnarok_grf --all-features
 
 [group("clippy")]
-ragnarok_pal:
+ragnarok_pal $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_pal --no-default-features
     cargo clippy -p ragnarok_pal --no-default-features --features="warning"
     cargo clippy -p ragnarok_pal
     cargo clippy -p ragnarok_pal --all-features
 
 [group("clippy")]
-ragnarok_rsm:
+ragnarok_rsm $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_rsm --no-default-features
     cargo clippy -p ragnarok_rsm --no-default-features --features="warning"
     cargo clippy -p ragnarok_rsm
     cargo clippy -p ragnarok_rsm --all-features
 
 [group("clippy")]
-ragnarok_rsw:
+ragnarok_rsw $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_rsw --no-default-features
     cargo clippy -p ragnarok_rsw --no-default-features --features="warning"
     cargo clippy -p ragnarok_rsw
     cargo clippy -p ragnarok_rsw --all-features
 
 [group("clippy")]
-ragnarok_spr:
+ragnarok_spr $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_spr --no-default-features
     cargo clippy -p ragnarok_spr --no-default-features --features="warning"
     cargo clippy -p ragnarok_spr
     cargo clippy -p ragnarok_spr --all-features
 
 [group("clippy")]
-bevy_ragnarok_act:
+bevy_ragnarok_act $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_act --no-default-features
     cargo clippy -p bevy_ragnarok_act --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_act
     cargo clippy -p bevy_ragnarok_act --all-features
 
 [group("clippy")]
-bevy_ragnarok_grf:
+bevy_ragnarok_grf $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_grf --no-default-features
     cargo clippy -p bevy_ragnarok_grf
     cargo clippy -p bevy_ragnarok_grf --all-features
 
 [group("clippy")]
-bevy_ragnarok_pal:
+bevy_ragnarok_pal $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_pal --no-default-features
     cargo clippy -p bevy_ragnarok_pal --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_pal
     cargo clippy -p bevy_ragnarok_pal --all-features
 
 [group("clippy")]
-bevy_ragnarok_rsm:
+bevy_ragnarok_rsm $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_rsm --no-default-features
     cargo clippy -p bevy_ragnarok_rsm --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_rsm
     cargo clippy -p bevy_ragnarok_rsm --all-features
 
 [group("clippy")]
-bevy_ragnarok_rsw:
+bevy_ragnarok_rsw $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_rsw --no-default-features
     cargo clippy -p bevy_ragnarok_rsw --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_rsw
     cargo clippy -p bevy_ragnarok_rsw --all-features
 
 [group("clippy")]
-bevy_ragnarok_spr:
+bevy_ragnarok_spr $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_spr --no-default-features
     cargo clippy -p bevy_ragnarok_spr --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_spr
