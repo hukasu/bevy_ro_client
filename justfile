@@ -48,82 +48,82 @@ clippy:
 
 [group("clippy")]
 ragnarok_act $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p ragnarok_act --no-default-features
-    cargo clippy -p ragnarok_act --no-default-features --features="warning"
-    cargo clippy -p ragnarok_act
-    cargo clippy -p ragnarok_act --all-features
+    cargo clippy -p ragnarok_act --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_act --bins --lib --tests --no-default-features --features="warning"
+    cargo clippy -p ragnarok_act --bins --lib --tests
+    cargo clippy -p ragnarok_act --bins --lib --tests --all-features
 
 [group("clippy")]
 ragnarok_grf $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p ragnarok_grf --no-default-features
-    cargo clippy -p ragnarok_grf
-    cargo clippy -p ragnarok_grf --all-features
+    cargo clippy -p ragnarok_grf --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_grf --bins --lib --tests
+    cargo clippy -p ragnarok_grf --bins --lib --tests --all-features
 
 [group("clippy")]
 ragnarok_pal $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p ragnarok_pal --no-default-features
-    cargo clippy -p ragnarok_pal --no-default-features --features="warning"
-    cargo clippy -p ragnarok_pal
-    cargo clippy -p ragnarok_pal --all-features
+    cargo clippy -p ragnarok_pal --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_pal --bins --lib --tests --no-default-features --features="warning"
+    cargo clippy -p ragnarok_pal --bins --lib --tests
+    cargo clippy -p ragnarok_pal --bins --lib --tests --all-features
 
 [group("clippy")]
 ragnarok_rsm $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p ragnarok_rsm --no-default-features
-    cargo clippy -p ragnarok_rsm --no-default-features --features="warning"
-    cargo clippy -p ragnarok_rsm
-    cargo clippy -p ragnarok_rsm --all-features
+    cargo clippy -p ragnarok_rsm --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_rsm --bins --lib --tests --no-default-features --features="warning"
+    cargo clippy -p ragnarok_rsm --bins --lib --tests
+    cargo clippy -p ragnarok_rsm --bins --lib --tests --all-features
 
 [group("clippy")]
 ragnarok_rsw $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p ragnarok_rsw --no-default-features
-    cargo clippy -p ragnarok_rsw --no-default-features --features="warning"
-    cargo clippy -p ragnarok_rsw
-    cargo clippy -p ragnarok_rsw --all-features
+    cargo clippy -p ragnarok_rsw --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_rsw --bins --lib --tests --no-default-features --features="warning"
+    cargo clippy -p ragnarok_rsw --bins --lib --tests
+    cargo clippy -p ragnarok_rsw --bins --lib --tests --all-features
 
 [group("clippy")]
 ragnarok_spr $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p ragnarok_spr --no-default-features
-    cargo clippy -p ragnarok_spr --no-default-features --features="warning"
-    cargo clippy -p ragnarok_spr
-    cargo clippy -p ragnarok_spr --all-features
+    cargo clippy -p ragnarok_spr --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_spr --bins --lib --tests --no-default-features --features="warning"
+    cargo clippy -p ragnarok_spr --bins --lib --tests
+    cargo clippy -p ragnarok_spr --bins --lib --tests --all-features
 
 [group("clippy")]
 bevy_ragnarok_act $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_act --no-default-features
-    cargo clippy -p bevy_ragnarok_act --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_act
-    cargo clippy -p bevy_ragnarok_act --all-features
+    cargo clippy -p bevy_ragnarok_act --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_act --bins --lib --tests --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_act --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_act --bins --lib --tests --all-features
 
 [group("clippy")]
 bevy_ragnarok_grf $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_grf --no-default-features
-    cargo clippy -p bevy_ragnarok_grf
-    cargo clippy -p bevy_ragnarok_grf --all-features
+    cargo clippy -p bevy_ragnarok_grf --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_grf --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_grf --bins --lib --tests --all-features
 
 [group("clippy")]
 bevy_ragnarok_pal $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_pal --no-default-features
-    cargo clippy -p bevy_ragnarok_pal --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_pal
-    cargo clippy -p bevy_ragnarok_pal --all-features
+    cargo clippy -p bevy_ragnarok_pal --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_pal --bins --lib --tests --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_pal --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_pal --bins --lib --tests --all-features
 
 [group("clippy")]
 bevy_ragnarok_rsm $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_rsm --no-default-features
-    cargo clippy -p bevy_ragnarok_rsm --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_rsm
-    cargo clippy -p bevy_ragnarok_rsm --all-features
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --all-features
 
 [group("clippy")]
 bevy_ragnarok_rsw $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_rsw --no-default-features
-    cargo clippy -p bevy_ragnarok_rsw --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_rsw
-    cargo clippy -p bevy_ragnarok_rsw --all-features
+    cargo clippy -p bevy_ragnarok_rsw --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_rsw --bins --lib --tests --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_rsw --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_rsw --bins --lib --tests --all-features
 
 [group("clippy")]
 bevy_ragnarok_spr $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_spr --no-default-features
-    cargo clippy -p bevy_ragnarok_spr --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_spr
-    cargo clippy -p bevy_ragnarok_spr --all-features
+    cargo clippy -p bevy_ragnarok_spr --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_spr --bins --lib --tests --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_spr --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_spr --bins --lib --tests --all-features
