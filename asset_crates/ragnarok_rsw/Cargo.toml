@@ -13,6 +13,7 @@ workspace = true
 warning = ["ragnarok_rebuild_common/warning"]
 
 [dependencies]
+ragnarok_grf = { path = "../ragnarok_grf", optional = true }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 log = { workspace = true }
