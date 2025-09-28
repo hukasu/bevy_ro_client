@@ -11,6 +11,7 @@ members = [
   "bevy_crates/bevy_ragnarok_grf",
   "bevy_crates/bevy_ragnarok_pal",
   "bevy_crates/bevy_ragnarok_rsm",
+  "bevy_crates/bevy_ragnarok_rsw",
   "bevy_crates/bevy_ragnarok_spr",
   "ragnarok_rebuild_common",
   "ragnarok_rebuild_assets",
