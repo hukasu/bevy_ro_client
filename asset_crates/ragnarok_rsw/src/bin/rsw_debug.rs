@@ -1,6 +1,6 @@
 #![expect(clippy::unwrap_used, reason = "This is a test")]
 
-use std::{collections::BTreeSet, fmt::Write, io::Cursor, path::Path};
+use std::{io::Cursor, path::Path};
 
 use ragnarok_grf::Grf;
 use ragnarok_rebuild_common::warning::ReportWarning;
