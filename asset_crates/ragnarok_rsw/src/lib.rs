@@ -6,6 +6,8 @@ mod lighting_params;
 mod model;
 mod quad_tree;
 mod sound;
+#[cfg(feature = "warning")]
+pub mod warnings;
 
 use std::io::Read;
 
