@@ -13,7 +13,6 @@ required-features = ["debug"]
 workspace = true
 
 [features]
-default = ["debug"]
 # Graphical debugging of meshes
 debug = ["dep:bevy_gizmos"]
 
