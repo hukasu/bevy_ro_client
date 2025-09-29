@@ -10,7 +10,7 @@ workspace = true
 
 [features]
 debug = []
-reflect = ["dep:bevy_reflect"]
+reflect = []
 
 [dependencies]
 bevy_app = { workspace = true, default-features = false }
@@ -18,7 +18,7 @@ bevy_camera = { workspace = true, default-features = false }
 bevy_ecs = { workspace = true, default-features = false }
 bevy_log = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
-bevy_reflect = { workspace = true, default-features = false, optional = true }
+bevy_reflect = { workspace = true, default-features = false }
 bevy_transform = { workspace = true, default-features = false }
 bevy_gizmos = { workspace = true, default-features = false }
 
