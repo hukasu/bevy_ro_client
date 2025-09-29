@@ -51,6 +51,8 @@ clippy:
     @just bevy_ragnarok_rsw
     @just bevy_ragnarok_spr
 
+    @just bevy_ragnarok_quad_tree
+
 [group("clippy")]
 ragnarok_act $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_act --bins --lib --tests --no-default-features
@@ -139,3 +141,11 @@ bevy_ragnarok_spr $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_spr --bins --lib --tests --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_spr --bins --lib --tests
     cargo clippy -p bevy_ragnarok_spr --bins --lib --tests --all-features
+
+[group("clippy")]
+bevy_ragnarok_quad_tree $RUSTFLAGS="-Dwarnings":
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --no-default-features --features="reflect"
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --all-features

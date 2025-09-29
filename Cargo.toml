@@ -13,6 +13,7 @@ members = [
   "bevy_crates/bevy_ragnarok_rsm",
   "bevy_crates/bevy_ragnarok_rsw",
   "bevy_crates/bevy_ragnarok_spr",
+  "bevy_crates/bevy_ragnarok_quad_tree",
   "ragnarok_rebuild_common",
   "ragnarok_rebuild_assets",
   "ragnarok_rebuild_bevy",
@@ -32,6 +33,8 @@ bevy_ragnarok_rsm = { path = "bevy_crates/bevy_ragnarok_rsm", default-features =
 bevy_ragnarok_rsw = { path = "bevy_crates/bevy_ragnarok_rsw", default-features = false }
 bevy_ragnarok_spr = { path = "bevy_crates/bevy_ragnarok_spr", default-features = false }
 
+bevy_ragnarok_quad_tree = { path = "bevy_crates/bevy_ragnarok_quad_tree", default-features = false }
+
 bevy = { version = "0.17.0-rc.1", default-features = false }
 bevy_animation = { version = "0.17.0-rc.1", default-features = false }
 bevy_app = { version = "0.17.0-rc.1", default-features = false }
@@ -40,10 +43,12 @@ bevy_audio = { version = "0.17.0-rc.1", default-features = false }
 bevy_camera = { version = "0.17.0-rc.1", default-features = false }
 bevy_color = { version = "0.17.0-rc.1", default-features = false }
 bevy_core_pipeline = { version = "0.17.0-rc.1", default-features = false }
+bevy_derive = { version = "0.17.0-rc.1", default-features = false }
 bevy_ecs = { version = "0.17.0-rc.1", default-features = false }
 bevy_gizmos = { version = "0.17.0-rc.1", default-features = false }
 bevy_image = { version = "0.17.0-rc.1", default-features = false }
 bevy_light = { version = "0.17.0-rc.1", default-features = false }
+bevy_log = { version = "0.17.0-rc.1", default-features = false }
 bevy_math = { version = "0.17.0-rc.1", default-features = false }
 bevy_mesh = { version = "0.17.0-rc.1", default-features = false }
 bevy_pbr = { version = "0.17.0-rc.1", default-features = false }
