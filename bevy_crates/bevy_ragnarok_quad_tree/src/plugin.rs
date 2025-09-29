@@ -32,13 +32,13 @@ impl bevy_app::Plugin for Plugin {
         );
         app.add_observer(initial_tracking);
 
+        app.register_type::<TrackEntity>();
         #[cfg(feature = "reflect")]
         {
             use crate::TrackingEntities;
 
             app.register_type::<QuadTree>();
             app.register_type::<QuadTreeNode>();
-            app.register_type::<TrackEntity>();
             app.register_type::<TrackedEntity>();
             app.register_type::<TrackingEntities>();
         }

@@ -7,8 +7,8 @@ pub mod plugin;
 use bevy_ecs::{
     component::Component,
     entity::{Entity, EntityHashSet},
+    reflect::ReflectComponent,
 };
-#[cfg(feature = "reflect")]
 use bevy_reflect::Reflect;
 
 /// A [`QuadTree`] has 4 children of type [`QuadTreeNode`], partitioning the space
@@ -34,8 +34,8 @@ pub struct QuadTreeNode {
 
 /// Marks this entity to be tracked by the [`QuadTree`]
 #[cfg_attr(feature = "debug", derive(Debug))]
-#[derive(Component)]
-#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[derive(Reflect, Component)]
+#[reflect(Component)]
 pub struct TrackEntity;
 
 /// Entities that are present on this [`QuadTreeNode`].
