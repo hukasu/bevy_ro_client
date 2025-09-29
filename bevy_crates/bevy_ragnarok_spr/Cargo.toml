@@ -14,7 +14,7 @@ debug = []
 
 [dependencies]
 bevy_ragnarok_pal = { workspace = true }
-ragnarok_spr = { path = "../../asset_crates/ragnarok_spr" }
+ragnarok_spr = { workspace = true }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 bevy_app = { workspace = true, default-features = false }

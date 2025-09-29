@@ -30,6 +30,7 @@ ragnarok_grf = { path = "asset_crates/ragnarok_grf", default-features = false }
 ragnarok_pal = { path = "asset_crates/ragnarok_pal", default-features = false }
 ragnarok_rsm = { path = "asset_crates/ragnarok_rsm", default-features = false }
 ragnarok_rsw = { path = "asset_crates/ragnarok_rsw", default-features = false }
+ragnarok_spr = { path = "asset_crates/ragnarok_spr", default-features = false }
 
 bevy_ragnarok_act = { path = "bevy_crates/bevy_ragnarok_act", default-features = false }
 bevy_ragnarok_gat = { path = "bevy_crates/bevy_ragnarok_gat", default-features = false }
