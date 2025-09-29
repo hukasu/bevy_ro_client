@@ -14,7 +14,7 @@ debug = ["bevy_gizmos"]
 
 [dependencies]
 ragnarok_rsm = { workspace = true }
-ragnarok_rsw = { path = "../../asset_crates/ragnarok_rsw" }
+ragnarok_rsw = { workspace = true }
 
 bevy_animation = { workspace = true, default-features = false }
 bevy_app = { workspace = true, default-features = false }
