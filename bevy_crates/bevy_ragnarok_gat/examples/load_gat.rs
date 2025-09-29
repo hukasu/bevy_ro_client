@@ -4,13 +4,20 @@ use std::f32::consts::PI;
 
 use bevy::{
     DefaultPlugins,
-    app::{App, Startup},
-    asset::{AssetApp, AssetServer},
-    camera::Camera3d,
-    ecs::{
-        component::Component,
-        system::{Commands, Res, ResMut},
+    app::{App, Startup, Update},
+    asset::{
+        AssetApp, AssetServer,
+        io::{AssetSourceBuilder, AssetSourceId},
     },
+    camera::{Camera, Camera3d},
+    ecs::{
+        children,
+        component::Component,
+        query::With,
+        spawn::SpawnRelated,
+        system::{Commands, Res, ResMut, Single},
+    },
+    gizmos::{GizmoAsset, retained::Gizmo},
     input::{ButtonInput, keyboard::KeyCode},
     light::DirectionalLight,
     math::{Quat, Vec3},
@@ -19,18 +26,14 @@ use bevy::{
     transform::components::Transform,
     ui::{Node, Val, widget::Text},
 };
-use bevy_app::Update;
-use bevy_camera::Camera;
-use bevy_ecs::{children, query::With, spawn::SpawnRelated, system::Single};
-use bevy_gizmos::{GizmoAsset, retained::Gizmo};
 use bevy_ragnarok_gat::debug::{ToggleGatAabbs, ToggleGatQuads};
 
 fn main() {
     let mut app = App::new();
 
     app.register_asset_source(
-        bevy::asset::io::AssetSourceId::Default,
-        bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
+        AssetSourceId::Default,
+        AssetSourceBuilder::default().with_reader(|| {
             #[expect(clippy::unwrap_used, reason = "This is on my TODO")]
             let grf =
                 bevy_ragnarok_grf::AssetReader::new(std::path::Path::new("data.grf")).unwrap();

@@ -9,7 +9,7 @@ edition = "2024"
 workspace = true
 
 [dependencies]
-ragnarok_grf = { path = "../../asset_crates/ragnarok_grf" }
+ragnarok_grf = { workspace = true }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 bevy_asset = { workspace = true, default-features = false }
