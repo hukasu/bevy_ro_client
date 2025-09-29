@@ -8,6 +8,7 @@ members = [
   "asset_crates/ragnarok_rsw",
   "asset_crates/ragnarok_spr",
   "bevy_crates/bevy_ragnarok_act",
+  "bevy_crates/bevy_ragnarok_gat",
   "bevy_crates/bevy_ragnarok_grf",
   "bevy_crates/bevy_ragnarok_pal",
   "bevy_crates/bevy_ragnarok_rsm",
@@ -27,6 +28,7 @@ ragnarok_act = { path = "asset_crates/ragnarok_act", default-features = false }
 ragnarok_gat = { path = "asset_crates/ragnarok_gat", default-features = false }
 
 bevy_ragnarok_act = { path = "bevy_crates/bevy_ragnarok_act", default-features = false }
+bevy_ragnarok_gat = { path = "bevy_crates/bevy_ragnarok_gat", default-features = false }
 bevy_ragnarok_grf = { path = "bevy_crates/bevy_ragnarok_grf", default-features = false }
 bevy_ragnarok_pal = { path = "bevy_crates/bevy_ragnarok_pal", default-features = false }
 bevy_ragnarok_rsm = { path = "bevy_crates/bevy_ragnarok_rsm", default-features = false }
@@ -53,6 +55,7 @@ bevy_math = { version = "0.17.0-rc.1", default-features = false }
 bevy_mesh = { version = "0.17.0-rc.1", default-features = false }
 bevy_pbr = { version = "0.17.0-rc.1", default-features = false }
 bevy_platform = { version = "0.17.0-rc.1", default-features = false }
+bevy_ptr = { version = "0.17.0-rc.1", default-features = false }
 bevy_reflect = { version = "0.17.0-rc.1", default-features = false }
 bevy_render = { version = "0.17.0-rc.1", default-features = false }
 bevy_scene = { version = "0.17.0-rc.1", default-features = false }

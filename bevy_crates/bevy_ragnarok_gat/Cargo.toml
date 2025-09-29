@@ -1,0 +1,68 @@
+[package]
+name = "bevy_ragnarok_gat"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[example]]
+name = "load_gat"
+required-features = ["debug"]
+
+[lints]
+workspace = true
+
+[features]
+default = ["debug"]
+# Graphical debugging of meshes
+debug = ["dep:bevy_gizmos"]
+
+[dependencies]
+ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
+ragnarok_gat = { workspace = true }
+
+bevy_ragnarok_quad_tree = { workspace = true }
+
+bevy_animation = { workspace = true, default-features = false }
+bevy_app = { workspace = true, default-features = false }
+bevy_asset = { workspace = true, default-features = false }
+bevy_audio = { workspace = true, default-features = false }
+bevy_camera = { workspace = true, default-features = false }
+bevy_color = { workspace = true, default-features = false }
+bevy_derive = { workspace = true, default-features = false }
+bevy_ecs = { workspace = true, default-features = false }
+bevy_gizmos = { workspace = true, default-features = false, optional = true }
+bevy_log = { workspace = true, default-features = false }
+bevy_math = { workspace = true, default-features = false }
+bevy_mesh = { workspace = true, default-features = false }
+bevy_platform = { workspace = true, default-features = false }
+bevy_ptr = { workspace = true, default-features = false }
+bevy_reflect = { workspace = true, default-features = false }
+bevy_render = { workspace = true, default-features = false }
+bevy_scene = { workspace = true, default-features = false }
+bevy_transform = { workspace = true, default-features = false }
+
+log = { workspace = true }
+
+[dev-dependencies]
+bevy_ragnarok_grf = { workspace = true }
+
+bevy = { workspace = true, features = [
+  "bevy_asset",
+  "bevy_camera",
+  "bevy_core_pipeline",
+  "bevy_gizmos",
+  "bevy_light",
+  "bevy_log",
+  "bevy_pbr",
+  "bevy_render",
+  "bevy_scene",
+  "bevy_ui",
+  "bevy_window",
+  "bevy_winit",
+  "debug",
+  "default_font",
+  "tonemapping_luts",
+  "wayland",
+  "zstd_rust",
+] }
