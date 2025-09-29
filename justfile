@@ -45,6 +45,7 @@ clippy:
     @just ragnarok_spr
 
     @just bevy_ragnarok_act
+    @just bevy_ragnarok_gat
     @just bevy_ragnarok_grf
     @just bevy_ragnarok_pal
     @just bevy_ragnarok_rsm
@@ -107,6 +108,17 @@ bevy_ragnarok_act $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_act --bins --lib --tests --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_act --bins --lib --tests
     cargo clippy -p bevy_ragnarok_act --bins --lib --tests --all-features
+
+[group("clippy")]
+bevy_ragnarok_gat $RUSTFLAGS="-Dwarnings":
+    cargo clippy -p bevy_ragnarok_gat --bins --lib --tests --no-default-features
+    cargo clippy -p bevy_ragnarok_gat --bins --lib --tests --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_gat --bins --lib --tests
+    cargo clippy -p bevy_ragnarok_gat --bins --lib --tests --all-features
+
+    cargo clippy -p bevy_ragnarok_gat --example load_gat --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_gat --example load_gat --features="debug"
+    cargo clippy -p bevy_ragnarok_gat --example load_gat --all-features
 
 [group("clippy")]
 bevy_ragnarok_grf $RUSTFLAGS="-Dwarnings":

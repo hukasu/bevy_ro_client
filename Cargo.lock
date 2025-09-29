@@ -1240,6 +1240,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_ragnarok_gat"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_animation",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_audio",
+ "bevy_camera",
+ "bevy_color",
+ "bevy_derive",
+ "bevy_ecs",
+ "bevy_gizmos",
+ "bevy_log",
+ "bevy_math",
+ "bevy_mesh",
+ "bevy_platform",
+ "bevy_ptr",
+ "bevy_ragnarok_grf",
+ "bevy_ragnarok_quad_tree",
+ "bevy_reflect",
+ "bevy_render",
+ "bevy_scene",
+ "bevy_transform",
+ "log",
+ "ragnarok_gat",
+ "ragnarok_rebuild_common",
+]
+
+[[package]]
 name = "bevy_ragnarok_grf"
 version = "0.1.0"
 dependencies = [

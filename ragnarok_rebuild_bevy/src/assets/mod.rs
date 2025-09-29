@@ -1,4 +1,3 @@
-pub mod gat;
 pub mod gnd;
 pub mod paths;
 pub mod rsw;
@@ -11,7 +10,6 @@ pub struct PluginGroup;
 impl BevyPluginGroup for PluginGroup {
     fn build(self) -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add(gat::Plugin)
             .add(gnd::Plugin)
             .add(rsw::Plugin)
             .add(water_plane::Plugin)
