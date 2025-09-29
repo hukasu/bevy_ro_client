@@ -8,8 +8,8 @@
     },
 }
 
-@group(2) @binding(0) var rsm_texture: texture_2d<f32>;
-@group(2) @binding(1) var rsm_sampler: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var rsm_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var rsm_sampler: sampler;
 
 fn rsm_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     #ifdef RSM_MATERIAL_DOUBLE_SIDED
