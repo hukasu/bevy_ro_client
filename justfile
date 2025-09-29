@@ -152,14 +152,8 @@ bevy_ragnarok_spr $RUSTFLAGS="-Dwarnings":
 
 [group("clippy")]
 bevy_ragnarok_quad_tree $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --no-default-features
-    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --no-default-features --features="reflect"
-    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests
-    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --all-features
-
-    cargo clippy -p bevy_ragnarok_quad_tree --example track_entity --no-default-features
-    cargo clippy -p bevy_ragnarok_quad_tree --example track_entity --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_quad_tree --example track_entity --no-default-features --features="reflect"
-    cargo clippy -p bevy_ragnarok_quad_tree --example track_entity
-    cargo clippy -p bevy_ragnarok_quad_tree --example track_entity --all-features
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples --no-default-features
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples --no-default-features --features="reflect"
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples
+    cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples --all-features
