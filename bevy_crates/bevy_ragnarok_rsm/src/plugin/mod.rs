@@ -3,7 +3,7 @@ mod loader;
 use bevy_asset::AssetApp;
 use loader::AssetLoader;
 
-use crate::{Model, ModelInvertedMaterial, assets::RsmModel};
+use crate::{Model, RsmMaterials, assets::RsmModel, materials::RsmMaterial};
 
 pub struct Plugin {
     pub texture_path_prefix: std::path::PathBuf,
@@ -11,11 +11,6 @@ pub struct Plugin {
 
 impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut bevy_app::App) {
-        app
-            // Types
-            .register_type::<Model>()
-            .register_type::<ModelInvertedMaterial>();
-
         // Assets
         app.init_asset::<RsmModel>()
             .register_asset_reflect::<RsmModel>()
@@ -23,6 +18,10 @@ impl bevy_app::Plugin for Plugin {
 
         // Materials
         app.add_plugins(crate::materials::Plugin);
+
+        // Types
+        app.register_type::<Model>();
+        app.register_type::<RsmMaterials>();
 
         #[cfg(feature = "debug")]
         app.add_plugins(crate::debug::Plugin);

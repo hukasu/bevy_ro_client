@@ -16,14 +16,13 @@ use bevy_ecs::{
 };
 use bevy_image::Image;
 use bevy_mesh::Mesh3d;
-use bevy_pbr::MeshMaterial3d;
 use bevy_platform::collections::{HashMap, HashSet};
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 use ragnarok_rsm::{Rsm, ShadeType, mesh::Textures};
 
 use crate::{
-    Model, ModelAnimation, ModelInvertedMaterial,
+    Model, ModelAnimation, RsmMaterials,
     assets::RsmModel,
     extensions::{RsmExt, RsmMeshExt, RsmPrimitiveExt},
     materials::RsmMaterial,
@@ -426,8 +425,10 @@ impl SpawnableList<ChildOf> for PrimitiveList {
                 (
                     item.name,
                     Mesh3d(item.mesh),
-                    MeshMaterial3d(item.material),
-                    ModelInvertedMaterial(item.inverted_material),
+                    RsmMaterials {
+                        base: item.material,
+                        inverted: item.inverted_material,
+                    },
                 )
             }))),
         ));

@@ -26,6 +26,12 @@ pub struct ModelAnimation {
     pub animation_node_index: AnimationNodeIndex,
 }
 
+/// Materials for a Rsm model primitive
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
-pub struct ModelInvertedMaterial(pub Handle<RsmMaterial>);
+pub struct RsmMaterials {
+    /// Used when the model has 0 or 2 negative scale axis
+    pub base: Handle<RsmMaterial>,
+    /// Used when the model has 1 or 3 negative scale axis
+    pub inverted: Handle<RsmMaterial>,
+}
