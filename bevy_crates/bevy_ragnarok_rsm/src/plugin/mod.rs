@@ -1,16 +1,22 @@
 mod loader;
 
+use bevy_animation::{AnimationPlayer, AnimationTarget, graph::AnimationGraphHandle};
 use bevy_app::PostUpdate;
 use bevy_asset::AssetApp;
+use bevy_camera::visibility::{InheritedVisibility, ViewVisibility, Visibility};
 use bevy_ecs::{
-    name::NameOrEntity,
+    hierarchy::{ChildOf, Children},
+    name::{Name, NameOrEntity},
     query::{With, Without},
     schedule::IntoScheduleConfigs,
     system::{Commands, Populated},
 };
 use bevy_mesh::Mesh3d;
 use bevy_pbr::MeshMaterial3d;
-use bevy_transform::{TransformSystems, components::GlobalTransform};
+use bevy_transform::{
+    TransformSystems,
+    components::{GlobalTransform, Transform, TransformTreeChanged},
+};
 use loader::AssetLoader;
 
 use crate::{Model, RsmMaterials, assets::RsmModel, materials::RsmMaterial};
@@ -38,6 +44,21 @@ impl bevy_app::Plugin for Plugin {
         // Types
         app.register_type::<Model>();
         app.register_type::<RsmMaterials>();
+
+        // Types needed for Scene
+        app.register_type::<Name>();
+        app.register_type::<Children>();
+        app.register_type::<ChildOf>();
+        app.register_type::<Transform>();
+        app.register_type::<GlobalTransform>();
+        app.register_type::<TransformTreeChanged>();
+        app.register_type::<Visibility>();
+        app.register_type::<InheritedVisibility>();
+        app.register_type::<ViewVisibility>();
+        app.register_type::<AnimationPlayer>();
+        app.register_type::<AnimationGraphHandle>();
+        app.register_type::<AnimationTarget>();
+        app.register_type::<Mesh3d>();
 
         #[cfg(feature = "debug")]
         app.add_plugins(crate::debug::Plugin);
