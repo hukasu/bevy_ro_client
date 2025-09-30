@@ -1,5 +1,3 @@
-#[cfg(feature = "debug")]
-mod debug;
 mod loader;
 
 use bevy_asset::AssetApp;
@@ -27,6 +25,6 @@ impl bevy_app::Plugin for Plugin {
         app.add_plugins(crate::materials::Plugin);
 
         #[cfg(feature = "debug")]
-        app.add_plugins(debug::Plugin);
+        app.add_plugins(crate::debug::Plugin);
     }
 }

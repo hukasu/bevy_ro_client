@@ -1,6 +1,8 @@
 //! Builds Ragnarok Online's Rsm files to be used in Bevy
 
 pub mod assets;
+#[cfg(feature = "debug")]
+pub mod debug;
 pub mod extensions;
 pub mod materials;
 pub mod plugin;
