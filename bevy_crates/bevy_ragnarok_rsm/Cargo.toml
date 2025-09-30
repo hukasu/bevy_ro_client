@@ -55,6 +55,8 @@ bevy = { workspace = true, features = [
   "bevy_ui",
   "bevy_window",
   "bevy_winit",
+  "animation",
+  "bmp",
   "debug",
   "default_font",
   "tonemapping_luts",
