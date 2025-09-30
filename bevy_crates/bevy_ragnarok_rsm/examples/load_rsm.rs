@@ -24,10 +24,19 @@ use bevy::{
 };
 use bevy_app::PluginGroup;
 use bevy_camera::visibility::Visibility;
+use bevy_color::Color;
 use bevy_ecs::hierarchy::ChildOf;
 use bevy_image::{ImageFilterMode, ImagePlugin, ImageSamplerDescriptor};
+use bevy_math::{Vec2, primitives::Plane3d};
+use bevy_mesh::{Mesh3d, MeshBuilder, Meshable};
+use bevy_pbr::{MeshMaterial3d, StandardMaterial};
 use bevy_ragnarok_rsm::debug::{ToggleRsmEdges, ToggleRsmNormals};
 use bevy_scene::SceneRoot;
+
+const PATHS: &[&str] = &[
+    "data/model/prontera/prn_statue_08.rsm",
+    "data/model/prt/trees_s_01.rsm2",
+];
 
 fn main() {
     let mut app = App::new();
@@ -69,8 +78,11 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         Transform::from_translation(Vec3::new(0., 25., 25.)).looking_at(Vec3::ZERO, Vec3::Y),
     ));
     commands.spawn((
-        DirectionalLight::default(),
-        Transform::from_translation(Vec3::new(0., 5., 5.)).looking_at(Vec3::ZERO, Vec3::Y),
+        DirectionalLight {
+            shadows_enabled: true,
+            ..Default::default()
+        },
+        Transform::from_translation(Vec3::new(-5., 5., 5.)).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     let world = commands
@@ -81,13 +93,19 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         ))
         .id();
 
-    for (i, path) in [
-        "data/model/prontera/prn_statue_08.rsm",
-        "data/model/prt/trees_s_01.rsm2",
-    ]
-    .into_iter()
-    .enumerate()
-    {
+    commands.spawn((
+        Mesh3d(
+            asset_server.add(
+                Plane3d::new(Vec3::Y, Vec2::new(5. * PATHS.len() as f32, 10.))
+                    .mesh()
+                    .build(),
+            ),
+        ),
+        MeshMaterial3d(asset_server.add(StandardMaterial::from_color(Color::WHITE))),
+        Transform::from_translation(Vec3::new(5. * (PATHS.len() - 1) as f32, 0., -5.)),
+    ));
+
+    for (i, path) in PATHS.iter().enumerate() {
         let scale_invert = if path.ends_with(".rsm2") {
             Vec3::new(1., -1., 1.)
         } else {
