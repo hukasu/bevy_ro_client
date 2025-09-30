@@ -11,23 +11,22 @@ use bevy::{
     },
     camera::{Camera, Camera3d},
     ecs::{
-        children,
         component::Component,
         query::With,
-        spawn::SpawnRelated,
-        system::{Commands, Res, ResMut, Single},
+        system::{Commands, Res, Single},
     },
     gizmos::{GizmoAsset, retained::Gizmo},
     input::{ButtonInput, keyboard::KeyCode},
     light::DirectionalLight,
     math::{Quat, Vec3},
-    scene::SceneSpawner,
     time::Time,
     transform::components::Transform,
-    ui::{Node, Val, widget::Text},
 };
+use bevy_app::PluginGroup;
 use bevy_camera::visibility::Visibility;
 use bevy_ecs::hierarchy::ChildOf;
+use bevy_image::{ImageFilterMode, ImagePlugin, ImageSamplerDescriptor};
+use bevy_ragnarok_rsm::debug::{ToggleRsmEdges, ToggleRsmNormals};
 use bevy_scene::SceneRoot;
 
 fn main() {
@@ -43,7 +42,14 @@ fn main() {
         }),
     );
 
-    app.add_plugins(DefaultPlugins);
+    app.add_plugins(DefaultPlugins.set(ImagePlugin {
+        default_sampler: ImageSamplerDescriptor {
+            label: Some("default_linear_sampler".into()),
+            mag_filter: ImageFilterMode::Linear,
+            min_filter: ImageFilterMode::Linear,
+            ..Default::default()
+        },
+    }));
     app.add_plugins(bevy_ragnarok_rsm::plugin::Plugin {
         texture_path_prefix: "data/texture/".into(),
     });
@@ -57,11 +63,7 @@ fn main() {
 #[derive(Component)]
 struct World;
 
-fn setup(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut scene_spawner: ResMut<SceneSpawner>,
-) {
+fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Camera3d::default(),
         Transform::from_translation(Vec3::new(0., 25., 25.)).looking_at(Vec3::ZERO, Vec3::Y),
@@ -81,20 +83,26 @@ fn setup(
 
     for (i, path) in [
         "data/model/prontera/prn_statue_08.rsm",
-        "data/model/aurora/stall_d_02.rsm2",
+        "data/model/prt/trees_s_01.rsm2",
     ]
     .into_iter()
     .enumerate()
     {
+        let scale_invert = if path.ends_with(".rsm2") {
+            Vec3::new(1., -1., 1.)
+        } else {
+            Vec3::new(1., 1., 1.)
+        };
+
         let model = asset_server.load(format!("{path}#Scene"));
         commands.spawn((
-            Transform::from_translation(Vec3::new(50. * i as f32, 0., 0.)),
+            Transform::from_translation(Vec3::new(50. * i as f32, 0., 0.)).with_scale(scale_invert),
             SceneRoot(model.clone()),
             ChildOf(world),
         ));
         commands.spawn((
             Transform::from_translation(Vec3::new(50. * i as f32, 0., 50.))
-                .with_scale(Vec3::new(-1., 1., 1.)),
+                .with_scale(Vec3::new(-1., 1., 1.) * scale_invert),
             SceneRoot(model.clone()),
             ChildOf(world),
         ));
@@ -112,11 +120,18 @@ fn setup(
 }
 
 fn debug(
+    mut commands: Commands,
     mut camera: Single<&mut Transform, With<Camera>>,
     key: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
-    const SCROLL_SPEED: f32 = 125.;
+    const SCROLL_SPEED: f32 = 25.;
+    if key.just_pressed(KeyCode::Digit1) {
+        commands.trigger(ToggleRsmEdges);
+    }
+    if key.just_pressed(KeyCode::Digit2) {
+        commands.trigger(ToggleRsmNormals);
+    }
 
     let delta = time.delta_secs();
     if key.pressed(KeyCode::KeyW) {
