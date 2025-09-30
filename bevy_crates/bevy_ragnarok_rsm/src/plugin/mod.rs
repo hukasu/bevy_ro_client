@@ -2,7 +2,7 @@ mod loader;
 
 use bevy_animation::{AnimationPlayer, AnimationTarget, graph::AnimationGraphHandle};
 use bevy_app::PostUpdate;
-use bevy_asset::AssetApp;
+use bevy_asset::{AssetApp, AssetEventSystems};
 use bevy_camera::visibility::{InheritedVisibility, ViewVisibility, Visibility};
 use bevy_ecs::{
     hierarchy::{ChildOf, Children},
@@ -38,7 +38,9 @@ impl bevy_app::Plugin for Plugin {
         // Systems
         app.add_systems(
             PostUpdate,
-            invert_material.after(TransformSystems::Propagate),
+            invert_material
+                .after(TransformSystems::Propagate)
+                .before(AssetEventSystems),
         );
 
         // Types
