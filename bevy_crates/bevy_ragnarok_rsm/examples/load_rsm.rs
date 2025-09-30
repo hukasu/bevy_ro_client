@@ -53,9 +53,9 @@ fn main() {
 
     app.add_plugins(DefaultPlugins.set(ImagePlugin {
         default_sampler: ImageSamplerDescriptor {
-            label: Some("default_linear_sampler".into()),
-            mag_filter: ImageFilterMode::Linear,
-            min_filter: ImageFilterMode::Linear,
+            label: Some("default_nearest_sampler".into()),
+            mag_filter: ImageFilterMode::Nearest,
+            min_filter: ImageFilterMode::Nearest,
             ..Default::default()
         },
     }));
