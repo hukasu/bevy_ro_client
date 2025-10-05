@@ -1,6 +1,6 @@
 use std::marker::PhantomData;
 
-use bevy_asset::{Asset, AssetApp, Handle, embedded_asset};
+use bevy_asset::{Asset, AssetApp, AssetPath, Handle, embedded_asset, embedded_path};
 use bevy_image::Image;
 use bevy_mesh::MeshVertexBufferLayoutRef;
 use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin};
@@ -59,19 +59,31 @@ impl Material for RsmMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
+        ShaderRef::Path(
+            AssetPath::from_path_buf(embedded_path!("shaders/rsm_vertex_shader.wgsl"))
+                .with_source("embedded"),
+        )
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_vertex_shader.wgsl".into()
+        ShaderRef::Path(
+            AssetPath::from_path_buf(embedded_path!("shaders/rsm_vertex_shader.wgsl"))
+                .with_source("embedded"),
+        )
     }
 
     fn fragment_shader() -> ShaderRef {
-        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_fragment_shader.wgsl".into()
+        ShaderRef::Path(
+            AssetPath::from_path_buf(embedded_path!("shaders/rsm_fragment_shader.wgsl"))
+                .with_source("embedded"),
+        )
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        "embedded://bevy_ragnarok_rsm/materials/shaders/rsm_prepass_shader.wgsl".into()
+        ShaderRef::Path(
+            AssetPath::from_path_buf(embedded_path!("shaders/rsm_prepass_shader.wgsl"))
+                .with_source("embedded"),
+        )
     }
 
     fn specialize(
@@ -91,10 +103,13 @@ impl Material for RsmMaterial {
             Some(Face::Back)
         };
 
-        if key.bind_group_data.double_sided
-            && let Some(frag) = &mut descriptor.fragment
-        {
-            frag.shader_defs.push("RSM_MATERIAL_DOUBLE_SIDED".into());
+        if let Some(frag) = &mut descriptor.fragment {
+            if key.bind_group_data.double_sided {
+                frag.shader_defs.push("RSM_MATERIAL_DOUBLE_SIDED".into());
+            }
+            if key.bind_group_data.inverted_scale {
+                frag.shader_defs.push("RSM_MATERIAL_MIRRORED".into());
+            }
         }
 
         Ok(())

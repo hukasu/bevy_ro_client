@@ -5,6 +5,10 @@ edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[[example]]
+name = "load_rsm"
+required-features = ["debug"]
+
 [lints]
 workspace = true
 
@@ -34,3 +38,28 @@ bevy_shader = { workspace = true, default-features = false }
 bevy_transform = { workspace = true, default-features = false }
 
 log = { workspace = true }
+
+[dev-dependencies]
+bevy_ragnarok_grf = { workspace = true }
+
+bevy = { workspace = true, features = [
+  "bevy_asset",
+  "bevy_camera",
+  "bevy_core_pipeline",
+  "bevy_gizmos",
+  "bevy_light",
+  "bevy_log",
+  "bevy_pbr",
+  "bevy_render",
+  "bevy_scene",
+  "bevy_ui",
+  "bevy_window",
+  "bevy_winit",
+  "animation",
+  "bmp",
+  "debug",
+  "default_font",
+  "tonemapping_luts",
+  "wayland",
+  "zstd_rust",
+] }

@@ -131,10 +131,10 @@ bevy_ragnarok_pal $RUSTFLAGS="-Dwarnings":
 
 [group("clippy")]
 bevy_ragnarok_rsm $RUSTFLAGS="-Dwarnings":
-    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --no-default-features
-    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --no-default-features --features="debug"
-    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests
-    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --all-features
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --examples --no-default-features
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --examples --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --examples
+    cargo clippy -p bevy_ragnarok_rsm --bins --lib --tests --examples --all-features
 
 [group("clippy")]
 bevy_ragnarok_rsw $RUSTFLAGS="-Dwarnings":
