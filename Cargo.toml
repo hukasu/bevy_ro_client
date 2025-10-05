@@ -42,49 +42,47 @@ bevy_ragnarok_spr = { path = "bevy_crates/bevy_ragnarok_spr", default-features =
 
 bevy_ragnarok_quad_tree = { path = "bevy_crates/bevy_ragnarok_quad_tree", default-features = false }
 
-bevy = { version = "0.17.0-rc.1", default-features = false }
-bevy_animation = { version = "0.17.0-rc.1", default-features = false }
-bevy_app = { version = "0.17.0-rc.1", default-features = false }
-bevy_asset = { version = "0.17.0-rc.1", default-features = false }
-bevy_audio = { version = "0.17.0-rc.1", default-features = false }
-bevy_camera = { version = "0.17.0-rc.1", default-features = false }
-bevy_color = { version = "0.17.0-rc.1", default-features = false }
-bevy_core_pipeline = { version = "0.17.0-rc.1", default-features = false }
-bevy_derive = { version = "0.17.0-rc.1", default-features = false }
-bevy_ecs = { version = "0.17.0-rc.1", default-features = false }
-bevy_gizmos = { version = "0.17.0-rc.1", default-features = false }
-bevy_image = { version = "0.17.0-rc.1", default-features = false }
-bevy_light = { version = "0.17.0-rc.1", default-features = false }
-bevy_log = { version = "0.17.0-rc.1", default-features = false }
-bevy_math = { version = "0.17.0-rc.1", default-features = false }
-bevy_mesh = { version = "0.17.0-rc.1", default-features = false }
-bevy_pbr = { version = "0.17.0-rc.1", default-features = false }
-bevy_platform = { version = "0.17.0-rc.1", default-features = false }
-bevy_ptr = { version = "0.17.0-rc.1", default-features = false }
-bevy_reflect = { version = "0.17.0-rc.1", default-features = false }
-bevy_render = { version = "0.17.0-rc.1", default-features = false }
-bevy_scene = { version = "0.17.0-rc.1", default-features = false }
-bevy_shader = { version = "0.17.0-rc.1", default-features = false }
-bevy_transform = { version = "0.17.0-rc.1", default-features = false }
-bevy_time = { version = "0.17.0-rc.1", default-features = false }
+bevy = { version = "0.17.2", default-features = false }
+bevy_animation = { version = "0.17.2", default-features = false }
+bevy_app = { version = "0.17.2", default-features = false }
+bevy_asset = { version = "0.17.2", default-features = false }
+bevy_audio = { version = "0.17.2", default-features = false }
+bevy_camera = { version = "0.17.2", default-features = false }
+bevy_color = { version = "0.17.2", default-features = false }
+bevy_core_pipeline = { version = "0.17.2", default-features = false }
+bevy_derive = { version = "0.17.2", default-features = false }
+bevy_ecs = { version = "0.17.2", default-features = false }
+bevy_gizmos = { version = "0.17.2", default-features = false }
+bevy_image = { version = "0.17.2", default-features = false }
+bevy_light = { version = "0.17.2", default-features = false }
+bevy_log = { version = "0.17.2", default-features = false }
+bevy_math = { version = "0.17.2", default-features = false }
+bevy_mesh = { version = "0.17.2", default-features = false }
+bevy_pbr = { version = "0.17.2", default-features = false }
+bevy_platform = { version = "0.17.2", default-features = false }
+bevy_ptr = { version = "0.17.2", default-features = false }
+bevy_reflect = { version = "0.17.2", default-features = false }
+bevy_render = { version = "0.17.2", default-features = false }
+bevy_scene = { version = "0.17.2", default-features = false }
+bevy_shader = { version = "0.17.2", default-features = false }
+bevy_transform = { version = "0.17.2", default-features = false }
+bevy_time = { version = "0.17.2", default-features = false }
 
-bevy_egui = { version = "0.36.0" }
-bevy-inspector-egui = { version = "0.33.1" }
-bevy_flycam = { version = "0.16.1" }
-iyes_perf_ui = { version = "0.5.0" }
+bevy_egui = { version = "0.37.0" }
+bevy-inspector-egui = { version = "0.34.0" }
 
 log = "0.4.28"
 
 futures = "0.3.31"
 
-tungstenite = "0.27.0"
+tungstenite = "0.28.0"
 url = "2.5.7"
 
 uuid = "1.18.1"
-serde = "1.0.224"
-toml = "0.9.6"
+serde = "1.0.228"
+toml = "0.9.7"
 
-flate2 = "1.1.2"
+flate2 = "1.1.4"
 encoding_rs = "0.8.35"
 
 sqlx = { version = "0.8.6", features = [
@@ -93,7 +91,7 @@ sqlx = { version = "0.8.6", features = [
   "uuid",
 ] }
 
-wgpu = "25.0.2"
+wgpu = "26.0.1"
 criterion = "0.7.0"
 
 [workspace.lints.clippy]
