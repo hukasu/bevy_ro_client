@@ -25,16 +25,16 @@ use bevy::{
 use bevy_app::PluginGroup;
 use bevy_camera::visibility::Visibility;
 use bevy_color::Color;
-use bevy_ecs::hierarchy::ChildOf;
+use bevy_ecs::{hierarchy::ChildOf, query::Without};
 use bevy_image::{ImageFilterMode, ImagePlugin, ImageSamplerDescriptor};
-use bevy_math::{Vec2, primitives::Plane3d};
+use bevy_math::{Dir3, Vec2, primitives::Plane3d};
 use bevy_mesh::{Mesh3d, MeshBuilder, Meshable};
 use bevy_pbr::{MeshMaterial3d, StandardMaterial};
 use bevy_ragnarok_rsm::debug::{ToggleRsmEdges, ToggleRsmNormals};
 use bevy_scene::SceneRoot;
 
 const PATHS: &[&str] = &[
-    "data/model/prontera/prn_statue_08.rsm",
+    "data/model/프론테라/휘장가로등.rsm",
     "data/model/prt/trees_s_01.rsm2",
 ];
 
@@ -75,7 +75,7 @@ struct World;
 fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Camera3d::default(),
-        Transform::from_translation(Vec3::new(0., 25., 25.)).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_translation(Vec3::new(0., 40., 40.)).looking_at(Vec3::ZERO, Vec3::Y),
     ));
     commands.spawn((
         DirectionalLight {
@@ -96,13 +96,14 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn((
         Mesh3d(
             asset_server.add(
-                Plane3d::new(Vec3::Y, Vec2::new(5. * PATHS.len() as f32, 10.))
+                Plane3d::new(Vec3::NEG_Y, Vec2::new(25. * PATHS.len() as f32, 100.))
                     .mesh()
                     .build(),
             ),
         ),
         MeshMaterial3d(asset_server.add(StandardMaterial::from_color(Color::WHITE))),
-        Transform::from_translation(Vec3::new(5. * (PATHS.len() - 1) as f32, 0., -5.)),
+        Transform::from_translation(Vec3::new(25. * (PATHS.len() - 1) as f32, 0., 75.)),
+        ChildOf(world),
     ));
 
     for (i, path) in PATHS.iter().enumerate() {
@@ -124,6 +125,18 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             SceneRoot(model.clone()),
             ChildOf(world),
         ));
+        commands.spawn((
+            Transform::from_translation(Vec3::new(50. * i as f32, 0., 100.))
+                .with_scale(Vec3::new(1., 1., -1.) * scale_invert),
+            SceneRoot(model.clone()),
+            ChildOf(world),
+        ));
+        commands.spawn((
+            Transform::from_translation(Vec3::new(50. * i as f32, 0., 150.))
+                .with_scale(Vec3::new(-1., 1., -1.) * scale_invert),
+            SceneRoot(model.clone()),
+            ChildOf(world),
+        ));
     }
 
     let mut world_axis = GizmoAsset::new();
@@ -137,9 +150,12 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     ));
 }
 
+#[expect(clippy::type_complexity, reason = "Queries are complex")]
 fn debug(
     mut commands: Commands,
-    mut camera: Single<&mut Transform, With<Camera>>,
+    mut camera: Single<&mut Transform, (With<Camera>, Without<World>, Without<DirectionalLight>)>,
+    mut world: Single<&mut Transform, (With<World>, Without<DirectionalLight>)>,
+    mut sun: Single<&mut Transform, With<DirectionalLight>>,
     key: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
 ) {
@@ -149,6 +165,12 @@ fn debug(
     }
     if key.just_pressed(KeyCode::Digit2) {
         commands.trigger(ToggleRsmNormals);
+    }
+    if key.just_pressed(KeyCode::Digit3) {
+        world.rotation *= Quat::from_rotation_x(PI);
+    }
+    if key.just_pressed(KeyCode::Digit4) {
+        sun.rotate_axis(Dir3::Y, PI);
     }
 
     let delta = time.delta_secs();
