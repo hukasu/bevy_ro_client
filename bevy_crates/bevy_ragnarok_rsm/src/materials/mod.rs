@@ -103,10 +103,13 @@ impl Material for RsmMaterial {
             Some(Face::Back)
         };
 
-        if key.bind_group_data.double_sided
-            && let Some(frag) = &mut descriptor.fragment
-        {
-            frag.shader_defs.push("RSM_MATERIAL_DOUBLE_SIDED".into());
+        if let Some(frag) = &mut descriptor.fragment {
+            if key.bind_group_data.double_sided {
+                frag.shader_defs.push("RSM_MATERIAL_DOUBLE_SIDED".into());
+            }
+            if key.bind_group_data.inverted_scale {
+                frag.shader_defs.push("RSM_MATERIAL_MIRRORED".into());
+            }
         }
 
         Ok(())

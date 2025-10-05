@@ -13,10 +13,16 @@
 
 fn rsm_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     #ifdef RSM_MATERIAL_DOUBLE_SIDED
-    var pbr_input = pbr_input_from_vertex_output(in, is_front, true);
+    let double_sided = true;
     #else
-    var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
+    let double_sided = false;
     #endif
+    #ifdef RSM_MATERIAL_MIRRORED
+    let is_front_m = !is_front;
+    #else
+    let is_front_m = is_front;
+    #endif
+    var pbr_input = pbr_input_from_vertex_output(in, is_front_m, double_sided);
 
     pbr_input.material.reflectance = vec3(0.0);
     pbr_input.material.flags = STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
