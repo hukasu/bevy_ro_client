@@ -55,7 +55,7 @@ impl QuadTree {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Copy)]
 /// A node in the [QuadTree]
 ///
 /// # Note
