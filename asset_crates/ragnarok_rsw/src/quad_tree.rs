@@ -104,7 +104,7 @@ impl<'a> Crawler<'a> {
     }
 
     fn next_index(&mut self, direction: CrawlDirection) -> Option<&Range> {
-        if self.depth >= 5 {
+        if self.depth >= QUAD_TREE_MAX_DEPTH {
             None
         } else {
             self.stack.push_back(self.index);
