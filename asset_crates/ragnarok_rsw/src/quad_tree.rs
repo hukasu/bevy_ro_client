@@ -103,8 +103,12 @@ impl<'a> Crawler<'a> {
         }
     }
 
-    fn next_index(&mut self, direction: CrawlDirection) -> Option<&Range> {
-        if self.depth >= QUAD_TREE_MAX_DEPTH {
+    pub fn is_leaf(&self) -> bool {
+        self.depth >= QUAD_TREE_MAX_DEPTH
+    }
+
+    fn next_index(&mut self, direction: CrawlDirection) -> Option<Crawler<'a>> {
+        if self.is_leaf() {
             None
         } else {
             self.stack.push_back(self.index);
