@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, io::Read, ops::Deref};
+use std::{io::Read, ops::Deref};
 
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
@@ -75,11 +75,11 @@ pub struct Range {
     pub center: [f32; 3],
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 /// An Iterator-like object to crawl through a [QuadTree]
 pub struct Crawler<'a> {
     quad_tree: &'a QuadTree,
-    stack: VecDeque<usize>,
+    directions: usize,
     depth: usize,
     index: usize,
 }
@@ -97,7 +97,7 @@ impl<'a> Crawler<'a> {
     fn new(quad_tree: &'a QuadTree) -> Self {
         Self {
             quad_tree,
-            stack: VecDeque::default(),
+            directions: 0,
             depth: 0,
             index: 0,
         }
@@ -107,12 +107,15 @@ impl<'a> Crawler<'a> {
         self.depth >= QUAD_TREE_MAX_DEPTH
     }
 
-    fn next_index(&mut self, direction: CrawlDirection) -> Option<Crawler<'a>> {
+    fn index_skip(depth: usize, direction: usize) -> usize {
+        let till_max_depth = QUAD_TREE_MAX_DEPTH - depth;
+        (((4usize.pow(till_max_depth as u32) - 4) / 3) * (direction - 1)) + direction
+    }
+
+    fn next_index(&self, direction: CrawlDirection) -> Option<Crawler<'a>> {
         if self.is_leaf() {
             None
         } else {
-            self.stack.push_back(self.index);
-
             let direction_addition = match direction {
                 CrawlDirection::BottomLeft => 1,
                 CrawlDirection::BottomRight => 2,
@@ -120,41 +123,52 @@ impl<'a> Crawler<'a> {
                 CrawlDirection::TopRight => 4,
             };
 
-            let till_max_depth = QUAD_TREE_MAX_DEPTH - self.depth;
-            let index_skip = (((4usize.pow(till_max_depth as u32) - 4) / 3)
-                * (direction_addition - 1))
-                + direction_addition;
+            let index_skip = Self::index_skip(self.depth, direction_addition);
 
-            self.depth += 1;
-            self.index += index_skip;
+            let next_depth = self.depth + 1;
+            let next_index = self.index + index_skip;
 
-            Some(&self.quad_tree.ranges[self.index])
+            Some(Crawler {
+                quad_tree: self.quad_tree,
+                directions: (self.directions << 2) + (direction_addition - 1),
+                depth: next_depth,
+                index: next_index,
+            })
         }
     }
 
-    pub fn parent(&mut self) -> Option<&Range> {
-        if let Some(old) = self.stack.pop_back() {
-            self.depth -= 1;
-            self.index = old;
-            Some(&self.quad_tree.ranges[self.index])
-        } else {
+    pub fn parent(&self) -> Option<Crawler<'a>> {
+        if self.depth == 0 {
             None
+        } else {
+            let direction_addition = (self.directions & 3) + 1;
+
+            let skipped_indexes = Self::index_skip(self.depth - 1, direction_addition);
+
+            let next_index = self.index - skipped_indexes;
+
+            Some(Crawler {
+                quad_tree: self.quad_tree,
+                directions: self.directions >> 2,
+                depth: self.depth - 1,
+                index: next_index,
+            })
         }
     }
 
-    pub fn top_left(&mut self) -> Option<&Range> {
+    pub fn top_left(&self) -> Option<Crawler<'a>> {
         self.next_index(CrawlDirection::TopLeft)
     }
 
-    pub fn top_right(&mut self) -> Option<&Range> {
+    pub fn top_right(&self) -> Option<Crawler<'a>> {
         self.next_index(CrawlDirection::TopRight)
     }
 
-    pub fn bottom_left(&mut self) -> Option<&Range> {
+    pub fn bottom_left(&self) -> Option<Crawler<'a>> {
         self.next_index(CrawlDirection::BottomLeft)
     }
 
-    pub fn bottom_right(&mut self) -> Option<&Range> {
+    pub fn bottom_right(&self) -> Option<Crawler<'a>> {
         self.next_index(CrawlDirection::BottomRight)
     }
 }
@@ -164,5 +178,57 @@ impl Deref for Crawler<'_> {
 
     fn deref(&self) -> &Self::Target {
         &self.quad_tree.ranges[self.index]
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    #[expect(clippy::unwrap_used, reason = "This is a test")]
+    fn test_parent() {
+        fn recursive(crawler: &Crawler) {
+            let current_index = crawler.index;
+            let current_depth = crawler.depth;
+
+            if !crawler.is_leaf() {
+                let bl = crawler.bottom_left().unwrap();
+                assert_eq!(bl.parent().unwrap().index, current_index);
+                assert_eq!(bl.parent().unwrap().depth, current_depth);
+                recursive(&bl);
+
+                let br = crawler.bottom_right().unwrap();
+                assert_eq!(br.parent().unwrap().index, current_index);
+                assert_eq!(br.parent().unwrap().depth, current_depth);
+                recursive(&br);
+
+                let tl = crawler.top_left().unwrap();
+                assert_eq!(tl.parent().unwrap().index, current_index);
+                assert_eq!(tl.parent().unwrap().depth, current_depth);
+                recursive(&tl);
+
+                let tr = crawler.top_right().unwrap();
+                assert_eq!(tr.parent().unwrap().index, current_index);
+                assert_eq!(tr.parent().unwrap().depth, current_depth);
+                recursive(&tr);
+            }
+        }
+
+        let quad_tree = QuadTree {
+            ranges: vec![
+                Range {
+                    center: [0., 0., 0.],
+                    radius: [0., 0., 0.],
+                    bottom: [0., 0., 0.],
+                    top: [0., 0., 0.],
+                };
+                QUAD_TREE_SIZE
+            ]
+            .into_boxed_slice(),
+        };
+
+        let crawler = quad_tree.crawl();
+        recursive(&crawler);
     }
 }
