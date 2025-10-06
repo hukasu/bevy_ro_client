@@ -51,3 +51,8 @@ pub struct EnvironmentalSound {
 #[reflect(Component)]
 /// Environmental effect that create particles in the [`World`]
 pub struct EnvironmentalEffect;
+
+#[derive(Debug, Default, Component, Reflect)]
+#[reflect(Component)]
+/// The quad tree of the [`World`]
+pub struct WorldQuadTree;

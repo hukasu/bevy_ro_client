@@ -1,7 +1,6 @@
 // #[cfg(feature = "debug")]
 // mod debug;
 mod loader;
-// mod quad_tree;
 
 use std::path::PathBuf;
 
