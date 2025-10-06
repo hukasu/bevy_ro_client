@@ -8,18 +8,20 @@ use bevy_ecs::{
     entity::Entity,
     hierarchy::{ChildOf, Children},
     name::Name,
+    relationship::Relationship,
     spawn::{SpawnRelated, SpawnableList},
 };
 use bevy_light::{AmbientLight, DirectionalLight, PointLight};
-use bevy_math::{EulerRot, Quat, Vec3};
+use bevy_math::{EulerRot, Quat, Vec3, Vec3A};
+use bevy_ragnarok_quad_tree::QuadTreeNode;
 use bevy_scene::{Scene, SceneRoot};
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
-use ragnarok_rsw::{Model, Rsw};
+use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
 
 use crate::{
     AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
-    assets::RswWorld,
+    WorldQuadTree, assets::RswWorld,
 };
 
 pub struct AssetLoader {
@@ -81,7 +83,7 @@ impl AssetLoader {
             None => Self::UNNAMED_RSW,
         };
 
-        world
+        let rsw_world = world
             .spawn((
                 Name::new(filename.to_string()),
                 Transform::default(),
@@ -96,7 +98,10 @@ impl AssetLoader {
                 environmental_lights,
                 environmental_sounds,
                 environmental_effects,
-            ]);
+            ])
+            .id();
+
+        Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
         RswWorld {
             scene: load_context.add_labeled_asset("Scene".into(), Scene::new(world)),
@@ -308,6 +313,53 @@ impl AssetLoader {
                 }
             })
             .id()
+    }
+
+    fn spawn_quad_tree(
+        rsw: &Rsw,
+        rsw_world: Entity,
+        world: &mut bevy_ecs::world::World,
+        load_context: &mut LoadContext,
+    ) {
+        log::trace!("Spawning quad tree of {:?}", load_context.path());
+
+        fn recursive(
+            world: &mut bevy_ecs::world::World,
+            crawler: Crawler<'_>,
+            parent: Entity,
+            parent_center: Vec3,
+        ) -> Entity {
+            let center = Vec3::from_array(crawler.center);
+            let node = world
+                .spawn((
+                    Transform::from_translation(center - parent_center),
+                    Aabb {
+                        center: Vec3A::default(),
+                        half_extents: Vec3A::from_array(crawler.radius),
+                    },
+                    Visibility::default(),
+                    ChildOf(parent),
+                    <QuadTreeNode as Relationship>::from(parent),
+                ))
+                .id();
+
+            if let Some([bl, br, tl, tr]) = crawler.children() {
+                recursive(world, bl, node, center);
+                recursive(world, br, node, center);
+                recursive(world, tl, node, center);
+                recursive(world, tr, node, center);
+            }
+
+            node
+        }
+
+        let crawler = rsw.quad_tree.crawl();
+
+        let root = recursive(world, crawler, rsw_world, Vec3::default());
+        world
+            .entity_mut(root)
+            .insert((Name::new("QuadTree"), WorldQuadTree))
+            .remove::<QuadTreeNode>();
     }
 }
 
