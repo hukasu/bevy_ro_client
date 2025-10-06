@@ -171,6 +171,23 @@ impl<'a> Crawler<'a> {
     pub fn bottom_right(&self) -> Option<Crawler<'a>> {
         self.next_index(CrawlDirection::BottomRight)
     }
+
+    /// Returns all 4 children of this node.
+    ///
+    /// The order is `bottom left`, `bottom right`, `top left`, `top right`.
+    pub fn children(&self) -> Option<[Crawler<'a>; 4]> {
+        if self.is_leaf() {
+            None
+        } else {
+            #[expect(clippy::unwrap_used, reason = "Already tested that is not leaf")]
+            Some([
+                self.bottom_left().unwrap(),
+                self.bottom_right().unwrap(),
+                self.top_left().unwrap(),
+                self.top_right().unwrap(),
+            ])
+        }
+    }
 }
 
 impl Deref for Crawler<'_> {
