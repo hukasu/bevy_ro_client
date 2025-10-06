@@ -1,16 +1,20 @@
 //! Sets up the [`QuadTree`].
 
+use std::time::{Duration, Instant};
+
 use bevy_app::PostUpdate;
 use bevy_camera::primitives::Aabb;
 use bevy_ecs::{
+    component::Component,
     entity::Entity,
     lifecycle::Add,
     observer::On,
-    query::{With, Without},
+    query::{Changed, With, Without},
     relationship::{Relationship, RelationshipTarget},
     schedule::IntoScheduleConfigs,
-    system::{Commands, Query, Single},
+    system::{Commands, Populated, Query, Single},
 };
+use bevy_gizmos::aabb::ShowAabbGizmo;
 use bevy_log::{error, trace};
 use bevy_math::Vec3A;
 use bevy_transform::{TransformSystems, components::GlobalTransform};
@@ -28,7 +32,9 @@ impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut bevy_app::App) {
         app.add_systems(
             PostUpdate,
-            update_tracked_entities.after(TransformSystems::Propagate),
+            (mark_entities, update_tracked_entities, tracked_entities)
+                .chain()
+                .after(TransformSystems::Propagate),
         );
         app.add_observer(initial_tracking);
 
@@ -45,16 +51,51 @@ impl bevy_app::Plugin for Plugin {
     }
 }
 
+/// Marks new entities and entities that have moved as needing to be updated.
+#[derive(Component)]
+pub struct TrackedEntityModified;
+
+/// Entities with [`TrackEntity`] that had their transform updated
+/// that frame are marked to be verified.
+fn mark_entities(
+    mut commands: Commands,
+    entities: Query<Entity, (With<TrackEntity>, Changed<GlobalTransform>)>,
+) {
+    for entity in entities {
+        commands.entity(entity).insert(TrackedEntityModified);
+    }
+}
+
+fn tracked_entities(
+    tracked_entities: Populated<(), With<TrackedEntity>>,
+    total: Populated<(), With<TrackEntity>>,
+) {
+    trace!(
+        "There are {} tracked entities out of {}.",
+        tracked_entities.iter().len(),
+        total.iter().len()
+    );
+}
+
 /// Updates the [`QuadTreeNode`] that the [`TrackEntity`]
 /// points to.
+#[expect(clippy::type_complexity, reason = "Queries are complex")]
 fn update_tracked_entities(
     mut commands: Commands,
-    entities: Query<(Entity, &GlobalTransform, Option<&TrackedEntity>), With<TrackEntity>>,
+    entities: Populated<
+        (Entity, &GlobalTransform, Option<&TrackedEntity>),
+        (With<TrackEntity>, With<TrackedEntityModified>),
+    >,
     root: Single<(Entity, &Aabb, &GlobalTransform, &QuadTree), Without<QuadTreeNode>>,
     nodes: Query<(Entity, &Aabb, &GlobalTransform, Option<&QuadTree>), With<QuadTreeNode>>,
 ) {
     trace!("Updating tracked entities.");
+    let start = Instant::now();
     for (entity, transform, tracked_entity_opt) in entities {
+        let loop_instant = Instant::now();
+        if loop_instant - start > Duration::from_secs_f64(1. / 64.) {
+            break;
+        }
         do_tracking(
             &mut commands,
             entity,
@@ -66,27 +107,11 @@ fn update_tracked_entities(
     }
 }
 
-/// Adds an entity to the [`QuadTree`] on insertion of [`TrackEntity`].
-fn initial_tracking(
-    event: On<Add, TrackEntity>,
-    mut commands: Commands,
-    entities: Query<(&GlobalTransform, Option<&TrackedEntity>), With<TrackEntity>>,
-    root: Single<(Entity, &Aabb, &GlobalTransform, &QuadTree), Without<QuadTreeNode>>,
-    nodes: Query<(Entity, &Aabb, &GlobalTransform, Option<&QuadTree>), With<QuadTreeNode>>,
-) {
+/// Marks a newly spawned [`TrackEntity`] to be updated
+fn initial_tracking(event: On<Add, TrackEntity>, mut commands: Commands) {
     let entity = event.entity;
-    let Ok((transform, tracked_entity_opt)) = entities.get(entity) else {
-        unreachable!("Couldn't add {entity} to Quadtree due to missing components.",);
-    };
 
-    do_tracking(
-        &mut commands,
-        entity,
-        transform,
-        tracked_entity_opt,
-        &root,
-        nodes,
-    );
+    commands.entity(entity).insert(TrackedEntityModified);
 }
 
 /// Places an entity into a [`QuadTreeNode`]
@@ -98,6 +123,7 @@ fn do_tracking(
     root: &(Entity, &Aabb, &GlobalTransform, &QuadTree),
     nodes: Query<(Entity, &Aabb, &GlobalTransform, Option<&QuadTree>), With<QuadTreeNode>>,
 ) {
+    commands.entity(entity).remove::<TrackedEntityModified>();
     let translation = transform.translation();
     if tracked_entity_opt
         .and_then(|tracked_entity| nodes.get(tracked_entity.get()).ok())
@@ -111,7 +137,7 @@ fn do_tracking(
         })
         .is_none()
     {
-        trace!("{entity} needs updating its location in the Quadtree.");
+        // trace!("{entity} needs updating its location in the Quadtree.");
         commands.entity(entity).remove::<TrackedEntity>();
 
         let root_transformed_aabb = TransformedAabb::new(root.1, root.2);
@@ -132,8 +158,10 @@ fn do_tracking(
                 })
             else {
                 error!("{entity} is not in any of the nodes of {current_node}.");
+                commands.entity(entity).insert(ShowAabbGizmo::default());
                 break;
             };
+            commands.entity(entity).remove::<ShowAabbGizmo>();
 
             current_node = child_node;
             if let Some(child_node_children) = child_node_children_opt {
