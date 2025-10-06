@@ -4,7 +4,7 @@ mod error;
 mod light;
 mod lighting_params;
 mod model;
-mod quad_tree;
+pub mod quad_tree;
 mod sound;
 #[cfg(feature = "warning")]
 pub mod warnings;
@@ -15,15 +15,10 @@ use ragnarok_rebuild_common::{
     Version, WaterPlane, euc_kr::read_euc_kr_string, reader_ext::ReaderExt,
 };
 
-pub use self::{
-    bounding_box::BoundingBox,
-    effect::Effect,
-    error::Error,
-    light::Light,
-    lighting_params::LightingParams,
-    model::Model,
-    quad_tree::{QUAD_TREE_MAX_DEPTH, QUAD_TREE_SIZE, QuadTree, Range},
-    sound::Sound,
+use crate::quad_tree::{QUAD_TREE_SIZE, QuadTree, Range};
+pub use crate::{
+    bounding_box::BoundingBox, effect::Effect, error::Error, light::Light,
+    lighting_params::LightingParams, model::Model, sound::Sound,
 };
 
 type Objects = (Box<[Model]>, Box<[Light]>, Box<[Sound]>, Box<[Effect]>);
