@@ -1,25 +1,22 @@
 //! Sets up the [`QuadTree`].
 
-use std::time::{Duration, Instant};
-
-use bevy_app::PostUpdate;
+use bevy_app::{AppExit, Update};
 use bevy_camera::primitives::Aabb;
 use bevy_ecs::{
-    component::Component,
     entity::Entity,
-    lifecycle::Add,
-    observer::On,
+    name::NameOrEntity,
     query::{Changed, With, Without},
     relationship::{Relationship, RelationshipTarget},
     schedule::IntoScheduleConfigs,
-    system::{Commands, Populated, Query, Single},
+    system::{Commands, Populated, Query, RegisteredSystemError, Single},
+    world::World,
 };
 use bevy_gizmos::aabb::ShowAabbGizmo;
 use bevy_log::{error, trace};
-use bevy_math::Vec3A;
-use bevy_transform::{TransformSystems, components::GlobalTransform};
+use bevy_math::bounding::{Aabb3d, BoundingVolume};
+use bevy_transform::components::GlobalTransform;
 
-use crate::{QuadTree, QuadTreeNode, TrackEntity, TrackedEntity};
+use crate::{QuadTree, QuadTreeNode, TrackEntity, TrackedEntity, TrackingEntities};
 
 /// Add systems to update [`QuadTree`].
 #[cfg_attr(
@@ -31,12 +28,9 @@ pub struct Plugin;
 impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut bevy_app::App) {
         app.add_systems(
-            PostUpdate,
-            (mark_entities, update_tracked_entities, tracked_entities)
-                .chain()
-                .after(TransformSystems::Propagate),
+            Update,
+            ((initial_insertion, reinsert_on_root), execute_subsystems).chain(),
         );
-        app.add_observer(initial_tracking);
 
         app.register_type::<TrackEntity>();
         app.register_type::<QuadTree>();
@@ -51,151 +45,124 @@ impl bevy_app::Plugin for Plugin {
     }
 }
 
-/// Marks new entities and entities that have moved as needing to be updated.
-#[derive(Component)]
-pub struct TrackedEntityModified;
-
-/// Entities with [`TrackEntity`] that had their transform updated
-/// that frame are marked to be verified.
-fn mark_entities(
-    mut commands: Commands,
-    entities: Query<Entity, (With<TrackEntity>, Changed<GlobalTransform>)>,
-) {
-    for entity in entities {
-        commands.entity(entity).insert(TrackedEntityModified);
-    }
-}
-
-fn tracked_entities(
-    tracked_entities: Populated<(), With<TrackedEntity>>,
-    total: Populated<(), With<TrackEntity>>,
-) {
-    trace!(
-        "There are {} tracked entities out of {}.",
-        tracked_entities.iter().len(),
-        total.iter().len()
-    );
-}
-
-/// Updates the [`QuadTreeNode`] that the [`TrackEntity`]
-/// points to.
 #[expect(clippy::type_complexity, reason = "Queries are complex")]
-fn update_tracked_entities(
+fn initial_insertion(
     mut commands: Commands,
-    entities: Populated<
-        (Entity, &GlobalTransform, Option<&TrackedEntity>),
-        (With<TrackEntity>, With<TrackedEntityModified>),
+    tracked_entities: Populated<
+        (NameOrEntity, &GlobalTransform),
+        (With<TrackEntity>, Without<TrackedEntity>),
     >,
-    root: Single<(Entity, &Aabb, &GlobalTransform, &QuadTree), Without<QuadTreeNode>>,
-    nodes: Query<(Entity, &Aabb, &GlobalTransform, Option<&QuadTree>), With<QuadTreeNode>>,
+    quad_tree: Single<
+        (NameOrEntity, &GlobalTransform, &Aabb),
+        (With<QuadTree>, Without<QuadTreeNode>),
+    >,
 ) {
-    trace!("Updating tracked entities.");
-    let start = Instant::now();
-    for (entity, transform, tracked_entity_opt) in entities {
-        let loop_instant = Instant::now();
-        if loop_instant - start > Duration::from_secs_f64(1. / 64.) {
-            break;
+    trace!("Inserting {} on root.", tracked_entities.iter().len());
+    let (quad_tree, quad_tree_global_transform, quad_tree_aabb) = quad_tree.into_inner();
+    for (tracked_entity, global_transform) in tracked_entities.into_inner() {
+        let quad_tree_aabb = Aabb3d::new(quad_tree_aabb.center, quad_tree_aabb.half_extents)
+            .scale_around_center(quad_tree_global_transform.scale())
+            .rotated_by(quad_tree_global_transform.rotation());
+        let position = global_transform.translation();
+        if quad_tree_aabb.closest_point(position) == position.to_vec3a() {
+            commands
+                .entity(tracked_entity.entity)
+                .insert(<TrackedEntity as Relationship>::from(quad_tree.entity));
+        } else {
+            error!("{tracked_entity} is outside of {quad_tree}.");
         }
-        do_tracking(
-            &mut commands,
-            entity,
-            transform,
-            tracked_entity_opt,
-            &root,
-            nodes,
+    }
+}
+
+#[expect(clippy::type_complexity, reason = "Queries are complex")]
+fn reinsert_on_root(
+    mut commands: Commands,
+    tracked_entities: Populated<
+        (NameOrEntity, &GlobalTransform),
+        (
+            With<TrackEntity>,
+            With<TrackedEntity>,
+            Changed<GlobalTransform>,
+        ),
+    >,
+    quad_tree: Single<
+        (NameOrEntity, &GlobalTransform, &Aabb),
+        (With<QuadTree>, Without<QuadTreeNode>),
+    >,
+) {
+    trace!("Reinserting {} on root.", tracked_entities.iter().count());
+    let (quad_tree, quad_tree_global_transform, quad_tree_aabb) = quad_tree.into_inner();
+    for (tracked_entity, global_transform) in tracked_entities.into_inner() {
+        let quad_tree_aabb = Aabb3d::new(quad_tree_aabb.center, quad_tree_aabb.half_extents)
+            .scale_around_center(quad_tree_global_transform.scale())
+            .rotated_by(quad_tree_global_transform.rotation());
+        let position = global_transform.translation();
+        if quad_tree_aabb.closest_point(position) == position.to_vec3a() {
+            commands
+                .entity(tracked_entity.entity)
+                .insert(<TrackedEntity as Relationship>::from(quad_tree.entity));
+        } else {
+            error!("{tracked_entity} is outside of {quad_tree}.");
+        }
+    }
+}
+
+fn execute_subsystems(world: &mut World) {
+    trace!("Executing subsystems.");
+    for _ in 0..5 {
+        match world.run_system_cached(push_tracked_entities_to_child_nodes) {
+            Ok(_) => (),
+            Err(RegisteredSystemError::Skipped(_)) => break,
+            Err(err) => {
+                error!("{err}");
+                world.write_message(AppExit::from_code(1));
+                break;
+            }
+        }
+    }
+}
+
+fn push_tracked_entities_to_child_nodes(
+    mut commands: Commands,
+    quad_tree_nodes: Populated<(NameOrEntity, &QuadTree, &TrackingEntities)>,
+    tracked_entities: Query<(NameOrEntity, &GlobalTransform), With<TrackEntity>>,
+    aabbs: Query<(&Aabb, &GlobalTransform), With<QuadTreeNode>>,
+) {
+    for (quad_tree, child_nodes, tracking_entities) in quad_tree_nodes.into_inner() {
+        let Ok(children): Result<[Entity; 4], _> = child_nodes.collection().clone().try_into()
+        else {
+            unreachable!("QuadTree must always have 4 children.");
+        };
+        let Ok(child_nodes_aabbs) = aabbs.get_many(children) else {
+            unreachable!("Relationship invariant was broken.");
+        };
+        let child_nodes_aabbs = child_nodes_aabbs.map(|(aabb, global_transform)| {
+            Aabb3d::new(aabb.center, aabb.half_extents)
+                .scale_around_center(global_transform.scale())
+                .rotated_by(global_transform.rotation())
+        });
+        trace!(
+            "{quad_tree} has {} needing to be pushed to leaf.",
+            tracking_entities.collection().len()
         );
-    }
-}
 
-/// Marks a newly spawned [`TrackEntity`] to be updated
-fn initial_tracking(event: On<Add, TrackEntity>, mut commands: Commands) {
-    let entity = event.entity;
-
-    commands.entity(entity).insert(TrackedEntityModified);
-}
-
-/// Places an entity into a [`QuadTreeNode`]
-fn do_tracking(
-    commands: &mut Commands,
-    entity: Entity,
-    transform: &GlobalTransform,
-    tracked_entity_opt: Option<&TrackedEntity>,
-    root: &(Entity, &Aabb, &GlobalTransform, &QuadTree),
-    nodes: Query<(Entity, &Aabb, &GlobalTransform, Option<&QuadTree>), With<QuadTreeNode>>,
-) {
-    commands.entity(entity).remove::<TrackedEntityModified>();
-    let translation = transform.translation();
-    if tracked_entity_opt
-        .and_then(|tracked_entity| nodes.get(tracked_entity.get()).ok())
-        .filter(|(_, aabb, node_transform, quad_tree_opt)| {
-            if quad_tree_opt.is_some() {
-                unreachable!("All entities must be tracked by a leaf node.");
-            } else {
-                let transformed_aabb = TransformedAabb::new(aabb, node_transform);
-                transformed_aabb.contains(translation)
+        'entity: for (tracked_entity, global_transform) in
+            tracked_entities.iter_many(tracking_entities.collection())
+        {
+            for (aabb, quad_tree_child_node) in child_nodes_aabbs.iter().zip(children) {
+                let position = global_transform.translation();
+                if aabb.closest_point(position) == position.to_vec3a() {
+                    commands
+                        .entity(tracked_entity.entity)
+                        .insert(<TrackedEntity as Relationship>::from(quad_tree_child_node))
+                        .remove::<ShowAabbGizmo>();
+                    continue 'entity;
+                }
             }
-        })
-        .is_none()
-    {
-        // trace!("{entity} needs updating its location in the Quadtree.");
-        commands.entity(entity).remove::<TrackedEntity>();
-
-        let root_transformed_aabb = TransformedAabb::new(root.1, root.2);
-        if !root_transformed_aabb.contains(translation) {
-            error!("{entity} is off the QuadTree.");
-            return;
+            commands
+                .entity(tracked_entity.entity)
+                .insert(ShowAabbGizmo::default());
+            // error!("{tracked_entity} is not in any of the children of {quad_tree}.");
         }
-
-        let mut current_node = root.0;
-        let mut child_nodes = root.3.collection();
-        loop {
-            let Some((child_node, _, _, child_node_children_opt)) = child_nodes
-                .iter()
-                .filter_map(|child_node| nodes.get(*child_node).ok())
-                .find(|(_, aabb, node_transform, _)| {
-                    let transformed_aabb = TransformedAabb::new(aabb, node_transform);
-                    transformed_aabb.contains(translation)
-                })
-            else {
-                error!("{entity} is not in any of the nodes of {current_node}.");
-                commands.entity(entity).insert(ShowAabbGizmo::default());
-                break;
-            };
-            commands.entity(entity).remove::<ShowAabbGizmo>();
-
-            current_node = child_node;
-            if let Some(child_node_children) = child_node_children_opt {
-                child_nodes = child_node_children.collection();
-            } else {
-                commands
-                    .entity(entity)
-                    .insert(<TrackedEntity as Relationship>::from(current_node));
-                break;
-            }
-        }
-    }
-}
-
-/// An [`Aabb`] that had its center and half extents transformed
-/// by a [`GlobalTransform`].
-struct TransformedAabb(Aabb);
-
-impl TransformedAabb {
-    /// Create an instance of [`TransformedAabb`] from a [`Aabb`] and [`GlobalTransform`].
-    fn new(aabb: &Aabb, global_transform: &GlobalTransform) -> Self {
-        Self(Aabb {
-            center: global_transform.transform_point(aabb.center.into()).into(),
-            half_extents: aabb.half_extents * global_transform.scale().to_vec3a(),
-        })
-    }
-
-    /// Checks if a point is inside this [`TransformedAabb`]
-    fn contains(&self, point: impl Into<Vec3A>) -> bool {
-        let point = point.into();
-        let aabb = self.0;
-
-        ((aabb.center.x - point.x).abs() <= aabb.half_extents.x)
-            && ((aabb.center.y - point.y).abs() <= aabb.half_extents.y)
-            && ((aabb.center.z - point.z).abs() <= aabb.half_extents.z)
     }
 }
