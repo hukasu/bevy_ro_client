@@ -34,6 +34,7 @@ bevy = { workspace = true, features = [
   "bevy_render",
   "bevy_window",
   "bevy_winit",
+  "debug",
   "tonemapping_luts",
   "wayland",
   "zstd_rust",
