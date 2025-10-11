@@ -107,6 +107,10 @@ impl<'a> Crawler<'a> {
         self.depth >= QUAD_TREE_MAX_DEPTH
     }
 
+    pub fn depth(&self) -> usize {
+        self.depth
+    }
+
     fn index_skip(depth: usize, direction: usize) -> usize {
         let till_max_depth = QUAD_TREE_MAX_DEPTH - depth;
         (((4usize.pow(till_max_depth as u32) - 4) / 3) * (direction - 1)) + direction
