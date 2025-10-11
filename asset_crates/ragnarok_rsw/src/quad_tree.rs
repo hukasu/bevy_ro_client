@@ -19,12 +19,12 @@ impl QuadTree {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<QuadTree, super::Error> {
         let ranges = (0..QUAD_TREE_SIZE)
             .map(|_| {
-                let bottom = [
+                let top = [
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                 ];
-                let top = [
+                let bottom = [
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
                     reader.read_le_f32()?,
@@ -59,14 +59,14 @@ impl QuadTree {
 /// A node in the [QuadTree]
 ///
 /// # Note
-/// Ragnarok uses a `Left-handed Y-down` coordinate system, and the name of the
+/// Ragnarok uses a `Right-handed Y-down` coordinate system, and the name of the
 /// members reflect that.
 pub struct Range {
-    /// The top(Y) bottom-left(XY) point of the bounding box.
-    /// Due to the coordinate system, the Y of the bottom > top.
+    /// The top right corner of the node.
+    /// All components will be greater than or equal to [`Range::bottom`]
     pub top: [f32; 3],
-    /// The bottom(Y) top-right(XY) point of the bounding box.
-    /// Due to the coordinate system, the Y of the bottom > top.
+    /// The bottom left corner of the node.
+    /// All components will be smaller than or equal to [`Range::top`]
     pub bottom: [f32; 3],
     /// The radius of the bounding box, each component represents the
     /// distance between the center and the edge axis aligned.
@@ -235,10 +235,10 @@ mod test {
         let quad_tree = QuadTree {
             ranges: vec![
                 Range {
+                    top: [0., 0., 0.],
+                    bottom: [0., 0., 0.],
                     center: [0., 0., 0.],
                     radius: [0., 0., 0.],
-                    bottom: [0., 0., 0.],
-                    top: [0., 0., 0.],
                 };
                 QUAD_TREE_SIZE
             ]
