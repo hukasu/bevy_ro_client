@@ -137,7 +137,7 @@ struct ClientPlugins;
 impl bevy::app::PluginGroup for ClientPlugins {
     fn build(self) -> bevy::app::PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add(client::Plugin)
+            .add(client::plugin::Plugin)
             .add(bevy_ragnarok_act::plugin::Plugin {
                 audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
             })
