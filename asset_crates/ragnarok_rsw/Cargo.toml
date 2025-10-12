@@ -27,8 +27,8 @@ encoding_rs = { workspace = true }
 [[bin]]
 name = "rsw_debug"
 required-features = [
-    "warning",
-    "ragnarok_gat",
-    "ragnarok_rebuild_assets",
-    "ragnarok_grf",
+  "warning",
+  "ragnarok_gat",
+  "ragnarok_rebuild_assets",
+  "ragnarok_grf",
 ]
