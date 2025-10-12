@@ -10,7 +10,6 @@ use bevy_ecs::{
     system::{Commands, Populated, Query, RegisteredSystemError, Single},
     world::World,
 };
-use bevy_gizmos::aabb::ShowAabbGizmo;
 use bevy_log::{error, trace};
 use bevy_math::Vec3A;
 use bevy_transform::components::{GlobalTransform, Transform};
@@ -128,14 +127,10 @@ fn push_tracked_entities_to_child_nodes(
                 if quad_tree_node_aabb.contains_point(point) {
                     commands
                         .entity(tracked_entity.entity)
-                        .insert(<TrackedEntity as Relationship>::from(quad_tree_node.entity))
-                        .remove::<ShowAabbGizmo>();
+                        .insert(<TrackedEntity as Relationship>::from(quad_tree_node.entity));
                     continue 'entity;
                 }
             }
-            commands
-                .entity(tracked_entity.entity)
-                .insert(ShowAabbGizmo::default());
         }
     }
 }
