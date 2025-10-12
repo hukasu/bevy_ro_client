@@ -142,7 +142,6 @@ fn main() {
                         continue;
                     }
                 }
-                return;
             }
             Err(err) => {
                 if !header {
