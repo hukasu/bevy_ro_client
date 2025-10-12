@@ -7,25 +7,27 @@ mod loading_screen;
 pub mod resources;
 pub mod states;
 
-use std::path::PathBuf;
-
 use bevy::{
-    app::{Startup, Update},
-    asset::AssetServer,
+    app::{AppExit, Startup, Update},
+    asset::{AssetServer, Assets, RecursiveDependencyLoadState},
     color::Color,
-    ecs::{children, lifecycle::Add, observer::On},
-    math::{Quat, Vec3},
+    ecs::{
+        children, lifecycle::Add, observer::On, schedule::common_conditions::resource_exists,
+        system::Single,
+    },
+    log::error,
+    math::Vec3,
     prelude::{
         in_state, resource_changed, ClearColor, Commands, Entity, IntoScheduleConfigs, Name,
         NextState, Observer, Query, Res, ResMut, SpawnRelated, Transform, Visibility, With,
     },
+    scene::SceneSpawner,
 };
 
-use bevy_ragnarok_rsw::World;
+use bevy_ragnarok_rsw::{assets::RswWorld, World};
 use ragnarok_rebuild_bevy::{
     assets::{gnd, paths},
     audio::{Bgm, Sound},
-    WorldTransform,
 };
 use resources::LoadingWorld;
 use states::GameState;
@@ -56,6 +58,8 @@ impl bevy::app::Plugin for Plugin {
             // in 0.15
             .add_observer(attach_bgm_to_game)
             .add_observer(attach_sound_to_game);
+
+        app.add_systems(Update, swap_world.run_if(resource_exists::<LoadingWorld>));
     }
 }
 
@@ -63,7 +67,7 @@ fn start_up(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>
     commands.spawn((
         Name::new("RagnarokOnline"),
         components::Game,
-        Transform::from_rotation(Quat::from_rotation_x(std::f32::consts::PI)),
+        Transform::default(),
         Visibility::default(),
         children![
             (
@@ -89,7 +93,7 @@ fn skip_login(
     mut next_state: ResMut<NextState<GameState>>,
 ) {
     commands.insert_resource(LoadingWorld {
-        world: asset_server.load(PathBuf::from(paths::WORLD_FILES_FOLDER).join("prontera.rsw")),
+        world: asset_server.load(format!("{}prontera.rsw", paths::WORLD_FILES_FOLDER)),
     });
 
     next_state.set(GameState::MapChange);
@@ -138,7 +142,6 @@ fn attach_sound_to_game(
 fn update_world_transform(
     mut games: Query<&mut Transform, With<Game>>,
     ground_scale: Res<gnd::GroundScale>,
-    mut world_transform: ResMut<WorldTransform>,
 ) {
     bevy::log::trace!("Updating world transform.");
     let Ok(mut game_transform) = games
@@ -149,6 +152,33 @@ fn update_world_transform(
     };
 
     // TODO use ground scale
-    *game_transform = game_transform.with_scale(Vec3::splat(**ground_scale));
-    **world_transform = *game_transform;
+    *game_transform =
+        game_transform.with_scale(Vec3::splat(**ground_scale) * Vec3::new(1., -1., -1.));
+}
+
+fn swap_world(
+    mut commands: Commands,
+    previous_world: Option<Single<Entity, With<World>>>,
+    loading_world: Res<LoadingWorld>,
+    rsw_worlds: Res<Assets<RswWorld>>,
+    asset_server: Res<AssetServer>,
+    mut scene_spawner: ResMut<SceneSpawner>,
+) {
+    match asset_server.recursive_dependency_load_state(loading_world.world.id()) {
+        RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading => {}
+        RecursiveDependencyLoadState::Loaded => {
+            let Some(world) = rsw_worlds.get(loading_world.world.id()) else {
+                unreachable!("Loaded RswWorld must be valid.");
+            };
+            scene_spawner.spawn(world.scene.clone());
+            commands.remove_resource::<LoadingWorld>();
+            if let Some(previous_world) = previous_world {
+                commands.entity(*previous_world).despawn();
+            }
+        }
+        RecursiveDependencyLoadState::Failed(err) => {
+            error!("{err}");
+            commands.write_message(AppExit::from_code(1));
+        }
+    }
 }
