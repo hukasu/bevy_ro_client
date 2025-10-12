@@ -21,7 +21,7 @@ use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
 
 use crate::{
     Altitude, AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight,
-    EnvironmentalSound, World, WorldQuadTree, assets::RswWorld,
+    EnvironmentalSound, WorldQuadTree, assets::RswWorld,
 };
 
 pub struct AssetLoader {
@@ -88,7 +88,6 @@ impl AssetLoader {
                 Name::new(filename.to_string()),
                 Transform::default(),
                 Visibility::default(),
-                World,
             ))
             .add_children(&[
                 directional_light,

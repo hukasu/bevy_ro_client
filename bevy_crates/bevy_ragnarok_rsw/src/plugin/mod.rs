@@ -7,7 +7,7 @@ use std::path::PathBuf;
 use bevy_asset::AssetApp;
 
 use crate::{
-    AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
+    AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound,
     assets::RswWorld,
 };
 
@@ -31,7 +31,6 @@ impl bevy_app::Plugin for Plugin {
             .init_asset::<RswWorld>()
             .register_asset_reflect::<RswWorld>()
             // Register Types
-            .register_type::<World>()
             .register_type::<DiffuseLight>()
             .register_type::<AnimatedProp>()
             .register_type::<EnvironmentalLight>()
