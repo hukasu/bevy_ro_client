@@ -65,6 +65,8 @@ fn main() {
                 Box::new(grf)
             }),
         );
+    // Resources
+    app.insert_resource(PointLightShadowMap { size: 16 });
     // Plugins
     app.add_plugins(
         DefaultPlugins
@@ -113,9 +115,8 @@ fn main() {
                 }),
                 ..Default::default()
             }),
-    )
-    .add_plugins(RemotePlugin::default())
-    .insert_resource(PointLightShadowMap { size: 16 });
+    );
+    app.add_plugins(RemotePlugin::default());
     app.add_plugins(RagnarokPlugin);
 
     #[cfg(not(feature = "with-inspector"))]
