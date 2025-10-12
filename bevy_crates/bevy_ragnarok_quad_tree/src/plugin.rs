@@ -3,7 +3,6 @@
 use bevy_app::{AppExit, Update};
 use bevy_camera::primitives::Aabb;
 use bevy_ecs::{
-    entity::Entity,
     name::NameOrEntity,
     query::{Changed, With, Without},
     relationship::{Relationship, RelationshipTarget},
@@ -13,8 +12,8 @@ use bevy_ecs::{
 };
 use bevy_gizmos::aabb::ShowAabbGizmo;
 use bevy_log::{error, trace};
-use bevy_math::bounding::{Aabb3d, BoundingVolume};
-use bevy_transform::components::GlobalTransform;
+use bevy_math::Vec3A;
+use bevy_transform::components::{GlobalTransform, Transform};
 
 use crate::{QuadTree, QuadTreeNode, TrackEntity, TrackedEntity, TrackingEntities};
 
@@ -49,22 +48,15 @@ impl bevy_app::Plugin for Plugin {
 fn initial_insertion(
     mut commands: Commands,
     tracked_entities: Populated<
-        (NameOrEntity, &GlobalTransform),
+        (NameOrEntity, &Transform),
         (With<TrackEntity>, Without<TrackedEntity>),
     >,
-    quad_tree: Single<
-        (NameOrEntity, &GlobalTransform, &Aabb),
-        (With<QuadTree>, Without<QuadTreeNode>),
-    >,
+    quad_tree: Single<(NameOrEntity, &Aabb), (With<QuadTree>, Without<QuadTreeNode>)>,
 ) {
     trace!("Inserting {} on root.", tracked_entities.iter().len());
-    let (quad_tree, quad_tree_global_transform, quad_tree_aabb) = quad_tree.into_inner();
-    for (tracked_entity, global_transform) in tracked_entities.into_inner() {
-        let quad_tree_aabb = Aabb3d::new(quad_tree_aabb.center, quad_tree_aabb.half_extents)
-            .scale_around_center(quad_tree_global_transform.scale())
-            .rotated_by(quad_tree_global_transform.rotation());
-        let position = global_transform.translation();
-        if quad_tree_aabb.closest_point(position) == position.to_vec3a() {
+    let (quad_tree, quad_tree_aabb) = quad_tree.into_inner();
+    for (tracked_entity, transform) in tracked_entities.into_inner() {
+        if quad_tree_aabb.contains_point(transform.translation) {
             commands
                 .entity(tracked_entity.entity)
                 .insert(<TrackedEntity as Relationship>::from(quad_tree.entity));
@@ -78,26 +70,19 @@ fn initial_insertion(
 fn reinsert_on_root(
     mut commands: Commands,
     tracked_entities: Populated<
-        (NameOrEntity, &GlobalTransform),
+        (NameOrEntity, &Transform),
         (
             With<TrackEntity>,
             With<TrackedEntity>,
             Changed<GlobalTransform>,
         ),
     >,
-    quad_tree: Single<
-        (NameOrEntity, &GlobalTransform, &Aabb),
-        (With<QuadTree>, Without<QuadTreeNode>),
-    >,
+    quad_tree: Single<(NameOrEntity, &Aabb), (With<QuadTree>, Without<QuadTreeNode>)>,
 ) {
     trace!("Reinserting {} on root.", tracked_entities.iter().count());
-    let (quad_tree, quad_tree_global_transform, quad_tree_aabb) = quad_tree.into_inner();
-    for (tracked_entity, global_transform) in tracked_entities.into_inner() {
-        let quad_tree_aabb = Aabb3d::new(quad_tree_aabb.center, quad_tree_aabb.half_extents)
-            .scale_around_center(quad_tree_global_transform.scale())
-            .rotated_by(quad_tree_global_transform.rotation());
-        let position = global_transform.translation();
-        if quad_tree_aabb.closest_point(position) == position.to_vec3a() {
+    let (quad_tree, quad_tree_aabb) = quad_tree.into_inner();
+    for (tracked_entity, transform) in tracked_entities.into_inner() {
+        if quad_tree_aabb.contains_point(transform.translation) {
             commands
                 .entity(tracked_entity.entity)
                 .insert(<TrackedEntity as Relationship>::from(quad_tree.entity));
@@ -108,7 +93,6 @@ fn reinsert_on_root(
 }
 
 fn execute_subsystems(world: &mut World) {
-    trace!("Executing subsystems.");
     for _ in 0..5 {
         match world.run_system_cached(push_tracked_entities_to_child_nodes) {
             Ok(_) => (),
@@ -124,37 +108,27 @@ fn execute_subsystems(world: &mut World) {
 
 fn push_tracked_entities_to_child_nodes(
     mut commands: Commands,
-    quad_tree_nodes: Populated<(NameOrEntity, &QuadTree, &TrackingEntities)>,
-    tracked_entities: Query<(NameOrEntity, &GlobalTransform), With<TrackEntity>>,
-    aabbs: Query<(&Aabb, &GlobalTransform), With<QuadTreeNode>>,
+    quad_trees: Populated<(NameOrEntity, &QuadTree, &TrackingEntities)>,
+    quad_tree_nodes: Query<(NameOrEntity, &Aabb), With<QuadTreeNode>>,
+    tracked_entities: Query<(NameOrEntity, &Transform), With<TrackEntity>>,
 ) {
-    for (quad_tree, child_nodes, tracking_entities) in quad_tree_nodes.into_inner() {
-        let Ok(children): Result<[Entity; 4], _> = child_nodes.collection().clone().try_into()
-        else {
-            unreachable!("QuadTree must always have 4 children.");
-        };
-        let Ok(child_nodes_aabbs) = aabbs.get_many(children) else {
-            unreachable!("Relationship invariant was broken.");
-        };
-        let child_nodes_aabbs = child_nodes_aabbs.map(|(aabb, global_transform)| {
-            Aabb3d::new(aabb.center, aabb.half_extents)
-                .scale_around_center(global_transform.scale())
-                .rotated_by(global_transform.rotation())
-        });
+    for (quad_tree, child_nodes, tracking_entities) in quad_trees.into_inner() {
         trace!(
-            "{quad_tree} has {} needing to be pushed to leaf.",
-            tracking_entities.collection().len()
+            "{quad_tree} has {} needing to be pushed towards leaf.",
+            tracking_entities.len()
         );
 
-        'entity: for (tracked_entity, global_transform) in
+        'entity: for (tracked_entity, transform) in
             tracked_entities.iter_many(tracking_entities.collection())
         {
-            for (aabb, quad_tree_child_node) in child_nodes_aabbs.iter().zip(children) {
-                let position = global_transform.translation();
-                if aabb.closest_point(position) == position.to_vec3a() {
+            let point = transform.translation;
+            for (quad_tree_node, quad_tree_node_aabb) in
+                quad_tree_nodes.iter_many(child_nodes.collection())
+            {
+                if quad_tree_node_aabb.contains_point(point) {
                     commands
                         .entity(tracked_entity.entity)
-                        .insert(<TrackedEntity as Relationship>::from(quad_tree_child_node))
+                        .insert(<TrackedEntity as Relationship>::from(quad_tree_node.entity))
                         .remove::<ShowAabbGizmo>();
                     continue 'entity;
                 }
@@ -162,7 +136,28 @@ fn push_tracked_entities_to_child_nodes(
             commands
                 .entity(tracked_entity.entity)
                 .insert(ShowAabbGizmo::default());
-            // error!("{tracked_entity} is not in any of the children of {quad_tree}.");
         }
+    }
+}
+
+trait ContainsPointExt {
+    fn contains_point(&self, point: impl Into<Vec3A>) -> bool;
+}
+
+impl ContainsPointExt for Aabb {
+    fn contains_point(&self, point: impl Into<Vec3A>) -> bool {
+        const EPSILON: f32 = 0.00001;
+        let point = point.into();
+
+        let min = self.min();
+        let max = self.max();
+
+        let x_test = (min.x - EPSILON) <= point.x && point.x <= (max.x + EPSILON);
+        // There are way too many Gat tiles that do not fit in a node.
+        // Treating each node as being 2d on XZ.
+        // let y_test = (min.y - EPSILON) <= point.y && point.y <= (max.y + EPSILON);
+        let z_test = (min.z - EPSILON) <= point.z && point.z <= (max.z + EPSILON);
+
+        x_test && z_test
     }
 }
