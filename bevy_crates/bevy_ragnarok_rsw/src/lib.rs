@@ -11,9 +11,14 @@ use bevy_transform::components::Transform;
 
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
-/// A World contains a Ground, a [`DirectionalLight`](bevy_pbr::DirectionalLight), multiple [`AnimatedProp`],
+/// A World contains a Ground, a [`Altitude`], a [`DirectionalLight`](bevy_pbr::DirectionalLight), multiple [`AnimatedProp`],
 /// multiple [`PointLight`](bevy_pbr::PointLight), and multiple [`EnvironmentalSound`]s
 pub struct World;
+
+#[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
+/// Tile information from a [`Gat`]
+pub struct Altitude;
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
@@ -51,3 +56,8 @@ pub struct EnvironmentalSound {
 #[reflect(Component)]
 /// Environmental effect that create particles in the [`World`]
 pub struct EnvironmentalEffect;
+
+#[derive(Debug, Default, Component, Reflect)]
+#[reflect(Component)]
+/// The quad tree of the [`World`]
+pub struct WorldQuadTree;

@@ -12,6 +12,7 @@ use bevy::{
     ecs::{
         entity::Entity,
         lifecycle::{Insert, Replace},
+        name::Name,
         observer::On,
         query::With,
         relationship::Relationship,
@@ -63,6 +64,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
     );
 
     commands.spawn((
+        Name::new("Tracked Entity"),
         TrackEntity,
         Transform::default(),
         Gizmo {
@@ -80,7 +82,6 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
 
     let root = setup_quadtree(
         &mut commands,
-        Vec3::default(),
         Aabb {
             center: Vec3A::new(0., -2.5, 0.),
             half_extents: Vec3A::new(3., 2.5, 3.),
@@ -127,7 +128,6 @@ fn update_gizmo_color_on_replace(
 
 fn setup_quadtree(
     commands: &mut Commands,
-    translation: Vec3,
     aabb: Aabb,
     parent_opt: Option<Entity>,
     colors: &[Color],
@@ -138,7 +138,7 @@ fn setup_quadtree(
 
     let current_node = commands
         .spawn((
-            Transform::from_translation(translation),
+            Transform::default(),
             aabb,
             ShowAabbGizmo {
                 color: Some(colors[0]),
@@ -154,40 +154,52 @@ fn setup_quadtree(
     let children = [
         setup_quadtree(
             commands,
-            Vec3::new(aabb.half_extents.x / 2., 0., aabb.half_extents.z / 2.),
             Aabb {
-                center: aabb.center * Vec3A::new(1., 0.4, 1.),
-                half_extents: aabb.half_extents * Vec3A::new(0.5, 0.4, 0.5),
-            },
-            Some(current_node),
-            &colors[1..],
-        ),
-        setup_quadtree(
-            commands,
-            Vec3::new(aabb.half_extents.x / 2., 0., aabb.half_extents.z / -2.),
-            Aabb {
-                center: aabb.center * Vec3A::new(1., 0.5, 1.),
-                half_extents: aabb.half_extents * Vec3A::new(0.5, 0.5, 0.5),
-            },
-            Some(current_node),
-            &colors[1..],
-        ),
-        setup_quadtree(
-            commands,
-            Vec3::new(aabb.half_extents.x / -2., 0., aabb.half_extents.z / 2.),
-            Aabb {
-                center: aabb.center * Vec3A::new(1., 0.75, 1.),
-                half_extents: aabb.half_extents * Vec3A::new(0.5, 0.75, 0.5),
-            },
-            Some(current_node),
-            &colors[1..],
-        ),
-        setup_quadtree(
-            commands,
-            Vec3::new(aabb.half_extents.x / -2., 0., aabb.half_extents.z / -2.),
-            Aabb {
-                center: aabb.center,
+                center: Vec3A::new(
+                    aabb.center.x - aabb.half_extents.x / 2.,
+                    aabb.center.y, // + aabb.half_extents.y / 2.,
+                    aabb.center.z - aabb.half_extents.z / 2.,
+                ),
                 half_extents: aabb.half_extents * Vec3A::new(0.5, 1., 0.5),
+            },
+            Some(current_node),
+            &colors[1..],
+        ),
+        setup_quadtree(
+            commands,
+            Aabb {
+                center: Vec3A::new(
+                    aabb.center.x + aabb.half_extents.x / 2.,
+                    aabb.center.y + aabb.half_extents.y * 0.2,
+                    aabb.center.z - aabb.half_extents.z / 2.,
+                ),
+                half_extents: aabb.half_extents * Vec3A::new(0.5, 0.8, 0.5),
+            },
+            Some(current_node),
+            &colors[1..],
+        ),
+        setup_quadtree(
+            commands,
+            Aabb {
+                center: Vec3A::new(
+                    aabb.center.x - aabb.half_extents.x / 2.,
+                    aabb.center.y + aabb.half_extents.y * 0.4,
+                    aabb.center.z + aabb.half_extents.z / 2.,
+                ),
+                half_extents: aabb.half_extents * Vec3A::new(0.5, 0.6, 0.5),
+            },
+            Some(current_node),
+            &colors[1..],
+        ),
+        setup_quadtree(
+            commands,
+            Aabb {
+                center: Vec3A::new(
+                    aabb.center.x + aabb.half_extents.x / 2.,
+                    aabb.center.y + aabb.half_extents.y * 0.7,
+                    aabb.center.z + aabb.half_extents.z / 2.,
+                ),
+                half_extents: aabb.half_extents * Vec3A::new(0.5, 0.3, 0.5),
             },
             Some(current_node),
             &colors[1..],

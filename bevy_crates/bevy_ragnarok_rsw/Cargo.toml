@@ -16,6 +16,8 @@ debug = ["bevy_gizmos"]
 ragnarok_rsm = { workspace = true }
 ragnarok_rsw = { workspace = true }
 
+bevy_ragnarok_quad_tree = { workspace = true }
+
 bevy_animation = { workspace = true, default-features = false }
 bevy_app = { workspace = true, default-features = false }
 bevy_asset = { workspace = true, default-features = false }

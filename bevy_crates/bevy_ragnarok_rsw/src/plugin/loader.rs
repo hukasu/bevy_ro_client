@@ -8,18 +8,20 @@ use bevy_ecs::{
     entity::Entity,
     hierarchy::{ChildOf, Children},
     name::Name,
+    relationship::Relationship,
     spawn::{SpawnRelated, SpawnableList},
 };
 use bevy_light::{AmbientLight, DirectionalLight, PointLight};
-use bevy_math::{EulerRot, Quat, Vec3};
+use bevy_math::{EulerRot, Quat, Vec3, Vec3A};
+use bevy_ragnarok_quad_tree::QuadTreeNode;
 use bevy_scene::{Scene, SceneRoot};
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
-use ragnarok_rsw::{Model, Rsw};
+use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
 
 use crate::{
-    AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound, World,
-    assets::RswWorld,
+    Altitude, AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight,
+    EnvironmentalSound, World, WorldQuadTree, assets::RswWorld,
 };
 
 pub struct AssetLoader {
@@ -81,7 +83,7 @@ impl AssetLoader {
             None => Self::UNNAMED_RSW,
         };
 
-        world
+        let rsw_world = world
             .spawn((
                 Name::new(filename.to_string()),
                 Transform::default(),
@@ -96,7 +98,10 @@ impl AssetLoader {
                 environmental_lights,
                 environmental_sounds,
                 environmental_effects,
-            ]);
+            ])
+            .id();
+
+        Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
         RswWorld {
             scene: load_context.add_labeled_asset("Scene".into(), Scene::new(world)),
@@ -166,9 +171,11 @@ impl AssetLoader {
     ) -> Entity {
         log::trace!("Spawning ground of {:?}", load_context.path());
 
-        let world_ground = load_context
-            .loader()
-            .load(self.ground_path_prefix.join(rsw.gnd_file.as_ref()));
+        let world_ground = load_context.loader().load(format!(
+            "{}{}",
+            self.ground_path_prefix.display(),
+            rsw.gnd_file
+        ));
 
         world
             .spawn((Name::new(rsw.gnd_file.to_string()), SceneRoot(world_ground)))
@@ -183,10 +190,23 @@ impl AssetLoader {
     ) -> Entity {
         log::trace!("Spawning tiles of {:?}", load_context.path());
 
-        let world_tiles = load_context.load(self.altitude_path_prefix.join(rsw.gat_file.as_ref()));
+        let world_tiles = load_context
+            .loader()
+            .with_settings(|settings: &mut f32| {
+                *settings = 5.;
+            })
+            .load(format!(
+                "{}{}#Scene",
+                self.altitude_path_prefix.display(),
+                rsw.gat_file
+            ));
 
         world
-            .spawn((Name::new(rsw.gat_file.to_string()), SceneRoot(world_tiles)))
+            .spawn((
+                Name::new(rsw.gat_file.to_string()),
+                Altitude,
+                SceneRoot(world_tiles),
+            ))
             .id()
     }
 
@@ -308,6 +328,51 @@ impl AssetLoader {
                 }
             })
             .id()
+    }
+
+    fn spawn_quad_tree(
+        rsw: &Rsw,
+        rsw_world: Entity,
+        world: &mut bevy_ecs::world::World,
+        load_context: &mut LoadContext,
+    ) {
+        log::trace!("Spawning quad tree of {:?}", load_context.path());
+
+        fn recursive(
+            world: &mut bevy_ecs::world::World,
+            crawler: Crawler<'_>,
+            parent: Entity,
+        ) -> Entity {
+            let node = world
+                .spawn((
+                    Aabb {
+                        center: Vec3A::from_array(crawler.center),
+                        half_extents: Vec3A::from_array(crawler.radius),
+                    },
+                    Transform::default(),
+                    Visibility::default(),
+                    ChildOf(parent),
+                    <QuadTreeNode as Relationship>::from(parent),
+                ))
+                .id();
+
+            if let Some([bl, br, tl, tr]) = crawler.children() {
+                recursive(world, bl, node);
+                recursive(world, br, node);
+                recursive(world, tl, node);
+                recursive(world, tr, node);
+            }
+
+            node
+        }
+
+        let crawler = rsw.quad_tree.crawl();
+
+        let root = recursive(world, crawler, rsw_world);
+        world
+            .entity_mut(root)
+            .insert((Name::new("QuadTree"), WorldQuadTree))
+            .remove::<QuadTreeNode>();
     }
 }
 

@@ -14,8 +14,8 @@ use bevy_reflect::Reflect;
 /// A [`QuadTree`] has 4 children of type [`QuadTreeNode`], partitioning the space
 /// in equal amounts on XZ.
 #[cfg_attr(feature = "debug", derive(Debug))]
-#[derive(Component)]
-#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[derive(Reflect, Component)]
+#[reflect(Component)]
 #[relationship_target(relationship = QuadTreeNode)]
 pub struct QuadTree {
     nodes: Vec<Entity>,
@@ -25,8 +25,8 @@ pub struct QuadTree {
 ///
 /// A [`QuadTreeNode`] can be a [`QuadTree`] subdividing even further the space.
 #[cfg_attr(feature = "debug", derive(Debug))]
-#[derive(Component)]
-#[cfg_attr(feature = "reflect", derive(Reflect))]
+#[derive(Reflect, Component)]
+#[reflect(Component)]
 #[relationship(relationship_target = QuadTree)]
 pub struct QuadTreeNode {
     parent: Entity,
