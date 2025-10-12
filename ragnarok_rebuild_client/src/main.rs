@@ -59,6 +59,7 @@ fn main() {
         .register_asset_source(
             bevy::asset::io::AssetSourceId::Default,
             bevy::asset::io::AssetSourceBuilder::default().with_reader(|| {
+                #[expect(clippy::unwrap_used, reason = "Grf AssetReader's API needs rework")]
                 let grf =
                     bevy_ragnarok_grf::AssetReader::new(std::path::Path::new("data.grf")).unwrap();
                 Box::new(grf)
@@ -82,11 +83,20 @@ fn main() {
                     format!("ragnarok_rebuild_assets={log_level}"),
                     format!("ragnarok_rebuild_common={log_level}"),
                     format!("ragnarok_act={log_level}"),
+                    format!("ragnarok_gat={log_level}"),
                     format!("ragnarok_grf={log_level}"),
                     format!("ragnarok_pal={log_level}"),
                     format!("ragnarok_rsm={log_level}"),
                     format!("ragnarok_rsw={log_level}"),
                     format!("ragnarok_spr={log_level}"),
+                    format!("bevy_ragnarok_act={log_level}"),
+                    format!("bevy_ragnarok_gat={log_level}"),
+                    format!("bevy_ragnarok_grf={log_level}"),
+                    format!("bevy_ragnarok_pal={log_level}"),
+                    format!("bevy_ragnarok_rsm={log_level}"),
+                    format!("bevy_ragnarok_rsw={log_level}"),
+                    format!("bevy_ragnarok_spr={log_level}"),
+                    format!("bevy_ragnarok_quad_tree={log_level}"),
                 ]
                 .join(","),
                 custom_layer: |_| None,
@@ -106,23 +116,7 @@ fn main() {
     )
     .add_plugins(RemotePlugin::default())
     .insert_resource(PointLightShadowMap { size: 16 });
-    app.add_plugins((
-        RagnarokPlugin,
-        bevy_ragnarok_act::plugin::Plugin {
-            audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
-        },
-        bevy_ragnarok_pal::plugin::Plugin,
-        bevy_ragnarok_rsm::plugin::Plugin {
-            texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
-        },
-        bevy_ragnarok_rsw::plugin::Plugin {
-            model_path_prefix: paths::MODEL_FILES_FOLDER.into(),
-            ground_path_prefix: paths::GROUND_FILES_FOLDER.into(),
-            altitude_path_prefix: paths::ALTITUDE_FILES_FOLDER.into(),
-            sound_path_prefix: paths::WAV_FILES_FOLDER.into(),
-        },
-        bevy_ragnarok_spr::plugin::Plugin,
-    ));
+    app.add_plugins(RagnarokPlugin);
 
     #[cfg(not(feature = "with-inspector"))]
     {
@@ -142,6 +136,23 @@ struct ClientPlugins;
 
 impl bevy::app::PluginGroup for ClientPlugins {
     fn build(self) -> bevy::app::PluginGroupBuilder {
-        PluginGroupBuilder::start::<Self>().add(client::Plugin)
+        PluginGroupBuilder::start::<Self>()
+            .add(client::Plugin)
+            .add(bevy_ragnarok_act::plugin::Plugin {
+                audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
+            })
+            .add(bevy_ragnarok_gat::plugin::Plugin)
+            .add(bevy_ragnarok_pal::plugin::Plugin)
+            .add(bevy_ragnarok_rsm::plugin::Plugin {
+                texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
+            })
+            .add(bevy_ragnarok_rsw::plugin::Plugin {
+                model_path_prefix: paths::MODEL_FILES_FOLDER.into(),
+                ground_path_prefix: paths::GROUND_FILES_FOLDER.into(),
+                altitude_path_prefix: paths::ALTITUDE_FILES_FOLDER.into(),
+                sound_path_prefix: paths::WAV_FILES_FOLDER.into(),
+            })
+            .add(bevy_ragnarok_spr::plugin::Plugin)
+            .add(bevy_ragnarok_quad_tree::plugin::Plugin)
     }
 }
