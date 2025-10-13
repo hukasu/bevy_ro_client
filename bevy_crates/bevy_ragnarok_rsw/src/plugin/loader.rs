@@ -111,7 +111,7 @@ impl AssetLoader {
             ])
             .id();
 
-        self.spawn_animated_props(rsw, rsw_world, &mut world);
+        Self::spawn_animated_props(rsw, rsw_world, &mut world);
         Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
         Scene::new(world)
@@ -220,7 +220,6 @@ impl AssetLoader {
     }
 
     fn spawn_animated_props(
-        &self,
         rsw: &Rsw,
         rsw_world: Entity,
         world: &mut bevy_ecs::world::World,
