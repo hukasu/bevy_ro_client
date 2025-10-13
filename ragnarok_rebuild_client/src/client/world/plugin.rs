@@ -23,8 +23,8 @@ use bevy::{
     state::{app::AppExtStates, commands::CommandsStatesExt, condition::in_state, state::OnEnter},
 };
 use bevy_ragnarok_rsw::{
-    relationships::{ModelsOfWorld, WorldOfModels},
-    AnimatedProp, World,
+    relationships::{GroundOfWorld, ModelsOfWorld, WorldOfGround, WorldOfModels},
+    AnimatedProp, Ground, World,
 };
 
 use crate::client::{
@@ -52,9 +52,14 @@ impl bevy::app::Plugin for Plugin {
             PreUpdate,
             (
                 wait_scene.run_if(in_state(MapChangeStates::LoadingAsset)),
+                wait_ground_scene.run_if(in_state(MapChangeStates::LoadingGround)),
                 wait_model_scene.run_if(in_state(MapChangeStates::LoadingModels)),
             )
                 .in_set(WorldSystems::Loading),
+        );
+        app.add_systems(
+            OnEnter(MapChangeStates::LoadingGround),
+            load_ground.in_set(WorldSystems::Loading),
         );
         app.add_systems(
             OnEnter(MapChangeStates::LoadingModels),
@@ -82,6 +87,10 @@ pub enum WorldSystems {
 #[derive(Resource)]
 struct MapChangeScene(Handle<Scene>);
 
+/// [`Handle<Scene>`] of the loading ground
+#[derive(Component)]
+struct LoadingGround(Handle<Scene>);
+
 /// [`Handle<Scene>`] of the loading animated prop
 #[derive(Component)]
 struct LoadingModel(Handle<Scene>);
@@ -97,26 +106,23 @@ fn map_change(map_change: On<ChangeMap>, mut commands: Commands, asset_server: R
     commands.insert_resource(MapChangeScene(map));
 }
 
-/// Wait for [`Scene`] of [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset) to finish loading
-fn wait_scene(
+/// Load ground of [`World`]
+fn load_ground(
     mut commands: Commands,
-    game: Single<Entity, With<Game>>,
-    map_change_scene: Res<MapChangeScene>,
-    mut scene_spawner: ResMut<SceneSpawner>,
+    world: Single<(NameOrEntity, &WorldOfGround), With<World>>,
+    children: Query<(NameOrEntity, &Ground), With<GroundOfWorld>>,
     asset_server: Res<AssetServer>,
 ) {
-    match asset_server.recursive_dependency_load_state(map_change_scene.0.id()) {
-        RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading => (),
-        RecursiveDependencyLoadState::Loaded => {
-            scene_spawner.spawn_as_child(map_change_scene.0.clone(), *game);
-            commands.remove_resource::<MapChangeScene>();
-            commands.set_state(MapChangeStates::LoadingScene);
-        }
-        RecursiveDependencyLoadState::Failed(err) => {
-            error!("{err}");
-            commands.write_message(AppExit::from_code(1));
-        }
-    }
+    let (world, world_of_models) = world.into_inner();
+
+    let Ok((ground, ground_path)) = children.get(*world_of_models.collection()) else {
+        debug!("{world} does not have animated props.");
+        return;
+    };
+
+    commands.entity(ground.entity).insert(LoadingGround(
+        asset_server.load(format!("data/{}", ground_path.ground_path)),
+    ));
 }
 
 /// Load models of [`World`]
@@ -142,6 +148,59 @@ fn load_models(
         commands.entity(*child).insert(LoadingModel(
             asset_server.load(format!("data/model/{}#Scene", animated_prop.prop_path)),
         ));
+    }
+}
+
+/// Wait for [`Scene`] of [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset) to finish loading
+fn wait_scene(
+    mut commands: Commands,
+    game: Single<Entity, With<Game>>,
+    map_change_scene: Res<MapChangeScene>,
+    mut scene_spawner: ResMut<SceneSpawner>,
+    asset_server: Res<AssetServer>,
+) {
+    match asset_server.recursive_dependency_load_state(map_change_scene.0.id()) {
+        RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading => (),
+        RecursiveDependencyLoadState::Loaded => {
+            scene_spawner.spawn_as_child(map_change_scene.0.clone(), *game);
+            commands.remove_resource::<MapChangeScene>();
+            commands.set_state(MapChangeStates::LoadingScene);
+        }
+        RecursiveDependencyLoadState::Failed(err) => {
+            error!("{err}");
+            commands.write_message(AppExit::from_code(1));
+        }
+    }
+}
+
+fn wait_ground_scene(
+    mut commands: Commands,
+    grounds: Query<(NameOrEntity, &LoadingGround), With<Ground>>,
+    asset_server: Res<AssetServer>,
+    mut scene_spawner: ResMut<SceneSpawner>,
+) {
+    if grounds.is_empty() {
+        commands.set_state(MapChangeStates::LoadingModels);
+        return;
+    }
+
+    for (ground, loading_ground) in grounds {
+        match asset_server.get_recursive_dependency_load_state(loading_ground.0.id()) {
+            Some(
+                RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading,
+            ) => (),
+            Some(RecursiveDependencyLoadState::Loaded) => {
+                commands.entity(ground.entity).remove::<LoadingGround>();
+                scene_spawner.spawn_as_child(loading_ground.0.clone(), ground.entity);
+            }
+            Some(RecursiveDependencyLoadState::Failed(err)) => {
+                commands.entity(ground.entity).remove::<LoadingGround>();
+                error!("Dependecies of {ground} failed to load: {err}");
+            }
+            None => {
+                unreachable!("All model scene handles must be valid.")
+            }
+        }
     }
 }
 
@@ -193,7 +252,7 @@ fn new_world_spawned(
 
     trace!("New World {name_or_entity} spawned.");
     commands.entity(world).insert(WorldOfGame(*game));
-    commands.set_state(MapChangeStates::LoadingModels);
+    commands.set_state(MapChangeStates::LoadingGround);
 }
 
 fn despawn_old_world(
