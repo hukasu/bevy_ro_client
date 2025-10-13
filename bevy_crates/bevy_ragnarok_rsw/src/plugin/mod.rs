@@ -38,7 +38,6 @@ impl bevy_app::Plugin for Plugin {
             .register_type::<EnvironmentalSound>()
             // Register AssetLoader
             .register_asset_loader(AssetLoader {
-                ground_path_prefix: self.ground_path_prefix.clone(),
                 altitude_path_prefix: self.altitude_path_prefix.clone(),
                 sound_path_prefix: self.sound_path_prefix.clone(),
             });

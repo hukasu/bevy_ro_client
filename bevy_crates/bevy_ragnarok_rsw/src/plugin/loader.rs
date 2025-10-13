@@ -21,7 +21,9 @@ use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
 
 use crate::{
     Altitude, AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight,
-    EnvironmentalSound, World, WorldQuadTree, assets::RswAsset, relationships::ModelsOfWorld,
+    EnvironmentalSound, Ground, World, WorldQuadTree,
+    assets::RswAsset,
+    relationships::{GroundOfWorld, ModelsOfWorld},
 };
 
 /// Asset loader for [`RswAsset`].
@@ -31,8 +33,6 @@ use crate::{
 /// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene cointaining all objects represented
 ///   by the [`Rsw`].
 pub struct AssetLoader {
-    /// Prefix for .gnd files
-    pub ground_path_prefix: PathBuf,
     /// Prefix for .gat files
     pub altitude_path_prefix: PathBuf,
     /// Prefix for .wav files
@@ -82,7 +82,6 @@ impl AssetLoader {
 
         Self::set_ambient_light(rsw, &mut world, load_context);
         let directional_light = Self::spawn_directional_light(rsw, &mut world, load_context);
-        let ground = self.spawn_ground(rsw, &mut world, load_context);
         let tiles = self.spawn_tiles(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
         let environmental_sounds = self.spawn_environmental_sounds(rsw, &mut world, load_context);
@@ -103,7 +102,6 @@ impl AssetLoader {
             ))
             .add_children(&[
                 directional_light,
-                ground,
                 tiles,
                 environmental_lights,
                 environmental_sounds,
@@ -111,6 +109,7 @@ impl AssetLoader {
             ])
             .id();
 
+        Self::spawn_ground(rsw, rsw_world, &mut world);
         Self::spawn_animated_props(rsw, rsw_world, &mut world);
         Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
@@ -172,22 +171,18 @@ impl AssetLoader {
             .id()
     }
 
-    fn spawn_ground(
-        &self,
-        rsw: &Rsw,
-        world: &mut bevy_ecs::world::World,
-        load_context: &mut LoadContext,
-    ) -> Entity {
-        log::trace!("Spawning ground of {:?}", load_context.path());
-
-        let world_ground = load_context.loader().load(format!(
-            "{}{}",
-            self.ground_path_prefix.display(),
-            rsw.gnd_file
-        ));
-
+    fn spawn_ground(rsw: &Rsw, rsw_world: Entity, world: &mut bevy_ecs::world::World) -> Entity {
         world
-            .spawn((Name::new(rsw.gnd_file.to_string()), SceneRoot(world_ground)))
+            .spawn((
+                Name::new(rsw.gnd_file.to_string()),
+                Ground {
+                    ground_path: Cow::Owned(rsw.gnd_file.to_string()),
+                },
+                ChildOf(rsw_world),
+                <GroundOfWorld as Relationship>::from(rsw_world),
+                Transform::default(),
+                Visibility::default(),
+            ))
             .id()
     }
 

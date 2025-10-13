@@ -24,6 +24,13 @@ pub struct World;
 
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
+/// Ground of the [`World`]
+pub struct Ground {
+    ground_path: Cow<'static, str>,
+}
+
+#[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
 /// Tile information from a [`Gat`]
 pub struct Altitude;
 
