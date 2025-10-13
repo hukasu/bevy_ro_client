@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Duration};
+use std::{borrow::Cow, path::PathBuf, time::Duration};
 
 use bevy_asset::{Handle, LoadContext, io::Reader};
 use bevy_audio::AudioSource;
@@ -31,8 +31,6 @@ use crate::{
 /// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene cointaining all objects represented
 ///   by the [`Rsw`].
 pub struct AssetLoader {
-    /// Prefix for .rsm files
-    pub model_path_prefix: PathBuf,
     /// Prefix for .gnd files
     pub ground_path_prefix: PathBuf,
     /// Prefix for .gat files
@@ -234,7 +232,7 @@ impl AssetLoader {
                 Name::new("Models"),
                 Transform::default(),
                 Visibility::default(),
-                Children::spawn(ModelSpawner::new(&rsw.models, self, load_context)),
+                Children::spawn(ModelSpawner::new(&rsw.models)),
             ))
             .id()
     }
@@ -395,12 +393,11 @@ struct ModelSpawner {
 struct SpawningModel {
     name: Name,
     animated_prop: AnimatedProp,
-    scene: Handle<Scene>,
     transform: Transform,
 }
 
 impl ModelSpawner {
-    pub fn new(models: &[Model], loader: &AssetLoader, load_context: &mut LoadContext<'_>) -> Self {
+    pub fn new(models: &[Model]) -> Self {
         let mut res = Vec::with_capacity(models.len());
 
         for model in models {
@@ -410,18 +407,13 @@ impl ModelSpawner {
                 Vec3::ONE
             };
 
-            let model_path = loader
-                .model_path_prefix
-                .join(format!("{}#Scene", model.filename));
-            let scene = load_context.load(model_path.to_string_lossy().to_string());
-
             res.push(SpawningModel {
                 name: Name::new(model.name.to_string()),
                 animated_prop: AnimatedProp {
+                    prop_path: Cow::Owned(model.filename.to_string()),
                     animation_type: model.animation_type,
                     animation_speed: model.animation_speed,
                 },
-                scene,
                 transform: Transform {
                     translation: Vec3::from_array(model.position),
                     rotation: Quat::from_euler(
@@ -448,10 +440,9 @@ impl SpawnableList<ChildOf> for ModelSpawner {
         for item in &this.models {
             world.spawn((
                 ChildOf(entity),
-                item.animated_prop,
+                item.animated_prop.clone(),
                 item.name.clone(),
                 item.transform,
-                SceneRoot(item.scene.clone()),
             ));
         }
     }

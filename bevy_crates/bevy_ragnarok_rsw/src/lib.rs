@@ -2,6 +2,8 @@ pub mod assets;
 pub mod events;
 pub mod plugin;
 
+use std::borrow::Cow;
+
 use bevy_asset::Handle;
 use bevy_audio::AudioSource;
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
@@ -29,10 +31,11 @@ pub struct Altitude;
 /// A diffuse light that illuminated the [`World`]
 pub struct DiffuseLight;
 
-#[derive(Debug, Default, Clone, Copy, Component, Reflect)]
+#[derive(Debug, Default, Clone, Component, Reflect)]
 #[reflect(Component)]
 /// An animated prop that is part of the [`World`]
 pub struct AnimatedProp {
+    pub prop_path: Cow<'static, str>,
     pub animation_type: i32,
     pub animation_speed: f32,
 }
