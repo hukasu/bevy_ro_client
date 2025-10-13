@@ -111,7 +111,7 @@ impl AssetLoader {
             ])
             .id();
 
-        self.spawn_animated_props(rsw, rsw_world, &mut world, load_context);
+        self.spawn_animated_props(rsw, rsw_world, &mut world);
         Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
         Scene::new(world)
@@ -224,9 +224,7 @@ impl AssetLoader {
         rsw: &Rsw,
         rsw_world: Entity,
         world: &mut bevy_ecs::world::World,
-        load_context: &mut LoadContext,
     ) -> Entity {
-        log::trace!("Spawning animated props of {:?}", load_context.path());
         world
             .spawn((
                 Name::new("Models"),
