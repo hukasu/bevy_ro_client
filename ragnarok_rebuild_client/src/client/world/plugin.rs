@@ -232,7 +232,7 @@ fn wait_ground_scene(
             }
             Some(RecursiveDependencyLoadState::Failed(err)) => {
                 commands.entity(ground.entity).remove::<LoadingGround>();
-                error!("Dependecies of {ground} failed to load: {err}");
+                error!("Dependencies of {ground} failed to load: {err}");
             }
             None => {
                 unreachable!("All model scene handles must be valid.")
@@ -263,7 +263,7 @@ fn wait_altitude_scene(
             }
             Some(RecursiveDependencyLoadState::Failed(err)) => {
                 commands.entity(altitude.entity).remove::<LoadingAltitude>();
-                error!("Dependecies of {altitude} failed to load: {err}");
+                error!("Dependencies of {altitude} failed to load: {err}");
             }
             None => {
                 unreachable!("All altitude scene handles must be valid.")
@@ -294,7 +294,7 @@ fn wait_model_scene(
             }
             Some(RecursiveDependencyLoadState::Failed(err)) => {
                 commands.entity(model.entity).remove::<LoadingModel>();
-                error!("Dependecies of {model} failed to load: {err}");
+                error!("Dependencies of {model} failed to load: {err}");
             }
             None => {
                 unreachable!("All model scene handles must be valid.")

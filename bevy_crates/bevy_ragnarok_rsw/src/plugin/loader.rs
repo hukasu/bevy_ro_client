@@ -30,7 +30,7 @@ use crate::{
 ///
 /// ## Labeled assets
 ///
-/// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene cointaining all objects represented
+/// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene containing all objects represented
 ///   by the [`Rsw`].
 pub struct AssetLoader {
     /// Prefix for .wav files
