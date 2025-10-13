@@ -1,6 +1,7 @@
 pub mod assets;
 pub mod events;
 pub mod plugin;
+pub mod relationships;
 
 use std::borrow::Cow;
 

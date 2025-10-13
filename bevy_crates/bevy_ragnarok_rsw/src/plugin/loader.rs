@@ -21,7 +21,7 @@ use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
 
 use crate::{
     Altitude, AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight,
-    EnvironmentalSound, World, WorldQuadTree, assets::RswAsset,
+    EnvironmentalSound, World, WorldQuadTree, assets::RswAsset, relationships::ModelsOfWorld,
 };
 
 /// Asset loader for [`RswAsset`].
@@ -84,7 +84,6 @@ impl AssetLoader {
         let directional_light = Self::spawn_directional_light(rsw, &mut world, load_context);
         let ground = self.spawn_ground(rsw, &mut world, load_context);
         let tiles = self.spawn_tiles(rsw, &mut world, load_context);
-        let animated_props = self.spawn_animated_props(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
         let environmental_sounds = self.spawn_environmental_sounds(rsw, &mut world, load_context);
         let environmental_effects =
@@ -106,13 +105,13 @@ impl AssetLoader {
                 directional_light,
                 ground,
                 tiles,
-                animated_props,
                 environmental_lights,
                 environmental_sounds,
                 environmental_effects,
             ])
             .id();
 
+        self.spawn_animated_props(rsw, rsw_world, &mut world, load_context);
         Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
         Scene::new(world)
@@ -223,6 +222,7 @@ impl AssetLoader {
     fn spawn_animated_props(
         &self,
         rsw: &Rsw,
+        rsw_world: Entity,
         world: &mut bevy_ecs::world::World,
         load_context: &mut LoadContext,
     ) -> Entity {
@@ -232,6 +232,8 @@ impl AssetLoader {
                 Name::new("Models"),
                 Transform::default(),
                 Visibility::default(),
+                ChildOf(rsw_world),
+                <ModelsOfWorld as Relationship>::from(rsw_world),
                 Children::spawn(ModelSpawner::new(&rsw.models)),
             ))
             .id()
