@@ -23,8 +23,11 @@ use bevy::{
     state::{app::AppExtStates, commands::CommandsStatesExt, condition::in_state, state::OnEnter},
 };
 use bevy_ragnarok_rsw::{
-    relationships::{GroundOfWorld, ModelsOfWorld, WorldOfGround, WorldOfModels},
-    AnimatedProp, Ground, World,
+    relationships::{
+        AltitudeOfWorld, GroundOfWorld, ModelsOfWorld, WorldOfAltitude, WorldOfGround,
+        WorldOfModels,
+    },
+    Altitude, AnimatedProp, Ground, World,
 };
 
 use crate::client::{
@@ -53,6 +56,7 @@ impl bevy::app::Plugin for Plugin {
             (
                 wait_scene.run_if(in_state(MapChangeStates::LoadingAsset)),
                 wait_ground_scene.run_if(in_state(MapChangeStates::LoadingGround)),
+                wait_altitude_scene.run_if(in_state(MapChangeStates::LoadingAltitude)),
                 wait_model_scene.run_if(in_state(MapChangeStates::LoadingModels)),
             )
                 .in_set(WorldSystems::Loading),
@@ -60,6 +64,10 @@ impl bevy::app::Plugin for Plugin {
         app.add_systems(
             OnEnter(MapChangeStates::LoadingGround),
             load_ground.in_set(WorldSystems::Loading),
+        );
+        app.add_systems(
+            OnEnter(MapChangeStates::LoadingAltitude),
+            load_altitude.in_set(WorldSystems::Loading),
         );
         app.add_systems(
             OnEnter(MapChangeStates::LoadingModels),
@@ -90,6 +98,10 @@ struct MapChangeScene(Handle<Scene>);
 /// [`Handle<Scene>`] of the loading ground
 #[derive(Component)]
 struct LoadingGround(Handle<Scene>);
+
+/// [`Handle<Scene>`] of the loading altitude tiles
+#[derive(Component)]
+struct LoadingAltitude(Handle<Scene>);
 
 /// [`Handle<Scene>`] of the loading animated prop
 #[derive(Component)]
@@ -123,6 +135,31 @@ fn load_ground(
     commands.entity(ground.entity).insert(LoadingGround(
         asset_server.load(format!("data/{}", ground_path.ground_path)),
     ));
+}
+
+/// Load altitude tiles of [`World`]
+fn load_altitude(
+    mut commands: Commands,
+    world: Single<(NameOrEntity, &WorldOfAltitude), With<World>>,
+    children: Query<(NameOrEntity, &Altitude), With<AltitudeOfWorld>>,
+    asset_server: Res<AssetServer>,
+) {
+    let (world, world_of_altitude) = world.into_inner();
+
+    let Ok((altitude, Altitude { altitude_path })) = children.get(*world_of_altitude.collection())
+    else {
+        debug!("{world} does not have animated props.");
+        return;
+    };
+
+    commands
+        .entity(altitude.entity)
+        .insert(LoadingAltitude(asset_server.load_with_settings(
+            format!("data/{}#Scene", altitude_path),
+            |settings: &mut f32| {
+                *settings = 5.;
+            },
+        )));
 }
 
 /// Load models of [`World`]
@@ -180,7 +217,7 @@ fn wait_ground_scene(
     mut scene_spawner: ResMut<SceneSpawner>,
 ) {
     if grounds.is_empty() {
-        commands.set_state(MapChangeStates::LoadingModels);
+        commands.set_state(MapChangeStates::LoadingAltitude);
         return;
     }
 
@@ -199,6 +236,37 @@ fn wait_ground_scene(
             }
             None => {
                 unreachable!("All model scene handles must be valid.")
+            }
+        }
+    }
+}
+
+fn wait_altitude_scene(
+    mut commands: Commands,
+    altitudes: Query<(NameOrEntity, &LoadingAltitude), With<Altitude>>,
+    asset_server: Res<AssetServer>,
+    mut scene_spawner: ResMut<SceneSpawner>,
+) {
+    if altitudes.is_empty() {
+        commands.set_state(MapChangeStates::LoadingModels);
+        return;
+    }
+
+    for (altitude, LoadingAltitude(altitude_handle)) in altitudes {
+        match asset_server.get_recursive_dependency_load_state(altitude_handle.id()) {
+            Some(
+                RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading,
+            ) => (),
+            Some(RecursiveDependencyLoadState::Loaded) => {
+                commands.entity(altitude.entity).remove::<LoadingAltitude>();
+                scene_spawner.spawn_as_child(altitude_handle.clone(), altitude.entity);
+            }
+            Some(RecursiveDependencyLoadState::Failed(err)) => {
+                commands.entity(altitude.entity).remove::<LoadingAltitude>();
+                error!("Dependecies of {altitude} failed to load: {err}");
+            }
+            None => {
+                unreachable!("All altitude scene handles must be valid.")
             }
         }
     }
