@@ -98,7 +98,7 @@ fn main() {
                     format!("bevy_ragnarok_rsm={log_level}"),
                     format!("bevy_ragnarok_rsw={log_level}"),
                     format!("bevy_ragnarok_spr={log_level}"),
-                    format!("bevy_ragnarok_quad_tree={log_level}"),
+                    "bevy_ragnarok_quad_tree=info".to_owned(),
                 ]
                 .join(","),
                 custom_layer: |_| None,

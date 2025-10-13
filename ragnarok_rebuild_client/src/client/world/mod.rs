@@ -35,7 +35,8 @@ impl ChangeMap {
 pub enum MapChangeStates {
     #[default]
     Unloaded,
-    Loading,
+    LoadingAsset,
+    LoadingScene,
     LoadingGround,
     LoadingAltitude,
     LoadingModels,
