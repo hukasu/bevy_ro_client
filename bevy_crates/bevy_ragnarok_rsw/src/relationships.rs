@@ -29,3 +29,16 @@ pub struct GroundOfWorld(Entity);
 #[reflect(Component)]
 #[relationship_target(relationship=GroundOfWorld)]
 pub struct WorldOfGround(Entity);
+
+/// Link between the altitute tiles and the [`World`](crate::World) from
+/// which it is loaded from.
+#[derive(Debug, Reflect, Component)]
+#[reflect(Component)]
+#[relationship(relationship_target=WorldOfAltitude)]
+pub struct AltitudeOfWorld(Entity);
+
+/// [`World`](crate::World) that contains altitude tiles.
+#[derive(Debug, Reflect, Component)]
+#[reflect(Component)]
+#[relationship_target(relationship=AltitudeOfWorld)]
+pub struct WorldOfAltitude(Entity);

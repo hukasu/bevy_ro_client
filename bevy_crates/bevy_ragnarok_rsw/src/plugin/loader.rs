@@ -14,7 +14,7 @@ use bevy_ecs::{
 use bevy_light::{AmbientLight, DirectionalLight, PointLight};
 use bevy_math::{EulerRot, Quat, Vec3, Vec3A};
 use bevy_ragnarok_quad_tree::QuadTreeNode;
-use bevy_scene::{Scene, SceneRoot};
+use bevy_scene::Scene;
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
 use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
@@ -23,7 +23,7 @@ use crate::{
     Altitude, AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight,
     EnvironmentalSound, Ground, World, WorldQuadTree,
     assets::RswAsset,
-    relationships::{GroundOfWorld, ModelsOfWorld},
+    relationships::{AltitudeOfWorld, GroundOfWorld, ModelsOfWorld},
 };
 
 /// Asset loader for [`RswAsset`].
@@ -33,8 +33,6 @@ use crate::{
 /// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene cointaining all objects represented
 ///   by the [`Rsw`].
 pub struct AssetLoader {
-    /// Prefix for .gat files
-    pub altitude_path_prefix: PathBuf,
     /// Prefix for .wav files
     pub sound_path_prefix: PathBuf,
 }
@@ -82,7 +80,6 @@ impl AssetLoader {
 
         Self::set_ambient_light(rsw, &mut world, load_context);
         let directional_light = Self::spawn_directional_light(rsw, &mut world, load_context);
-        let tiles = self.spawn_tiles(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
         let environmental_sounds = self.spawn_environmental_sounds(rsw, &mut world, load_context);
         let environmental_effects =
@@ -102,7 +99,6 @@ impl AssetLoader {
             ))
             .add_children(&[
                 directional_light,
-                tiles,
                 environmental_lights,
                 environmental_sounds,
                 environmental_effects,
@@ -110,6 +106,7 @@ impl AssetLoader {
             .id();
 
         Self::spawn_ground(rsw, rsw_world, &mut world);
+        Self::spawn_altitude_tiles(rsw, rsw_world, &mut world);
         Self::spawn_animated_props(rsw, rsw_world, &mut world);
         Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
@@ -186,30 +183,21 @@ impl AssetLoader {
             .id()
     }
 
-    fn spawn_tiles(
-        &self,
+    fn spawn_altitude_tiles(
         rsw: &Rsw,
+        rsw_world: Entity,
         world: &mut bevy_ecs::world::World,
-        load_context: &mut LoadContext,
     ) -> Entity {
-        log::trace!("Spawning tiles of {:?}", load_context.path());
-
-        let world_tiles = load_context
-            .loader()
-            .with_settings(|settings: &mut f32| {
-                *settings = 5.;
-            })
-            .load(format!(
-                "{}{}#Scene",
-                self.altitude_path_prefix.display(),
-                rsw.gat_file
-            ));
-
         world
             .spawn((
                 Name::new(rsw.gat_file.to_string()),
-                Altitude,
-                SceneRoot(world_tiles),
+                Altitude {
+                    altitude_path: Cow::Owned(rsw.gat_file.to_string()),
+                },
+                ChildOf(rsw_world),
+                <AltitudeOfWorld as Relationship>::from(rsw_world),
+                Transform::default(),
+                Visibility::default(),
             ))
             .id()
     }
