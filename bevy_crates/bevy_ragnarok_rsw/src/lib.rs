@@ -26,7 +26,7 @@ pub struct World;
 #[reflect(Component)]
 /// Ground of the [`World`]
 pub struct Ground {
-    ground_path: Cow<'static, str>,
+    pub ground_path: Cow<'static, str>,
 }
 
 #[derive(Debug, Component, Reflect)]
