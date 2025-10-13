@@ -21,9 +21,15 @@ use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
 
 use crate::{
     Altitude, AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight,
-    EnvironmentalSound, WorldQuadTree, assets::RswWorld,
+    EnvironmentalSound, World, WorldQuadTree, assets::RswAsset,
 };
 
+/// Asset loader for [`RswAsset`].
+///
+/// ## Labeled assets
+///
+/// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene cointaining all objects represented
+///   by the [`Rsw`].
 pub struct AssetLoader {
     /// Prefix for .rsm files
     pub model_path_prefix: PathBuf,
@@ -36,7 +42,7 @@ pub struct AssetLoader {
 }
 
 impl bevy_asset::AssetLoader for AssetLoader {
-    type Asset = RswWorld;
+    type Asset = RswAsset;
     type Settings = ();
     type Error = ragnarok_rsw::Error;
 
@@ -48,9 +54,14 @@ impl bevy_asset::AssetLoader for AssetLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut data: Vec<u8> = vec![];
         reader.read_to_end(&mut data).await?;
+
         let rsw = Rsw::from_reader(&mut data.as_slice())?;
 
-        Ok(self.generate_world_scene(&rsw, load_context))
+        let scene = self.generate_world_scene(&rsw, load_context);
+
+        Ok(RswAsset {
+            scene: load_context.add_labeled_asset("Scene".to_owned(), scene),
+        })
     }
 
     fn extensions(&self) -> &[&str] {
@@ -59,11 +70,14 @@ impl bevy_asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
+    /// Placeholder name for [`Rsw`] that do not have path
     const UNNAMED_RSW: &str = "Unnamed Rsw";
+    /// Intensity of the sun
     const LIGHT_LUX: f32 = 2000.;
+    /// Insentity of point lights
     const POINT_LIGHT_LUMEN: f32 = 5_000_000.;
 
-    fn generate_world_scene(&self, rsw: &Rsw, load_context: &mut LoadContext) -> RswWorld {
+    fn generate_world_scene(&self, rsw: &Rsw, load_context: &mut LoadContext) -> Scene {
         log::trace!("Generating {:?} world.", load_context.path());
 
         let mut world = bevy_ecs::world::World::new();
@@ -86,6 +100,7 @@ impl AssetLoader {
         let rsw_world = world
             .spawn((
                 Name::new(filename.to_string()),
+                World,
                 Transform::default(),
                 Visibility::default(),
             ))
@@ -102,9 +117,7 @@ impl AssetLoader {
 
         Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
-        RswWorld {
-            scene: load_context.add_labeled_asset("Scene".into(), Scene::new(world)),
-        }
+        Scene::new(world)
     }
 
     fn set_ambient_light(

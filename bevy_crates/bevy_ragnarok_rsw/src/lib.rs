@@ -9,6 +9,16 @@ use bevy_reflect::Reflect;
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
 
+#[derive(Debug, Reflect, Component)]
+#[reflect(Component)]
+/// A [`World`] contains a Ground,
+/// a [`Altitude`],
+/// a [`DirectionalLight`](bevy_pbr::DirectionalLight),
+/// multiple [`AnimatedProp`],
+/// multiple [`PointLight`](bevy_pbr::PointLight),
+/// and multiple [`EnvironmentalSounds`](crate::EnvironmentalSound)
+pub struct World;
+
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
 /// Tile information from a [`Gat`]

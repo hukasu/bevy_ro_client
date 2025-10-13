@@ -8,7 +8,7 @@ use bevy_asset::AssetApp;
 
 use crate::{
     AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight, EnvironmentalSound,
-    assets::RswWorld,
+    assets::RswAsset,
 };
 
 use self::loader::AssetLoader;
@@ -28,8 +28,8 @@ impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut bevy_app::App) {
         app
             // Assets
-            .init_asset::<RswWorld>()
-            .register_asset_reflect::<RswWorld>()
+            .init_asset::<RswAsset>()
+            .register_asset_reflect::<RswAsset>()
             // Register Types
             .register_type::<DiffuseLight>()
             .register_type::<AnimatedProp>()
