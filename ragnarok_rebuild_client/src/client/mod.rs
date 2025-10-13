@@ -4,8 +4,8 @@ mod audio;
 mod camera;
 pub mod entities;
 mod loading_screen;
-pub mod resources;
 pub mod states;
+pub mod world;
 
 use bevy::prelude::Component;
 
