@@ -1,4 +1,4 @@
-use std::{path::PathBuf, time::Duration};
+use std::{borrow::Cow, path::PathBuf, time::Duration};
 
 use bevy_asset::{Handle, LoadContext, io::Reader};
 use bevy_audio::AudioSource;
@@ -14,29 +14,31 @@ use bevy_ecs::{
 use bevy_light::{AmbientLight, DirectionalLight, PointLight};
 use bevy_math::{EulerRot, Quat, Vec3, Vec3A};
 use bevy_ragnarok_quad_tree::QuadTreeNode;
-use bevy_scene::{Scene, SceneRoot};
+use bevy_scene::Scene;
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
 use ragnarok_rsw::{Model, Rsw, quad_tree::Crawler};
 
 use crate::{
     Altitude, AnimatedProp, DiffuseLight, EnvironmentalEffect, EnvironmentalLight,
-    EnvironmentalSound, World, WorldQuadTree, assets::RswWorld,
+    EnvironmentalSound, Ground, World, WorldQuadTree,
+    assets::RswAsset,
+    relationships::{AltitudeOfWorld, GroundOfWorld, ModelsOfWorld},
 };
 
+/// Asset loader for [`RswAsset`].
+///
+/// ## Labeled assets
+///
+/// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene cointaining all objects represented
+///   by the [`Rsw`].
 pub struct AssetLoader {
-    /// Prefix for .rsm files
-    pub model_path_prefix: PathBuf,
-    /// Prefix for .gnd files
-    pub ground_path_prefix: PathBuf,
-    /// Prefix for .gat files
-    pub altitude_path_prefix: PathBuf,
     /// Prefix for .wav files
     pub sound_path_prefix: PathBuf,
 }
 
 impl bevy_asset::AssetLoader for AssetLoader {
-    type Asset = RswWorld;
+    type Asset = RswAsset;
     type Settings = ();
     type Error = ragnarok_rsw::Error;
 
@@ -48,9 +50,14 @@ impl bevy_asset::AssetLoader for AssetLoader {
     ) -> Result<Self::Asset, Self::Error> {
         let mut data: Vec<u8> = vec![];
         reader.read_to_end(&mut data).await?;
+
         let rsw = Rsw::from_reader(&mut data.as_slice())?;
 
-        Ok(self.generate_world_scene(&rsw, load_context))
+        let scene = self.generate_world_scene(&rsw, load_context);
+
+        Ok(RswAsset {
+            scene: load_context.add_labeled_asset("Scene".to_owned(), scene),
+        })
     }
 
     fn extensions(&self) -> &[&str] {
@@ -59,20 +66,20 @@ impl bevy_asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
+    /// Placeholder name for [`Rsw`] that do not have path
     const UNNAMED_RSW: &str = "Unnamed Rsw";
+    /// Intensity of the sun
     const LIGHT_LUX: f32 = 2000.;
+    /// Insentity of point lights
     const POINT_LIGHT_LUMEN: f32 = 5_000_000.;
 
-    fn generate_world_scene(&self, rsw: &Rsw, load_context: &mut LoadContext) -> RswWorld {
+    fn generate_world_scene(&self, rsw: &Rsw, load_context: &mut LoadContext) -> Scene {
         log::trace!("Generating {:?} world.", load_context.path());
 
         let mut world = bevy_ecs::world::World::new();
 
         Self::set_ambient_light(rsw, &mut world, load_context);
         let directional_light = Self::spawn_directional_light(rsw, &mut world, load_context);
-        let ground = self.spawn_ground(rsw, &mut world, load_context);
-        let tiles = self.spawn_tiles(rsw, &mut world, load_context);
-        let animated_props = self.spawn_animated_props(rsw, &mut world, load_context);
         let environmental_lights = Self::spawn_environmental_lights(rsw, &mut world, load_context);
         let environmental_sounds = self.spawn_environmental_sounds(rsw, &mut world, load_context);
         let environmental_effects =
@@ -86,26 +93,24 @@ impl AssetLoader {
         let rsw_world = world
             .spawn((
                 Name::new(filename.to_string()),
+                World,
                 Transform::default(),
                 Visibility::default(),
-                World,
             ))
             .add_children(&[
                 directional_light,
-                ground,
-                tiles,
-                animated_props,
                 environmental_lights,
                 environmental_sounds,
                 environmental_effects,
             ])
             .id();
 
+        Self::spawn_ground(rsw, rsw_world, &mut world);
+        Self::spawn_altitude_tiles(rsw, rsw_world, &mut world);
+        Self::spawn_animated_props(rsw, rsw_world, &mut world);
         Self::spawn_quad_tree(rsw, rsw_world, &mut world, load_context);
 
-        RswWorld {
-            scene: load_context.add_labeled_asset("Scene".into(), Scene::new(world)),
-        }
+        Scene::new(world)
     }
 
     fn set_ambient_light(
@@ -163,66 +168,53 @@ impl AssetLoader {
             .id()
     }
 
-    fn spawn_ground(
-        &self,
-        rsw: &Rsw,
-        world: &mut bevy_ecs::world::World,
-        load_context: &mut LoadContext,
-    ) -> Entity {
-        log::trace!("Spawning ground of {:?}", load_context.path());
-
-        let world_ground = load_context.loader().load(format!(
-            "{}{}",
-            self.ground_path_prefix.display(),
-            rsw.gnd_file
-        ));
-
+    fn spawn_ground(rsw: &Rsw, rsw_world: Entity, world: &mut bevy_ecs::world::World) -> Entity {
         world
-            .spawn((Name::new(rsw.gnd_file.to_string()), SceneRoot(world_ground)))
+            .spawn((
+                Name::new(rsw.gnd_file.to_string()),
+                Ground {
+                    ground_path: Cow::Owned(rsw.gnd_file.to_string()),
+                },
+                ChildOf(rsw_world),
+                <GroundOfWorld as Relationship>::from(rsw_world),
+                Transform::default(),
+                Visibility::default(),
+            ))
             .id()
     }
 
-    fn spawn_tiles(
-        &self,
+    fn spawn_altitude_tiles(
         rsw: &Rsw,
+        rsw_world: Entity,
         world: &mut bevy_ecs::world::World,
-        load_context: &mut LoadContext,
     ) -> Entity {
-        log::trace!("Spawning tiles of {:?}", load_context.path());
-
-        let world_tiles = load_context
-            .loader()
-            .with_settings(|settings: &mut f32| {
-                *settings = 5.;
-            })
-            .load(format!(
-                "{}{}#Scene",
-                self.altitude_path_prefix.display(),
-                rsw.gat_file
-            ));
-
         world
             .spawn((
                 Name::new(rsw.gat_file.to_string()),
-                Altitude,
-                SceneRoot(world_tiles),
+                Altitude {
+                    altitude_path: Cow::Owned(rsw.gat_file.to_string()),
+                },
+                ChildOf(rsw_world),
+                <AltitudeOfWorld as Relationship>::from(rsw_world),
+                Transform::default(),
+                Visibility::default(),
             ))
             .id()
     }
 
     fn spawn_animated_props(
-        &self,
         rsw: &Rsw,
+        rsw_world: Entity,
         world: &mut bevy_ecs::world::World,
-        load_context: &mut LoadContext,
     ) -> Entity {
-        log::trace!("Spawning animated props of {:?}", load_context.path());
         world
             .spawn((
                 Name::new("Models"),
                 Transform::default(),
                 Visibility::default(),
-                Children::spawn(ModelSpawner::new(&rsw.models, self, load_context)),
+                ChildOf(rsw_world),
+                <ModelsOfWorld as Relationship>::from(rsw_world),
+                Children::spawn(ModelSpawner::new(&rsw.models)),
             ))
             .id()
     }
@@ -383,12 +375,11 @@ struct ModelSpawner {
 struct SpawningModel {
     name: Name,
     animated_prop: AnimatedProp,
-    scene: Handle<Scene>,
     transform: Transform,
 }
 
 impl ModelSpawner {
-    pub fn new(models: &[Model], loader: &AssetLoader, load_context: &mut LoadContext<'_>) -> Self {
+    pub fn new(models: &[Model]) -> Self {
         let mut res = Vec::with_capacity(models.len());
 
         for model in models {
@@ -398,18 +389,13 @@ impl ModelSpawner {
                 Vec3::ONE
             };
 
-            let model_path = loader
-                .model_path_prefix
-                .join(format!("{}#Scene", model.filename));
-            let scene = load_context.load(model_path.to_string_lossy().to_string());
-
             res.push(SpawningModel {
                 name: Name::new(model.name.to_string()),
                 animated_prop: AnimatedProp {
+                    prop_path: Cow::Owned(model.filename.to_string()),
                     animation_type: model.animation_type,
                     animation_speed: model.animation_speed,
                 },
-                scene,
                 transform: Transform {
                     translation: Vec3::from_array(model.position),
                     rotation: Quat::from_euler(
@@ -436,10 +422,9 @@ impl SpawnableList<ChildOf> for ModelSpawner {
         for item in &this.models {
             world.spawn((
                 ChildOf(entity),
-                item.animated_prop,
+                item.animated_prop.clone(),
                 item.name.clone(),
                 item.transform,
-                SceneRoot(item.scene.clone()),
             ));
         }
     }

@@ -1,6 +1,9 @@
 pub mod assets;
 pub mod events;
 pub mod plugin;
+pub mod relationships;
+
+use std::borrow::Cow;
 
 use bevy_asset::Handle;
 use bevy_audio::AudioSource;
@@ -9,26 +12,40 @@ use bevy_reflect::Reflect;
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
 
-#[derive(Debug, Component, Reflect)]
+#[derive(Debug, Reflect, Component)]
 #[reflect(Component)]
-/// A World contains a Ground, a [`Altitude`], a [`DirectionalLight`](bevy_pbr::DirectionalLight), multiple [`AnimatedProp`],
-/// multiple [`PointLight`](bevy_pbr::PointLight), and multiple [`EnvironmentalSound`]s
+/// A [`World`] contains a Ground,
+/// a [`Altitude`],
+/// a [`DirectionalLight`](bevy_pbr::DirectionalLight),
+/// multiple [`AnimatedProp`],
+/// multiple [`PointLight`](bevy_pbr::PointLight),
+/// and multiple [`EnvironmentalSounds`](crate::EnvironmentalSound)
 pub struct World;
 
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
-/// Tile information from a [`Gat`]
-pub struct Altitude;
+/// Ground of the [`World`]
+pub struct Ground {
+    pub ground_path: Cow<'static, str>,
+}
+
+#[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
+/// Altitude tiles of the [`World`]
+pub struct Altitude {
+    pub altitude_path: Cow<'static, str>,
+}
 
 #[derive(Debug, Default, Component, Reflect)]
 #[reflect(Component)]
 /// A diffuse light that illuminated the [`World`]
 pub struct DiffuseLight;
 
-#[derive(Debug, Default, Clone, Copy, Component, Reflect)]
+#[derive(Debug, Default, Clone, Component, Reflect)]
 #[reflect(Component)]
 /// An animated prop that is part of the [`World`]
 pub struct AnimatedProp {
+    pub prop_path: Cow<'static, str>,
     pub animation_type: i32,
     pub animation_speed: f32,
 }

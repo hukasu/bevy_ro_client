@@ -21,7 +21,7 @@ use bevy_ragnarok_act::Actor;
 use bevy_ragnarok_spr::Sprite;
 use ragnarok_rebuild_bevy::assets::paths;
 
-use crate::client::{entities, resources::LoadingWorld, states::GameState};
+use crate::client::{entities, states::GameState, world::ChangeMap};
 
 const FONT_NAME: &str = "SCDream4";
 
@@ -50,7 +50,6 @@ fn teleport_windows(
     mut commands: Commands,
     mut text_box: ResMut<TeleportTextBox>,
     mut next_state: ResMut<NextState<GameState>>,
-    asset_server: Res<AssetServer>,
 ) {
     if let Ok(ctx) = contexts.ctx_mut() {
         bevy_inspector_egui::bevy_egui::egui::Window::new("Teleport").show(ctx, |ui| {
@@ -58,9 +57,7 @@ fn teleport_windows(
             let text = (**text_box).clone();
             if ui.text_edit_singleline(&mut **text_box).lost_focus() && !text.is_empty() {
                 next_state.set(GameState::MapChange);
-                commands.insert_resource(LoadingWorld {
-                    world: asset_server.load(format!("{}{}", paths::WORLD_FILES_FOLDER, text)),
-                });
+                commands.trigger(ChangeMap::new(text));
                 text_box.clear();
             }
         });

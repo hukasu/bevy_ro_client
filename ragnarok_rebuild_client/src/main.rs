@@ -65,6 +65,8 @@ fn main() {
                 Box::new(grf)
             }),
         );
+    // Resources
+    app.insert_resource(PointLightShadowMap { size: 16 });
     // Plugins
     app.add_plugins(
         DefaultPlugins
@@ -96,7 +98,7 @@ fn main() {
                     format!("bevy_ragnarok_rsm={log_level}"),
                     format!("bevy_ragnarok_rsw={log_level}"),
                     format!("bevy_ragnarok_spr={log_level}"),
-                    format!("bevy_ragnarok_quad_tree={log_level}"),
+                    "bevy_ragnarok_quad_tree=info".to_owned(),
                 ]
                 .join(","),
                 custom_layer: |_| None,
@@ -113,9 +115,8 @@ fn main() {
                 }),
                 ..Default::default()
             }),
-    )
-    .add_plugins(RemotePlugin::default())
-    .insert_resource(PointLightShadowMap { size: 16 });
+    );
+    app.add_plugins(RemotePlugin::default());
     app.add_plugins(RagnarokPlugin);
 
     #[cfg(not(feature = "with-inspector"))]
@@ -137,7 +138,7 @@ struct ClientPlugins;
 impl bevy::app::PluginGroup for ClientPlugins {
     fn build(self) -> bevy::app::PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add(client::Plugin)
+            .add(client::plugin::Plugin)
             .add(bevy_ragnarok_act::plugin::Plugin {
                 audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
             })

@@ -12,13 +12,13 @@ pub struct AssetLoader;
 
 impl bevy_asset::AssetLoader for AssetLoader {
     type Asset = super::assets::Gat;
-    type Settings = ();
+    type Settings = f32;
     type Error = ragnarok_gat::Error;
 
     async fn load(
         &self,
         reader: &mut dyn bevy_asset::io::Reader,
-        _settings: &Self::Settings,
+        settings: &Self::Settings,
         load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         bevy_log::trace!("Loading Gat {:?}.", load_context.path());
@@ -27,7 +27,7 @@ impl bevy_asset::AssetLoader for AssetLoader {
         reader.read_to_end(&mut data).await?;
 
         let gat = ragnarok_gat::Gat::from_reader(&mut data.as_slice())?;
-        Self::generate_altitude(load_context, &gat);
+        Self::generate_altitude(load_context, *settings, &gat);
 
         Ok(super::assets::Gat(gat))
     }
@@ -38,7 +38,7 @@ impl bevy_asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    fn generate_altitude(load_context: &mut LoadContext, gat: &ragnarok_gat::Gat) {
+    fn generate_altitude(load_context: &mut LoadContext, tile_scale: f32, gat: &ragnarok_gat::Gat) {
         let mut world = World::new();
 
         let root = world
@@ -55,6 +55,8 @@ impl AssetLoader {
             ))
             .id();
 
+        let half_tile_scale = tile_scale / 2.;
+        let scale = Vec3::new(tile_scale, 1., tile_scale);
         let offset = Vec3::new(gat.width as f32 / 2., 0., gat.height as f32 / 2.);
         for (i, tile) in gat.tiles.iter().enumerate() {
             let Ok(x) = u32::try_from(i).map(|i| i % gat.width) else {
@@ -78,9 +80,15 @@ impl AssetLoader {
             };
 
             world.spawn((
+                Name::new(format!("{x}/{z}")),
                 Tile::from(tile),
-                Transform::from_translation(Vec3::new(x as f32 + 0.5, 0., z as f32 + 0.5) - offset),
-                Aabb::from_min_max(Vec3::new(-0.5, min.0, -0.5), Vec3::new(0.5, max.0, 0.5)),
+                Transform::from_translation(
+                    (Vec3::new(x as f32 + 0.5, max.0, z as f32 + 0.5) - offset) * scale,
+                ),
+                Aabb::from_min_max(
+                    Vec3::new(-half_tile_scale, min.0 - max.0, -half_tile_scale),
+                    Vec3::new(half_tile_scale, 0., half_tile_scale),
+                ),
                 ChildOf(root),
                 TrackEntity,
             ));

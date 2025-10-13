@@ -13,7 +13,6 @@ workspace = true
 debug = ["bevy_gizmos"]
 
 [dependencies]
-ragnarok_rsm = { workspace = true }
 ragnarok_rsw = { workspace = true }
 
 bevy_ragnarok_quad_tree = { workspace = true }
