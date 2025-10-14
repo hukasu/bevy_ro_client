@@ -25,7 +25,7 @@ impl bevy::app::Plugin for Plugin {
         app.insert_resource(ClearColor(Color::BLACK))
             // Plugins
             .add_plugins(audio::Plugin)
-            .add_plugins(camera::Plugin)
+            .add_plugins(camera::plugin::Plugin)
             .add_plugins(entities::Plugin)
             .add_plugins(loading_screen::Plugin)
             .add_plugins(states::Plugin)

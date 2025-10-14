@@ -70,6 +70,8 @@ bevy_shader = { version = "0.17.2", default-features = false }
 bevy_transform = { version = "0.17.2", default-features = false }
 bevy_time = { version = "0.17.2", default-features = false }
 
+bevy_enhanced_input = { version = "0.19.1" }
+
 bevy_egui = { version = "0.37.0" }
 bevy-inspector-egui = { version = "0.34.0" }
 

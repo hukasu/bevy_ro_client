@@ -63,6 +63,7 @@ bevy = { workspace = true, default-features = false, features = [
   "trace",
   "zstd_rust",
 ] }
+bevy_enhanced_input = { workspace = true }
 bevy-inspector-egui = { workspace = true, optional = true }
 
 tungstenite = { workspace = true }
