@@ -1,5 +1,6 @@
 use bevy_app::Update;
 use bevy_asset::AssetServer;
+use bevy_camera::primitives::Aabb;
 use bevy_color::{Color, palettes};
 use bevy_ecs::{
     entity::Entity,
@@ -76,31 +77,38 @@ fn toggle_gat_quads(_event: On<ToggleGatQuads>, mut gat_debug: ResMut<GatDebug>)
 
 fn enable_gat_quads(
     mut commands: Commands,
-    tiles: Query<(Entity, &Tile)>,
+    tiles: Query<(Entity, &Tile, &Aabb)>,
     asset_server: Res<AssetServer>,
 ) {
     debug!("Enabling Gat Quads");
     let tile_quad_color: Color = palettes::tailwind::ORANGE_500.into();
-    for (entity, tile) in tiles {
+    for (entity, tile, aabb) in tiles {
         let mut gizmo = GizmoAsset::new();
+        let max_y = tile
+            .bottom_left
+            .max(tile.bottom_right)
+            .max(tile.top_left)
+            .max(tile.top_right);
+        let min = aabb.min();
+        let max = aabb.max();
         gizmo.line(
-            Vec3::new(0.5, tile.bottom_right, 0.5),
-            Vec3::new(0.5, tile.top_right, -0.5),
+            Vec3::new(max.x, tile.bottom_right - max_y, max.z),
+            Vec3::new(max.x, tile.top_right - max_y, min.z),
             tile_quad_color,
         );
         gizmo.line(
-            Vec3::new(0.5, tile.top_right, -0.5),
-            Vec3::new(-0.5, tile.top_left, -0.5),
+            Vec3::new(max.x, tile.top_right - max_y, min.z),
+            Vec3::new(min.x, tile.top_left - max_y, min.z),
             tile_quad_color,
         );
         gizmo.line(
-            Vec3::new(-0.5, tile.top_left, -0.5),
-            Vec3::new(-0.5, tile.bottom_left, 0.5),
+            Vec3::new(min.x, tile.top_left - max_y, min.z),
+            Vec3::new(min.x, tile.bottom_left - max_y, max.z),
             tile_quad_color,
         );
         gizmo.line(
-            Vec3::new(-0.5, tile.bottom_left, 0.5),
-            Vec3::new(0.5, tile.bottom_right, 0.5),
+            Vec3::new(min.x, tile.bottom_left - max_y, max.z),
+            Vec3::new(max.x, tile.bottom_right - max_y, max.z),
             tile_quad_color,
         );
         commands.entity(entity).insert(Gizmo {
@@ -113,7 +121,7 @@ fn enable_gat_quads(
 fn disable_gat_quads(mut commands: Commands, tiles: Query<Entity, With<Tile>>) {
     debug!("Disabling Gat Quads");
     for tile in tiles {
-        commands.entity(tile).remove::<ShowAabbGizmo>();
+        commands.entity(tile).remove::<Gizmo>();
     }
 }
 

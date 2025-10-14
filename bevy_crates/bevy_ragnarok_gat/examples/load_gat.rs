@@ -1,7 +1,5 @@
 //! Loads a Gat and builds it
 
-use std::f32::consts::PI;
-
 use bevy::{
     DefaultPlugins,
     app::{App, Startup, Update},
@@ -20,11 +18,11 @@ use bevy::{
     gizmos::{GizmoAsset, retained::Gizmo},
     input::{ButtonInput, keyboard::KeyCode},
     light::DirectionalLight,
-    math::{Quat, Vec3},
+    math::Vec3,
     scene::SceneSpawner,
     time::Time,
     transform::components::Transform,
-    ui::{Node, Val, widget::Text},
+    ui::{FlexDirection, Node, Val, widget::Text},
 };
 use bevy_ragnarok_gat::debug::{ToggleGatAabbs, ToggleGatQuads};
 
@@ -43,6 +41,7 @@ fn main() {
 
     app.add_plugins(DefaultPlugins);
     app.add_plugins(bevy_ragnarok_gat::plugin::Plugin);
+    app.add_plugins(bevy_ragnarok_quad_tree::plugin::Plugin);
 
     app.add_systems(Startup, setup);
     app.add_systems(Update, debug);
@@ -70,13 +69,18 @@ fn setup(
     let world = commands
         .spawn((
             World,
-            // Ragnarok maps usually have a world unit of 5., so,
-            // since that information is not present in the Gat, we add it here
-            Transform::from_rotation(Quat::from_rotation_x(PI)).with_scale(Vec3::new(5., 1., 5.)),
+            // Conversion from Ragnarok's Y-down system to Bevy's Y-Up system
+            Transform::from_scale(Vec3::new(1., -1., -1.)),
         ))
         .id();
 
-    scene_spawner.spawn_as_child(asset_server.load("data/prontera.gat#Scene"), world);
+    scene_spawner.spawn_as_child(
+        asset_server.load_with_settings("data/prontera.gat#Scene", |settings: &mut f32| {
+            // Ragnarok's usual world scale is 5. units
+            *settings = 5.;
+        }),
+        world,
+    );
 
     let mut world_axis = GizmoAsset::new();
     world_axis.axes(Transform::default(), 1.);
@@ -92,6 +96,7 @@ fn setup(
         Node {
             top: Val::Px(0.),
             left: Val::Px(0.),
+            flex_direction: FlexDirection::Column,
             ..Default::default()
         },
         children![
