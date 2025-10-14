@@ -18,7 +18,7 @@ use bevy_transform::{
 };
 
 #[cfg(feature = "reflect")]
-use crate::TrackedEntity;
+use crate::{CameraOfOrbitalCamera, TrackedEntity};
 use crate::{OrbitalCamera, OrbitalCameraLimits, OrbitalCameraSettings, TrackingEntity};
 
 /// Plugin for updating [`OrbitalCamera`].
@@ -35,8 +35,6 @@ impl bevy_app::Plugin for Plugin {
 
         #[cfg(feature = "reflect")]
         {
-            use crate::CameraOfOrbitalCamera;
-
             app.register_type::<OrbitalCamera>();
             app.register_type::<CameraOfOrbitalCamera>();
             app.register_type::<OrbitalCameraSettings>();
