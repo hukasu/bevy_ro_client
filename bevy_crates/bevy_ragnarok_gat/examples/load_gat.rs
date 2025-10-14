@@ -69,7 +69,7 @@ fn setup(
     let world = commands
         .spawn((
             World,
-            // Convertion from Ragnarok's Y-down system to Bevy's Y-Up system
+            // Conversion from Ragnarok's Y-down system to Bevy's Y-Up system
             Transform::from_scale(Vec3::new(1., -1., -1.)),
         ))
         .id();
