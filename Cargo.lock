@@ -5044,6 +5044,7 @@ dependencies = [
  "bevy",
  "bevy-inspector-egui",
  "bevy_ragnarok_act",
+ "bevy_ragnarok_camera",
  "bevy_ragnarok_gat",
  "bevy_ragnarok_grf",
  "bevy_ragnarok_pal",

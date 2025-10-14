@@ -154,6 +154,7 @@ impl bevy::app::PluginGroup for ClientPlugins {
                 sound_path_prefix: paths::WAV_FILES_FOLDER.into(),
             })
             .add(bevy_ragnarok_spr::plugin::Plugin)
+            .add(bevy_ragnarok_camera::plugin::Plugin)
             .add(bevy_ragnarok_quad_tree::plugin::Plugin)
     }
 }
