@@ -12,3 +12,8 @@ pub struct CameraYaw;
 #[derive(InputAction)]
 #[action_output(Vec2)]
 pub struct CameraPitch;
+
+/// Action to change camera zoom
+#[derive(InputAction)]
+#[action_output(Vec2)]
+pub struct CameraZoom;

@@ -25,7 +25,7 @@ use bevy_ragnarok_camera::{
     CameraOfOrbitalCamera, OrbitalCamera, OrbitalCameraLimits, OrbitalCameraSettings, TrackedEntity,
 };
 
-use crate::client::camera::{CameraPitch, CameraYaw};
+use crate::client::camera::{CameraPitch, CameraYaw, CameraZoom};
 
 pub struct Plugin;
 
@@ -37,6 +37,7 @@ impl bevy::app::Plugin for Plugin {
         app.add_systems(Startup, setup_orbital_camera);
         app.add_observer(camera_yaw);
         app.add_observer(camera_pitch);
+        app.add_observer(camera_zoom);
     }
 }
 
@@ -81,6 +82,7 @@ fn setup_orbital_camera(mut commands: Commands) {
 
     spawn_camera_yaw_action(&mut commands, orbital_camera);
     spawn_camera_pitch_action(&mut commands, orbital_camera);
+    spawn_camera_zoom_action(&mut commands, orbital_camera);
 
     commands.spawn((
         Name::new("Dummy"),
@@ -102,6 +104,13 @@ fn camera_pitch(
     mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
 ) {
     orbital_camera.pitch += event.value.y;
+}
+
+fn camera_zoom(
+    event: On<Fire<CameraZoom>>,
+    mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
+) {
+    orbital_camera.zoom += event.value.y;
 }
 
 fn spawn_camera_yaw_action(commands: &mut Commands, camera: Entity) {
@@ -161,5 +170,21 @@ fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
         ChildOf(camera_pith),
         <BindingOf as Relationship>::from(camera_pith),
         Binding::mouse_motion(),
+    ));
+}
+
+fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
+    let camera_zoom = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCamera>::new(camera),
+            Action::<CameraZoom>::new(),
+            Scale::splat(1. / 4.),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(camera_zoom),
+        <BindingOf as Relationship>::from(camera_zoom),
+        Binding::mouse_wheel(),
     ));
 }
