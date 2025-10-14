@@ -45,9 +45,9 @@ pub struct OrbitalCameraSettings {
 #[cfg_attr(feature = "reflect", reflect(Component))]
 pub struct OrbitalCameraLimits {
     /// The range that [`OrbitalCameraSettings::pitch`] can take
-    pitch_range: Range<f32>,
+    pub pitch_range: Range<f32>,
     /// The range that [`OrbitalCameraSettings::zoom`] can take
-    zoom_range: Range<f32>,
+    pub zoom_range: Range<f32>,
 }
 
 /// This [`Entity`] is being tracked by a [`OrbitalCamera`]
