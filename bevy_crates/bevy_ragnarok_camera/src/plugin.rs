@@ -1,5 +1,7 @@
 //! Plugin to control the cameras
 
+use std::f32::consts::TAU;
+
 use bevy_app::PostUpdate;
 use bevy_ecs::{
     entity::Entity,
@@ -47,12 +49,17 @@ impl bevy_app::Plugin for Plugin {
 
 /// Clamps the values of [`OrbitalCameraSettings`] with [`OrbitalCameraLimits`].
 fn clamp_orbital_camera(cameras: Populated<(&mut OrbitalCameraSettings, &OrbitalCameraLimits)>) {
-    for (mut orbital_camera, orbital_camera_limits) in cameras.into_inner() {
-        orbital_camera.pitch = orbital_camera.pitch.clamp(
+    for (mut orbital_camera_settings, orbital_camera_limits) in cameras.into_inner() {
+        orbital_camera_settings.pitch = orbital_camera_settings.pitch.clamp(
             orbital_camera_limits.pitch_range.start,
             orbital_camera_limits.pitch_range.end,
         );
-        orbital_camera.zoom = orbital_camera.zoom.clamp(
+        if orbital_camera_settings.yaw < 0. {
+            orbital_camera_settings.yaw += TAU;
+        } else if orbital_camera_settings.yaw > TAU {
+            orbital_camera_settings.yaw -= TAU;
+        }
+        orbital_camera_settings.zoom = orbital_camera_settings.zoom.clamp(
             orbital_camera_limits.zoom_range.start,
             orbital_camera_limits.zoom_range.end,
         );
