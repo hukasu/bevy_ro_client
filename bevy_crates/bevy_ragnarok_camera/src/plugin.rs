@@ -8,10 +8,11 @@ use bevy_ecs::{
     query::{With, Without},
     relationship::RelationshipTarget,
     schedule::IntoScheduleConfigs,
-    system::{Populated, Query},
+    system::{Populated, Query, Res},
 };
 use bevy_log::error;
-use bevy_math::{Dir3, Vec3};
+use bevy_math::{Dir3, StableInterpolate, Vec3};
+use bevy_time::Time;
 use bevy_transform::{
     TransformSystems,
     components::{GlobalTransform, Transform},
@@ -80,7 +81,9 @@ fn track_entity(
     >,
     mut transforms: Query<&mut Transform, Without<OrbitalCamera>>,
     global_transforms: Query<&GlobalTransform>,
+    time: Res<Time>,
 ) {
+    let delta = time.delta_secs();
     for (camera, orbital_camera, orbital_camera_settings, mut transform, tracking_entity) in cameras
     {
         let tracked_entity = tracking_entity.collection();
@@ -93,7 +96,12 @@ fn track_entity(
             unreachable!("{actual_camera} did not have Transform.");
         };
 
-        let mut desired_transform = Transform::from_translation(global_transform.translation());
+        let mut desired_transform = Transform::from_translation(transform.translation);
+        desired_transform.translation.smooth_nudge(
+            &global_transform.translation(),
+            256.0f32.ln(),
+            delta,
+        );
         desired_transform.rotate_axis(Dir3::X, orbital_camera_settings.pitch);
         desired_transform.rotate_axis(Dir3::Y, orbital_camera_settings.yaw);
         *transform = desired_transform;
