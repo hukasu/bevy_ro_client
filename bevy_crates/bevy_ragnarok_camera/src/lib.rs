@@ -43,9 +43,18 @@ pub struct OrbitalCameraSettings {
 #[derive(Component)]
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component))]
+#[component(immutable)]
 pub struct OrbitalCameraLimits {
+    /// The default value for [`OrbitalCameraSettings::yaw`]
+    pub yaw_default: f32,
+    /// The range that [`OrbitalCameraSettings::yaw`] can take
+    pub yaw_range: Range<f32>,
+    /// The default value for [`OrbitalCameraSettings::pitch`]
+    pub pitch_default: f32,
     /// The range that [`OrbitalCameraSettings::pitch`] can take
     pub pitch_range: Range<f32>,
+    /// The default value for [`OrbitalCameraSettings::zoom`]
+    pub zoom_default: f32,
     /// The range that [`OrbitalCameraSettings::zoom`] can take
     pub zoom_range: Range<f32>,
 }

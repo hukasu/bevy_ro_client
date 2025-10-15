@@ -53,11 +53,22 @@ fn clamp_orbital_camera(cameras: Populated<(&mut OrbitalCameraSettings, &Orbital
             orbital_camera_limits.pitch_range.start,
             orbital_camera_limits.pitch_range.end,
         );
-        if orbital_camera_settings.yaw < 0. {
-            orbital_camera_settings.yaw += TAU;
-        } else if orbital_camera_settings.yaw > TAU {
-            orbital_camera_settings.yaw -= TAU;
+
+        if (orbital_camera_limits.yaw_range.end - orbital_camera_limits.yaw_range.start - TAU).abs()
+            < f32::EPSILON
+        {
+            if orbital_camera_settings.yaw < 0. {
+                orbital_camera_settings.yaw += TAU;
+            } else if orbital_camera_settings.yaw > TAU {
+                orbital_camera_settings.yaw -= TAU;
+            }
+        } else {
+            orbital_camera_settings.yaw = orbital_camera_settings.yaw.clamp(
+                orbital_camera_limits.yaw_range.start,
+                orbital_camera_limits.yaw_range.end,
+            );
         }
+
         orbital_camera_settings.zoom = orbital_camera_settings.zoom.clamp(
             orbital_camera_limits.zoom_range.start,
             orbital_camera_limits.zoom_range.end,
