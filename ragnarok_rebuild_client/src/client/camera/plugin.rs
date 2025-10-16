@@ -1,4 +1,4 @@
-use std::f32::consts::TAU;
+use std::f32::consts::PI;
 
 use bevy::{
     app::Startup,
@@ -81,7 +81,7 @@ fn setup_orbital_camera(mut commands: Commands) {
             },
             OrbitalCameraLimits {
                 yaw_default: 0.0,
-                yaw_range: 0.0..TAU,
+                yaw_range: (-PI)..PI,
                 pitch_default: -45.0f32.to_radians(),
                 pitch_range: (-55.0f32).to_radians()..(-35.0f32).to_radians(),
                 zoom_default: 15.0,
