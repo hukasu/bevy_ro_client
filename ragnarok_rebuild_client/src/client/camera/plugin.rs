@@ -1,3 +1,5 @@
+use std::f32::consts::TAU;
+
 use bevy::{
     app::Startup,
     audio::SpatialListener,
@@ -17,21 +19,24 @@ use bevy::{
 use bevy_enhanced_input::{
     action::Action,
     prelude::{
-        ActionOf, Binding, BindingOf, Chord, Fire, InputAction, InputContextAppExt, InputModKeys,
-        ModKeys, Scale,
+        ActionOf, Binding, BindingOf, Chord, ContextPriority, Fire, InputAction,
+        InputContextAppExt, InputModKeys, ModKeys, Scale,
     },
 };
 use bevy_ragnarok_camera::{
     CameraOfOrbitalCamera, OrbitalCamera, OrbitalCameraLimits, OrbitalCameraSettings, TrackedEntity,
 };
 
-use crate::client::camera::{CameraPitch, CameraYaw, CameraZoom};
+use crate::client::camera::{
+    CameraPitch, CameraYaw, CameraZoom, OrbitalCameraPrimaryContext, OrbitalCameraSecondaryContext,
+};
 
 pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_input_context::<OrbitalCamera>();
+        app.add_input_context::<OrbitalCameraPrimaryContext>();
+        app.add_input_context::<OrbitalCameraSecondaryContext>();
 
         // Systems
         app.add_systems(Startup, setup_orbital_camera);
@@ -62,6 +67,9 @@ fn setup_orbital_camera(mut commands: Commands) {
                 zoom_default: 15.0,
                 zoom_range: 15.0..22.5,
             },
+            OrbitalCameraPrimaryContext,
+            OrbitalCameraSecondaryContext,
+            ContextPriority::<OrbitalCameraPrimaryContext>::new(1),
             Transform::default(),
             Visibility::default(),
         ))
@@ -121,7 +129,7 @@ fn spawn_camera_yaw_action(commands: &mut Commands, camera: Entity) {
     let mouse_right = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCamera>::new(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
             Action::<MouseRightAction>::new(),
         ))
         .id();
@@ -134,7 +142,7 @@ fn spawn_camera_yaw_action(commands: &mut Commands, camera: Entity) {
     let camera_yaw = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCamera>::new(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
             Action::<CameraYaw>::new(),
             Scale::splat(1. / 128.),
             Chord::new(vec![mouse_right]),
@@ -151,7 +159,7 @@ fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
     let shift_mouse_right = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCamera>::new(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
             Action::<MouseRightAction>::new(),
         ))
         .id();
@@ -164,7 +172,7 @@ fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
     let camera_pith = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCamera>::new(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
             Action::<CameraPitch>::new(),
             Scale::splat(1. / 128.),
             Chord::new(vec![shift_mouse_right]),
@@ -181,7 +189,7 @@ fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
     let camera_zoom = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCamera>::new(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
             Action::<CameraZoom>::new(),
             Scale::splat(1. / 4.),
         ))
