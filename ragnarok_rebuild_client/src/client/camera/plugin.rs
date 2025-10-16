@@ -26,7 +26,7 @@ use bevy_enhanced_input::{
     action::Action,
     prelude::{
         ActionOf, Binding, BindingOf, Chord, ContextPriority, Fire, InputAction,
-        InputContextAppExt, InputModKeys, ModKeys, Scale, Tap,
+        InputContextAppExt, InputModKeys, ModKeys, Scale, SmoothNudge, Tap,
     },
 };
 use bevy_ragnarok_camera::{
@@ -244,7 +244,8 @@ fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
             ChildOf(camera),
             ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
             Action::<CameraZoom>::new(),
-            Scale::splat(1. / 4.),
+            Scale::splat(2.),
+            SmoothNudge::new(16f32.ln()),
         ))
         .id();
     commands.spawn((
