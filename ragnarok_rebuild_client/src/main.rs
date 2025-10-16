@@ -40,6 +40,7 @@ use bevy::{
     DefaultPlugins,
 };
 
+use bevy_enhanced_input::EnhancedInputPlugin;
 use ragnarok_rebuild_bevy::{
     assets::paths::{self, BASE_DATA_FOLDER},
     RagnarokPlugin,
@@ -116,6 +117,7 @@ fn main() {
                 ..Default::default()
             }),
     );
+    app.add_plugins(EnhancedInputPlugin);
     app.add_plugins(RemotePlugin::default());
     app.add_plugins(RagnarokPlugin);
 
@@ -154,6 +156,7 @@ impl bevy::app::PluginGroup for ClientPlugins {
                 sound_path_prefix: paths::WAV_FILES_FOLDER.into(),
             })
             .add(bevy_ragnarok_spr::plugin::Plugin)
+            .add(bevy_ragnarok_camera::plugin::Plugin)
             .add(bevy_ragnarok_quad_tree::plugin::Plugin)
     }
 }

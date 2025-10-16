@@ -20,6 +20,7 @@ with-inspector = [
   "bevy_ragnarok_pal/debug",
   "bevy_ragnarok_rsm/debug",
   "bevy_ragnarok_rsw/debug",
+  "bevy_ragnarok_camera/reflect",
   "bevy_ragnarok_quad_tree/reflect",
   "bevy_ragnarok_quad_tree/debug",
 ]
@@ -33,6 +34,7 @@ bevy_ragnarok_rsm = { workspace = true }
 bevy_ragnarok_rsw = { workspace = true }
 bevy_ragnarok_spr = { workspace = true }
 
+bevy_ragnarok_camera = { workspace = true }
 bevy_ragnarok_quad_tree = { workspace = true }
 
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
@@ -61,6 +63,7 @@ bevy = { workspace = true, default-features = false, features = [
   "trace",
   "zstd_rust",
 ] }
+bevy_enhanced_input = { workspace = true }
 bevy-inspector-egui = { workspace = true, optional = true }
 
 tungstenite = { workspace = true }

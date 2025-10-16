@@ -904,6 +904,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "bevy_enhanced_input"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "246deef064adc593314a15d9ebb55eabb3d3359147e35a07e52afc88b492b893"
+dependencies = [
+ "bevy",
+ "bevy_enhanced_input_macros",
+ "bitflags 2.9.4",
+ "log",
+ "smallvec",
+ "variadics_please",
+]
+
+[[package]]
+name = "bevy_enhanced_input_macros"
+version = "0.19.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "741eadf4aeafb32a051a0a17565902ca290796b9415e0960f57485298d14ee65"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "bevy_gizmos"
 version = "0.17.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1338,6 +1363,20 @@ dependencies = [
  "log",
  "ragnarok_act",
  "ragnarok_rebuild_common",
+]
+
+[[package]]
+name = "bevy_ragnarok_camera"
+version = "0.1.0"
+dependencies = [
+ "bevy_app",
+ "bevy_camera",
+ "bevy_ecs",
+ "bevy_log",
+ "bevy_math",
+ "bevy_reflect",
+ "bevy_time",
+ "bevy_transform",
 ]
 
 [[package]]
@@ -5030,7 +5069,9 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy-inspector-egui",
+ "bevy_enhanced_input",
  "bevy_ragnarok_act",
+ "bevy_ragnarok_camera",
  "bevy_ragnarok_gat",
  "bevy_ragnarok_grf",
  "bevy_ragnarok_pal",

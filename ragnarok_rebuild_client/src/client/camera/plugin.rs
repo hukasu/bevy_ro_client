@@ -1,0 +1,354 @@
+use std::f32::consts::PI;
+
+use bevy::{
+    app::Startup,
+    audio::SpatialListener,
+    camera::visibility::Visibility,
+    ecs::{
+        entity::Entity,
+        hierarchy::ChildOf,
+        name::Name,
+        observer::On,
+        query::With,
+        relationship::Relationship,
+        system::{Local, Res, Single},
+    },
+    input::mouse::MouseButton,
+    math::Vec2,
+    pbr::{Atmosphere, AtmosphereSettings},
+    post_process::bloom::Bloom,
+    prelude::{Camera, Camera3d, Commands},
+    render::view::Hdr,
+    time::Time,
+    transform::components::Transform,
+};
+use bevy_enhanced_input::{
+    action::Action,
+    prelude::{
+        ActionOf, Binding, BindingOf, Chord, ContextPriority, Fire, InputAction,
+        InputContextAppExt, InputModKeys, ModKeys, Scale, SmoothNudge, Tap,
+    },
+};
+use bevy_ragnarok_camera::{
+    CameraOfOrbitalCamera, OrbitalCamera, OrbitalCameraLimits, OrbitalCameraSettings, TrackedEntity,
+};
+
+use crate::client::camera::{
+    CameraPitch, CameraYaw, CameraZoom, OrbitalCameraPrimaryContext, OrbitalCameraSecondaryContext,
+    ResetCameraPitch, ResetCameraYaw, ResetCameraZoom,
+};
+
+/// Time for a click to be interpreted as a [`Tap`]
+const TAP_TIMER: f32 = 0.15;
+/// Time between [`Tap`] to be interpreted as double tap
+const DOUBLE_TAP_INTERVAL: f32 = 0.2;
+
+pub struct Plugin;
+
+impl bevy::app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_input_context::<OrbitalCameraPrimaryContext>();
+        app.add_input_context::<OrbitalCameraSecondaryContext>();
+
+        // Systems
+        app.add_systems(Startup, setup_orbital_camera);
+
+        app.add_observer(camera_yaw);
+        app.add_observer(camera_pitch);
+        app.add_observer(camera_zoom);
+
+        app.add_observer(reset_camera_yaw);
+        app.add_observer(reset_camera_pitch);
+        app.add_observer(reset_camera_zoom);
+    }
+}
+
+#[derive(InputAction)]
+#[action_output(Vec2)]
+struct MouseRightAction;
+
+#[derive(InputAction)]
+#[action_output(Vec2)]
+struct ShiftMouseRightAction;
+
+#[derive(InputAction)]
+#[action_output(Vec2)]
+struct ControlMouseRightAction;
+
+fn setup_orbital_camera(mut commands: Commands) {
+    let orbital_camera = commands
+        .spawn((
+            Name::new("OrbitalCamera"),
+            OrbitalCameraSettings {
+                pitch: (-45.0f32).to_radians(),
+                yaw: 0.0f32.to_radians(),
+                zoom: 15.0f32,
+            },
+            OrbitalCameraLimits {
+                yaw_default: 0.0,
+                yaw_range: (-PI)..PI,
+                pitch_default: -45.0f32.to_radians(),
+                pitch_range: (-55.0f32).to_radians()..(-35.0f32).to_radians(),
+                zoom_default: 15.0,
+                zoom_range: 15.0..22.5,
+            },
+            OrbitalCameraPrimaryContext,
+            OrbitalCameraSecondaryContext,
+            ContextPriority::<OrbitalCameraPrimaryContext>::new(1),
+            Transform::default(),
+            Visibility::default(),
+        ))
+        .id();
+
+    commands.spawn((
+        Camera3d::default(),
+        Camera {
+            ..Default::default()
+        },
+        Hdr,
+        Atmosphere::EARTH,
+        AtmosphereSettings {
+            scene_units_to_m: 5.,
+            ..Default::default()
+        },
+        Bloom::NATURAL,
+        SpatialListener::default(),
+        ChildOf(orbital_camera),
+        <CameraOfOrbitalCamera as Relationship>::from(orbital_camera),
+    ));
+
+    spawn_camera_yaw_action(&mut commands, orbital_camera);
+    spawn_camera_pitch_action(&mut commands, orbital_camera);
+    spawn_camera_zoom_action(&mut commands, orbital_camera);
+
+    spawn_reset_camera_yaw_action(&mut commands, orbital_camera);
+    spawn_reset_camera_pitch_action(&mut commands, orbital_camera);
+    spawn_reset_camera_zoom_action(&mut commands, orbital_camera);
+
+    commands.spawn((
+        Name::new("Dummy"),
+        Transform::default(),
+        Visibility::default(),
+        <TrackedEntity as Relationship>::from(orbital_camera),
+    ));
+}
+
+fn camera_yaw(
+    event: On<Fire<CameraYaw>>,
+    mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
+) {
+    orbital_camera.yaw -= event.value.x;
+}
+
+fn camera_pitch(
+    event: On<Fire<CameraPitch>>,
+    mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
+) {
+    orbital_camera.pitch -= event.value.y;
+}
+
+fn camera_zoom(
+    event: On<Fire<CameraZoom>>,
+    mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
+) {
+    orbital_camera.zoom += event.value.y;
+}
+
+fn reset_camera_yaw(
+    _event: On<Fire<ResetCameraYaw>>,
+    mut commands: Commands,
+    orbital_camera: Single<Entity, With<OrbitalCamera>>,
+    mut previous_tap: Local<f32>,
+    time: Res<Time>,
+) {
+    let elapsed = time.elapsed_secs();
+    if elapsed - *previous_tap < DOUBLE_TAP_INTERVAL {
+        commands.trigger(bevy_ragnarok_camera::ResetCameraYaw::from(*orbital_camera));
+    }
+    *previous_tap = elapsed;
+}
+
+fn reset_camera_pitch(
+    _event: On<Fire<ResetCameraPitch>>,
+    mut commands: Commands,
+    orbital_camera: Single<Entity, With<OrbitalCamera>>,
+    mut previous_tap: Local<f32>,
+    time: Res<Time>,
+) {
+    let elapsed = time.elapsed_secs();
+    if elapsed - *previous_tap < DOUBLE_TAP_INTERVAL {
+        commands.trigger(bevy_ragnarok_camera::ResetCameraPitch::from(
+            *orbital_camera,
+        ));
+    }
+    *previous_tap = elapsed;
+}
+
+fn reset_camera_zoom(
+    _event: On<Fire<ResetCameraZoom>>,
+    mut commands: Commands,
+    orbital_camera: Single<Entity, With<OrbitalCamera>>,
+    mut previous_tap: Local<f32>,
+    time: Res<Time>,
+) {
+    let elapsed = time.elapsed_secs();
+    if elapsed - *previous_tap < DOUBLE_TAP_INTERVAL {
+        commands.trigger(bevy_ragnarok_camera::ResetCameraZoom::from(*orbital_camera));
+    }
+    *previous_tap = elapsed;
+}
+
+fn spawn_camera_yaw_action(commands: &mut Commands, camera: Entity) {
+    let mouse_right = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<MouseRightAction>::new(),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(mouse_right),
+        <BindingOf as Relationship>::from(mouse_right),
+        Binding::from(MouseButton::Right),
+    ));
+
+    let camera_yaw = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<CameraYaw>::new(),
+            Scale::splat(1. / 128.),
+            Chord::new(vec![mouse_right]),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(camera_yaw),
+        <BindingOf as Relationship>::from(camera_yaw),
+        Binding::mouse_motion(),
+    ));
+}
+
+fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
+    let shift_mouse_right = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<ShiftMouseRightAction>::new(),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(shift_mouse_right),
+        <BindingOf as Relationship>::from(shift_mouse_right),
+        MouseButton::Right.with_mod_keys(ModKeys::SHIFT),
+    ));
+
+    let camera_pith = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<CameraPitch>::new(),
+            Scale::splat(1. / 128.),
+            Chord::new(vec![shift_mouse_right]),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(camera_pith),
+        <BindingOf as Relationship>::from(camera_pith),
+        Binding::mouse_motion(),
+    ));
+}
+
+fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
+    // Zoom with mouse wheel
+    let camera_zoom = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<CameraZoom>::new(),
+            Scale::splat(2.),
+            SmoothNudge::new(16f32.ln()),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(camera_zoom),
+        <BindingOf as Relationship>::from(camera_zoom),
+        Binding::mouse_wheel(),
+    ));
+
+    // Zoom with CTRL + RIGHT mouse button
+    let control_mouse_right = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<ControlMouseRightAction>::new(),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(control_mouse_right),
+        <BindingOf as Relationship>::from(control_mouse_right),
+        MouseButton::Right.with_mod_keys(ModKeys::CONTROL),
+    ));
+
+    let camera_zoom = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<CameraZoom>::new(),
+            Scale::splat(1. / 32.),
+            Chord::new(vec![control_mouse_right]),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(camera_zoom),
+        <BindingOf as Relationship>::from(camera_zoom),
+        Binding::mouse_motion(),
+    ));
+}
+
+fn spawn_reset_camera_yaw_action(commands: &mut Commands, camera: Entity) {
+    let reset_camera_yaw = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            Action::<ResetCameraYaw>::new(),
+            Tap::new(TAP_TIMER),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(reset_camera_yaw),
+        <BindingOf as Relationship>::from(reset_camera_yaw),
+        Binding::from(MouseButton::Right),
+    ));
+}
+
+fn spawn_reset_camera_pitch_action(commands: &mut Commands, camera: Entity) {
+    let reset_camera_pitch = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            Action::<ResetCameraPitch>::new(),
+            Tap::new(TAP_TIMER),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(reset_camera_pitch),
+        <BindingOf as Relationship>::from(reset_camera_pitch),
+        MouseButton::Right.with_mod_keys(ModKeys::SHIFT),
+    ));
+}
+
+fn spawn_reset_camera_zoom_action(commands: &mut Commands, camera: Entity) {
+    let reset_camera_zoom = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            Action::<ResetCameraZoom>::new(),
+            Tap::new(TAP_TIMER),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(reset_camera_zoom),
+        <BindingOf as Relationship>::from(reset_camera_zoom),
+        MouseButton::Right.with_mod_keys(ModKeys::CONTROL),
+    ));
+}

@@ -1,35 +1,42 @@
-use bevy::{
-    app::Startup,
-    audio::SpatialListener,
-    pbr::{Atmosphere, AtmosphereSettings},
-    post_process::bloom::Bloom,
-    prelude::{Camera, Camera3d, Commands},
-    render::view::Hdr,
-};
+use bevy::{ecs::component::Component, math::Vec2};
+use bevy_enhanced_input::prelude::InputAction;
 
-pub struct Plugin;
+pub mod plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app
-            // Systems
-            .add_systems(Startup, create_camera);
-    }
-}
+/// The primary context for camera controls.
+#[derive(Component)]
+pub struct OrbitalCameraPrimaryContext;
 
-fn create_camera(mut commands: Commands) {
-    commands.spawn((
-        Camera3d::default(),
-        Camera {
-            ..Default::default()
-        },
-        Hdr,
-        Atmosphere::EARTH,
-        AtmosphereSettings {
-            scene_units_to_m: 5.,
-            ..Default::default()
-        },
-        Bloom::NATURAL,
-        SpatialListener::default(),
-    ));
-}
+/// The secondary context for camera controls.
+#[derive(Component)]
+pub struct OrbitalCameraSecondaryContext;
+
+/// Action to change camera yaw
+#[derive(InputAction)]
+#[action_output(Vec2)]
+pub struct CameraYaw;
+
+/// Action to change camera pitch
+#[derive(InputAction)]
+#[action_output(Vec2)]
+pub struct CameraPitch;
+
+/// Action to change camera zoom
+#[derive(InputAction)]
+#[action_output(Vec2)]
+pub struct CameraZoom;
+
+/// Action to reset camera yaw to default
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct ResetCameraYaw;
+
+/// Action to reset camera pitch to default
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct ResetCameraPitch;
+
+/// Action to reset camera zoom to default
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct ResetCameraZoom;
