@@ -35,7 +35,7 @@ use bevy_ragnarok_camera::{
 
 use crate::client::camera::{
     CameraPitch, CameraYaw, CameraZoom, OrbitalCameraPrimaryContext, OrbitalCameraSecondaryContext,
-    ResetCameraPitch,
+    ResetCameraPitch, ResetCameraYaw,
 };
 
 /// Time for a click to be interpreted as a [`Tap`]
@@ -57,6 +57,7 @@ impl bevy::app::Plugin for Plugin {
         app.add_observer(camera_pitch);
         app.add_observer(camera_zoom);
 
+        app.add_observer(reset_camera_yaw);
         app.add_observer(reset_camera_pitch);
     }
 }
@@ -115,6 +116,7 @@ fn setup_orbital_camera(mut commands: Commands) {
     spawn_camera_pitch_action(&mut commands, orbital_camera);
     spawn_camera_zoom_action(&mut commands, orbital_camera);
 
+    spawn_reset_camera_yaw_action(&mut commands, orbital_camera);
     spawn_reset_camera_pitch_action(&mut commands, orbital_camera);
 
     commands.spawn((
@@ -144,6 +146,20 @@ fn camera_zoom(
     mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
 ) {
     orbital_camera.zoom += event.value.y;
+}
+
+fn reset_camera_yaw(
+    _event: On<Fire<ResetCameraYaw>>,
+    mut commands: Commands,
+    orbital_camera: Single<Entity, With<OrbitalCamera>>,
+    mut previous_tap: Local<f32>,
+    time: Res<Time>,
+) {
+    let elapsed = time.elapsed_secs();
+    if elapsed - *previous_tap < DOUBLE_TAP_INTERVAL {
+        commands.trigger(bevy_ragnarok_camera::ResetCameraYaw::from(*orbital_camera));
+    }
+    *previous_tap = elapsed;
 }
 
 fn reset_camera_pitch(
@@ -235,6 +251,22 @@ fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
         ChildOf(camera_zoom),
         <BindingOf as Relationship>::from(camera_zoom),
         Binding::mouse_wheel(),
+    ));
+}
+
+fn spawn_reset_camera_yaw_action(commands: &mut Commands, camera: Entity) {
+    let reset_camera_yaw = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            Action::<ResetCameraYaw>::new(),
+            Tap::new(TAP_TIMER),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(reset_camera_yaw),
+        <BindingOf as Relationship>::from(reset_camera_yaw),
+        Binding::from(MouseButton::Right),
     ));
 }
 
