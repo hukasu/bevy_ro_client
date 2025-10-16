@@ -1,4 +1,3 @@
-pub mod gnd;
 pub mod paths;
 pub mod water_plane;
 
@@ -8,8 +7,6 @@ pub struct PluginGroup;
 
 impl BevyPluginGroup for PluginGroup {
     fn build(self) -> PluginGroupBuilder {
-        PluginGroupBuilder::start::<Self>()
-            .add(gnd::Plugin)
-            .add(water_plane::Plugin)
+        PluginGroupBuilder::start::<Self>().add(water_plane::Plugin)
     }
 }

@@ -1,18 +1,18 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, convert::Infallible};
 
 use bevy::{
-    asset::{io::Reader, Handle, LoadContext},
+    asset::{io::Reader, Handle, LoadContext, RenderAssetUsages},
     ecs::world::World,
     image::{
         Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
         ImageSamplerDescriptor,
     },
+    light::{NotShadowCaster, NotShadowReceiver},
     math::{Vec2, Vec3},
-    pbr::{MeshMaterial3d, NotShadowCaster, NotShadowReceiver},
+    mesh::{Indices, Mesh, PrimitiveTopology},
+    pbr::MeshMaterial3d,
     prelude::{Entity, Mesh3d, Name, Transform, Visibility},
     render::{
-        mesh::{Indices, Mesh, PrimitiveTopology},
-        render_asset::RenderAssetUsages,
         render_resource::{Extent3d, TextureDimension, TextureFormat},
         storage::ShaderStorageBuffer,
     },
@@ -554,9 +554,8 @@ impl AssetLoader {
         name: &str,
         frame: usize,
     ) -> Handle<water_plane::WaterPlaneMaterial> {
-        load_context.labeled_asset_scope(
-            format!("{}Material/Frame{}", name, frame),
-            |load_context| {
+        load_context
+            .labeled_asset_scope(format!("{}Material/Frame{}", name, frame), |load_context| {
                 let image: Handle<Image> = load_context
                     .loader()
                     .with_settings(|m: &mut ImageLoaderSettings| {
@@ -576,7 +575,7 @@ impl AssetLoader {
                         water_plane.water_type,
                         frame
                     ));
-                water_plane::WaterPlaneMaterial {
+                Ok::<_, Infallible>(water_plane::WaterPlaneMaterial {
                     texture: image,
                     wave: water_plane::Wave {
                         wave_height: water_plane.wave_height,
@@ -584,8 +583,8 @@ impl AssetLoader {
                         wave_pitch: water_plane.wave_pitch.to_radians(),
                     },
                     opaque: water_plane.water_type == 4 || water_plane.water_type == 6,
-                }
-            },
-        )
+                })
+            })
+            .unwrap()
     }
 }

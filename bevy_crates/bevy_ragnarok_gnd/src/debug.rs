@@ -1,22 +1,20 @@
 use bevy::{
     app::PostUpdate,
     asset::Assets,
+    camera::visibility::VisibilitySystems,
     color::{self, Color, Srgba},
     math::Vec3,
+    mesh::{Indices, VertexAttributeValues},
     prelude::{
         Gizmos, GlobalTransform, IntoScheduleConfigs, Mesh, Mesh3d, Query, ReflectResource, Res,
         Resource, ViewVisibility, With,
     },
     reflect::Reflect,
-    render::{
-        mesh::{Indices, VertexAttributeValues},
-        view::VisibilitySystems,
-    },
 };
 
 use crate::assets::gnd;
 
-const NORMAL_GIZMOS_LENGHT: f32 = 0.5;
+const NORMAL_GIZMOS_LENGTH: f32 = 0.5;
 
 pub struct Plugin;
 
@@ -79,7 +77,7 @@ fn show_gnd_vertex_normal(
                 let direction =
                     (ground_transform.transform_point(vertex + normal) - start).normalize();
                 let color = Color::srgb_from_array(direction.to_array());
-                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
+                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGTH), color);
             }
         } else {
             for (v, n) in vertex.iter().zip(normals) {
@@ -89,7 +87,7 @@ fn show_gnd_vertex_normal(
                 let direction =
                     (ground_transform.transform_point(vertex + normal) - start).normalize();
                 let color = Color::srgb_from_array(direction.to_array());
-                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGHT), color);
+                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGTH), color);
             }
         }
     }

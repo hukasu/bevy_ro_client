@@ -1,16 +1,17 @@
 use bevy::{
-    asset::{load_internal_asset, weak_handle, Asset, AssetApp, Handle},
+    asset::{load_internal_asset, uuid_handle, Asset, AssetApp, Handle},
+    mesh::MeshVertexAttribute,
     pbr::{Material, MaterialPlugin},
     prelude::{AlphaMode, Image, Mesh, Shader},
     reflect::Reflect,
     render::{
-        mesh::MeshVertexAttribute,
         render_resource::{AsBindGroup, VertexFormat},
         storage::ShaderStorageBuffer,
     },
+    shader::ShaderRef,
 };
 
-const GND_SHADER_HANDLE: Handle<Shader> = weak_handle!("b7fa811a-e840-469e-b972-91bb81c55dfd");
+const GND_SHADER_HANDLE: Handle<Shader> = uuid_handle!("b7fa811a-e840-469e-b972-91bb81c55dfd");
 
 pub struct Plugin;
 
@@ -52,28 +53,29 @@ impl Material for GndMaterial {
         AlphaMode::Mask(0.5)
     }
 
-    fn vertex_shader() -> bevy::render::render_resource::ShaderRef {
+    fn vertex_shader() -> ShaderRef {
         GND_SHADER_HANDLE.into()
     }
 
-    fn deferred_vertex_shader() -> bevy::render::render_resource::ShaderRef {
+    fn deferred_vertex_shader() -> ShaderRef {
         GND_SHADER_HANDLE.into()
     }
 
-    fn fragment_shader() -> bevy::render::render_resource::ShaderRef {
+    fn fragment_shader() -> ShaderRef {
         GND_SHADER_HANDLE.into()
     }
 
-    fn deferred_fragment_shader() -> bevy::render::render_resource::ShaderRef {
+    fn deferred_fragment_shader() -> ShaderRef {
         GND_SHADER_HANDLE.into()
     }
 
     fn specialize(
-        _pipeline: &bevy::pbr::MaterialPipeline<Self>,
+        _pipeline: &bevy::pbr::MaterialPipeline,
         descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
-        layout: &bevy::render::mesh::MeshVertexBufferLayoutRef,
+        layout: &bevy::mesh::MeshVertexBufferLayoutRef,
         _key: bevy::pbr::MaterialPipelineKey<Self>,
-    ) -> Result<(), bevy::render::render_resource::SpecializedMeshPipelineError> {
+    ) -> bevy::ecs::error::Result<(), bevy::render::render_resource::SpecializedMeshPipelineError>
+    {
         let vertex_layout = layout.0.get_layout(&[
             Mesh::ATTRIBUTE_POSITION.at_shader_location(0),
             Mesh::ATTRIBUTE_NORMAL.at_shader_location(1),

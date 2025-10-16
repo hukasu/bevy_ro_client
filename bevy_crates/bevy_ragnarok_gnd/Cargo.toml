@@ -1,0 +1,35 @@
+[package]
+name = "bevy_ragnarok_gnd"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lints]
+workspace = true
+
+[features]
+# Graphical debugging of meshes
+debug = ["dep:bevy_gizmos"]
+
+[dependencies]
+ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
+ragnarok_gnd = { workspace = true }
+
+bevy_animation = { workspace = true, default-features = false }
+bevy_app = { workspace = true, default-features = false }
+bevy_asset = { workspace = true, default-features = false }
+bevy_audio = { workspace = true, default-features = false }
+bevy_camera = { workspace = true, default-features = false }
+bevy_color = { workspace = true, default-features = false }
+bevy_ecs = { workspace = true, default-features = false }
+bevy_gizmos = { workspace = true, default-features = false, optional = true }
+bevy_math = { workspace = true, default-features = false }
+bevy_mesh = { workspace = true, default-features = false }
+bevy_platform = { workspace = true, default-features = false }
+bevy_reflect = { workspace = true, default-features = false }
+bevy_render = { workspace = true, default-features = false }
+bevy_scene = { workspace = true, default-features = false }
+bevy_transform = { workspace = true, default-features = false }
+
+log = { workspace = true }

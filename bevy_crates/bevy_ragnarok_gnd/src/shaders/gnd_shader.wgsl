@@ -26,9 +26,9 @@ struct Vertex {
     @location(3) texture_id: u32
 }
 
-@group(2) @binding(0) var gnd_texture: texture_2d<f32>;
-@group(2) @binding(1) var gnd_sampler: sampler;
-@group(2) @binding(2) var<storage> texture_uvs: array<vec2<f32>>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var gnd_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var gnd_sampler: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var<storage> texture_uvs: array<vec2<f32>>;
 
 fn gnd_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
