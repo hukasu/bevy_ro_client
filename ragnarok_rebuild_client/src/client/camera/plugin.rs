@@ -133,7 +133,7 @@ fn spawn_camera_yaw_action(commands: &mut Commands, camera: Entity) {
     let mouse_right = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
             Action::<MouseRightAction>::new(),
         ))
         .id();
@@ -146,7 +146,7 @@ fn spawn_camera_yaw_action(commands: &mut Commands, camera: Entity) {
     let camera_yaw = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
             Action::<CameraYaw>::new(),
             Scale::splat(1. / 128.),
             Chord::new(vec![mouse_right]),
@@ -163,7 +163,7 @@ fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
     let shift_mouse_right = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
             Action::<ShiftMouseRightAction>::new(),
         ))
         .id();
@@ -176,7 +176,7 @@ fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
     let camera_pith = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
             Action::<CameraPitch>::new(),
             Scale::splat(1. / 128.),
             Chord::new(vec![shift_mouse_right]),
@@ -193,7 +193,7 @@ fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
     let camera_zoom = commands
         .spawn((
             ChildOf(camera),
-            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
             Action::<CameraZoom>::new(),
             Scale::splat(1. / 4.),
         ))
