@@ -37,9 +37,9 @@ impl bevy_app::Plugin for Plugin {
             PostUpdate,
             (
                 (
-                    resetting_camera_yaw,
-                    resetting_camera_pitch,
-                    resetting_camera_zoom,
+                    resetting_camera_setting::<ResettingCameraYaw>,
+                    resetting_camera_setting::<ResettingCameraPitch>,
+                    resetting_camera_setting::<ResettingCameraZoom>,
                 ),
                 clamp_orbital_camera,
                 track_entity,
@@ -156,85 +156,128 @@ fn reset_camera_setting<T: EntityEvent, C: Component + Default>(
 }
 
 #[expect(clippy::type_complexity, reason = "Queries are complex")]
-fn resetting_camera_yaw(
+fn resetting_camera_setting<T: OrbitalCameraResetter>(
     mut commands: Commands,
     cameras: Populated<
         (Entity, &mut OrbitalCameraSettings, &OrbitalCameraLimits),
-        (With<OrbitalCamera>, With<ResettingCameraYaw>),
+        (With<OrbitalCamera>, With<T>),
     >,
     time: Res<Time>,
 ) {
     let delta = time.delta_secs();
     for (entity, mut orbital_camera_settings, orbital_camera_limits) in cameras.into_inner() {
-        if (orbital_camera_settings.yaw - orbital_camera_limits.yaw_default)
-            .abs()
-            .to_degrees()
-            < 1.
-        {
-            orbital_camera_settings.yaw = orbital_camera_limits.yaw_default;
-            commands.entity(entity).remove::<ResettingCameraYaw>();
+        if T::snap_condition(&orbital_camera_settings, orbital_camera_limits) {
+            T::snap(&mut orbital_camera_settings, orbital_camera_limits);
+            commands.entity(entity).remove::<T>();
         } else {
-            orbital_camera_settings.yaw.smooth_nudge(
-                &orbital_camera_limits.yaw_default,
-                1024f32.ln(),
-                delta,
-            );
+            T::nudge(&mut orbital_camera_settings, orbital_camera_limits, delta);
         }
     }
 }
 
-#[expect(clippy::type_complexity, reason = "Queries are complex")]
-fn resetting_camera_pitch(
-    mut commands: Commands,
-    cameras: Populated<
-        (Entity, &mut OrbitalCameraSettings, &OrbitalCameraLimits),
-        (With<OrbitalCamera>, With<ResettingCameraPitch>),
-    >,
-    time: Res<Time>,
-) {
-    let delta = time.delta_secs();
-    for (entity, mut orbital_camera_settings, orbital_camera_limits) in cameras.into_inner() {
-        if (orbital_camera_settings.pitch - orbital_camera_limits.pitch_default)
+/// Trait to allow [`resetting_camera_setting`] to be generic
+trait OrbitalCameraResetter: Component {
+    fn snap_condition(
+        orbital_camera_settings: &OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    ) -> bool;
+    fn snap(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    );
+    fn nudge(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+        delta: f32,
+    );
+}
+
+impl OrbitalCameraResetter for ResettingCameraYaw {
+    fn snap_condition(
+        orbital_camera_settings: &OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    ) -> bool {
+        (orbital_camera_settings.yaw - orbital_camera_limits.yaw_default)
             .abs()
             .to_degrees()
             < 1.
-        {
-            orbital_camera_settings.pitch = orbital_camera_limits.pitch_default;
-            commands.entity(entity).remove::<ResettingCameraPitch>();
-        } else {
-            orbital_camera_settings.pitch.smooth_nudge(
-                &orbital_camera_limits.pitch_default,
-                1024f32.ln(),
-                delta,
-            );
-        }
+    }
+
+    fn snap(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    ) {
+        orbital_camera_settings.yaw = orbital_camera_limits.yaw_default;
+    }
+
+    fn nudge(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+        delta: f32,
+    ) {
+        orbital_camera_settings.yaw.smooth_nudge(
+            &orbital_camera_limits.yaw_default,
+            1024f32.ln(),
+            delta,
+        );
     }
 }
 
-#[expect(clippy::type_complexity, reason = "Queries are complex")]
-fn resetting_camera_zoom(
-    mut commands: Commands,
-    cameras: Populated<
-        (Entity, &mut OrbitalCameraSettings, &OrbitalCameraLimits),
-        (With<OrbitalCamera>, With<ResettingCameraZoom>),
-    >,
-    time: Res<Time>,
-) {
-    let delta = time.delta_secs();
-    for (entity, mut orbital_camera_settings, orbital_camera_limits) in cameras.into_inner() {
-        if (orbital_camera_settings.zoom - orbital_camera_limits.zoom_default)
+impl OrbitalCameraResetter for ResettingCameraPitch {
+    fn snap_condition(
+        orbital_camera_settings: &OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    ) -> bool {
+        (orbital_camera_settings.pitch - orbital_camera_limits.pitch_default)
             .abs()
             .to_degrees()
             < 1.
-        {
-            orbital_camera_settings.zoom = orbital_camera_limits.zoom_default;
-            commands.entity(entity).remove::<ResettingCameraZoom>();
-        } else {
-            orbital_camera_settings.zoom.smooth_nudge(
-                &orbital_camera_limits.zoom_default,
-                1024f32.ln(),
-                delta,
-            );
-        }
+    }
+
+    fn snap(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    ) {
+        orbital_camera_settings.pitch = orbital_camera_limits.pitch_default;
+    }
+
+    fn nudge(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+        delta: f32,
+    ) {
+        orbital_camera_settings.pitch.smooth_nudge(
+            &orbital_camera_limits.pitch_default,
+            1024f32.ln(),
+            delta,
+        );
+    }
+}
+
+impl OrbitalCameraResetter for ResettingCameraZoom {
+    fn snap_condition(
+        orbital_camera_settings: &OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    ) -> bool {
+        (orbital_camera_settings.zoom - orbital_camera_limits.zoom_default).abs() < 0.125
+    }
+
+    fn snap(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+    ) {
+        orbital_camera_settings.zoom = orbital_camera_limits.zoom_default;
+    }
+
+    fn nudge(
+        orbital_camera_settings: &mut OrbitalCameraSettings,
+        orbital_camera_limits: &OrbitalCameraLimits,
+        delta: f32,
+    ) {
+        orbital_camera_settings.zoom.smooth_nudge(
+            &orbital_camera_limits.zoom_default,
+            1024f32.ln(),
+            delta,
+        );
     }
 }
