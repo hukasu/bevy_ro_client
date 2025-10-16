@@ -50,6 +50,10 @@ impl bevy::app::Plugin for Plugin {
 #[action_output(Vec2)]
 struct MouseRightAction;
 
+#[derive(InputAction)]
+#[action_output(Vec2)]
+struct ShiftMouseRightAction;
+
 fn setup_orbital_camera(mut commands: Commands) {
     let orbital_camera = commands
         .spawn((
@@ -160,7 +164,7 @@ fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
         .spawn((
             ChildOf(camera),
             ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
-            Action::<MouseRightAction>::new(),
+            Action::<ShiftMouseRightAction>::new(),
         ))
         .id();
     commands.spawn((
