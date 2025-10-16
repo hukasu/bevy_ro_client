@@ -25,3 +25,8 @@ pub struct CameraPitch;
 #[derive(InputAction)]
 #[action_output(Vec2)]
 pub struct CameraZoom;
+
+/// Action to reset camera pitch to default
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct ResetCameraPitch;

@@ -5,8 +5,13 @@ use bevy::{
     audio::SpatialListener,
     camera::visibility::Visibility,
     ecs::{
-        entity::Entity, hierarchy::ChildOf, name::Name, observer::On, query::With,
-        relationship::Relationship, system::Single,
+        entity::Entity,
+        hierarchy::ChildOf,
+        name::Name,
+        observer::On,
+        query::With,
+        relationship::Relationship,
+        system::{Local, Res, Single},
     },
     input::mouse::MouseButton,
     math::Vec2,
@@ -14,13 +19,14 @@ use bevy::{
     post_process::bloom::Bloom,
     prelude::{Camera, Camera3d, Commands},
     render::view::Hdr,
+    time::Time,
     transform::components::Transform,
 };
 use bevy_enhanced_input::{
     action::Action,
     prelude::{
         ActionOf, Binding, BindingOf, Chord, ContextPriority, Fire, InputAction,
-        InputContextAppExt, InputModKeys, ModKeys, Scale,
+        InputContextAppExt, InputModKeys, ModKeys, Scale, Tap,
     },
 };
 use bevy_ragnarok_camera::{
@@ -29,7 +35,13 @@ use bevy_ragnarok_camera::{
 
 use crate::client::camera::{
     CameraPitch, CameraYaw, CameraZoom, OrbitalCameraPrimaryContext, OrbitalCameraSecondaryContext,
+    ResetCameraPitch,
 };
+
+/// Time for a click to be interpreted as a [`Tap`]
+const TAP_TIMER: f32 = 0.15;
+/// Time between [`Tap`] to be interpreted as double tap
+const DOUBLE_TAP_INTERVAL: f32 = 0.175;
 
 pub struct Plugin;
 
@@ -40,9 +52,12 @@ impl bevy::app::Plugin for Plugin {
 
         // Systems
         app.add_systems(Startup, setup_orbital_camera);
+
         app.add_observer(camera_yaw);
         app.add_observer(camera_pitch);
         app.add_observer(camera_zoom);
+
+        app.add_observer(reset_camera_pitch);
     }
 }
 
@@ -100,6 +115,8 @@ fn setup_orbital_camera(mut commands: Commands) {
     spawn_camera_pitch_action(&mut commands, orbital_camera);
     spawn_camera_zoom_action(&mut commands, orbital_camera);
 
+    spawn_reset_camera_pitch_action(&mut commands, orbital_camera);
+
     commands.spawn((
         Name::new("Dummy"),
         Transform::default(),
@@ -127,6 +144,22 @@ fn camera_zoom(
     mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
 ) {
     orbital_camera.zoom += event.value.y;
+}
+
+fn reset_camera_pitch(
+    _event: On<Fire<ResetCameraPitch>>,
+    mut commands: Commands,
+    orbital_camera: Single<Entity, With<OrbitalCamera>>,
+    mut previous_tap: Local<f32>,
+    time: Res<Time>,
+) {
+    let elapsed = time.elapsed_secs();
+    if elapsed - *previous_tap < DOUBLE_TAP_INTERVAL {
+        commands.trigger(bevy_ragnarok_camera::ResetCameraPitch::from(
+            *orbital_camera,
+        ));
+    }
+    *previous_tap = elapsed;
 }
 
 fn spawn_camera_yaw_action(commands: &mut Commands, camera: Entity) {
@@ -202,5 +235,21 @@ fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
         ChildOf(camera_zoom),
         <BindingOf as Relationship>::from(camera_zoom),
         Binding::mouse_wheel(),
+    ));
+}
+
+fn spawn_reset_camera_pitch_action(commands: &mut Commands, camera: Entity) {
+    let reset_camera_pitch = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraPrimaryContext>::new(camera),
+            Action::<ResetCameraPitch>::new(),
+            Tap::new(TAP_TIMER),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(reset_camera_pitch),
+        <BindingOf as Relationship>::from(reset_camera_pitch),
+        MouseButton::Right.with_mod_keys(ModKeys::SHIFT),
     ));
 }
