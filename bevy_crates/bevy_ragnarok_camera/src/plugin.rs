@@ -22,8 +22,8 @@ use bevy_transform::{
 #[cfg(feature = "reflect")]
 use crate::{CameraOfOrbitalCamera, TrackedEntity};
 use crate::{
-    OrbitalCamera, OrbitalCameraLimits, OrbitalCameraSettings, ResetCameraPitch,
-    ResettingCameraPitch, TrackingEntity,
+    OrbitalCamera, OrbitalCameraLimits, OrbitalCameraSettings, ResetCameraPitch, ResetCameraYaw,
+    ResettingCameraPitch, ResettingCameraYaw, TrackingEntity,
 };
 
 /// Plugin for updating [`OrbitalCamera`].
@@ -33,11 +33,16 @@ impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut bevy_app::App) {
         app.add_systems(
             PostUpdate,
-            (resetting_camera_pitch, clamp_orbital_camera, track_entity)
+            (
+                (resetting_camera_yaw, resetting_camera_pitch),
+                clamp_orbital_camera,
+                track_entity,
+            )
                 .chain()
                 .before(TransformSystems::Propagate),
         );
 
+        app.add_observer(reset_camera_yaw);
         app.add_observer(reset_camera_pitch);
 
         #[cfg(feature = "reflect")]
@@ -127,6 +132,19 @@ fn track_entity(
     }
 }
 
+fn reset_camera_yaw(
+    event: On<ResetCameraYaw>,
+    mut commands: Commands,
+    cameras: Query<(), With<OrbitalCamera>>,
+) {
+    let camera = event.0;
+    if cameras.contains(camera) {
+        commands.entity(camera).insert(ResettingCameraYaw);
+    } else {
+        error!("ResetCamerayaw must be called on a OrbitalCamera.");
+    }
+}
+
 fn reset_camera_pitch(
     event: On<ResetCameraPitch>,
     mut commands: Commands,
@@ -137,6 +155,34 @@ fn reset_camera_pitch(
         commands.entity(camera).insert(ResettingCameraPitch);
     } else {
         error!("ResetCameraPitch must be called on a OrbitalCamera.");
+    }
+}
+
+#[expect(clippy::type_complexity, reason = "Queries are complex")]
+fn resetting_camera_yaw(
+    mut commands: Commands,
+    cameras: Populated<
+        (Entity, &mut OrbitalCameraSettings, &OrbitalCameraLimits),
+        (With<OrbitalCamera>, With<ResettingCameraYaw>),
+    >,
+    time: Res<Time>,
+) {
+    let delta = time.delta_secs();
+    for (entity, mut orbital_camera_settings, orbital_camera_limits) in cameras.into_inner() {
+        if (orbital_camera_settings.yaw - orbital_camera_limits.yaw_default)
+            .abs()
+            .to_degrees()
+            < 1.
+        {
+            orbital_camera_settings.yaw = orbital_camera_limits.yaw_default;
+            commands.entity(entity).remove::<ResettingCameraYaw>();
+        } else {
+            orbital_camera_settings.yaw.smooth_nudge(
+                &orbital_camera_limits.yaw_default,
+                1024f32.ln(),
+                delta,
+            );
+        }
     }
 }
 

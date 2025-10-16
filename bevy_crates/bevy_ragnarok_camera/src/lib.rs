@@ -74,9 +74,24 @@ pub struct TrackedEntity(Entity);
 pub struct TrackingEntity(Entity);
 
 /// Marker component that indicates that the [`OrbitalCamera`]
+/// is resetting its yaw
+#[derive(Component)]
+pub struct ResettingCameraYaw;
+
+/// Marker component that indicates that the [`OrbitalCamera`]
 /// is resetting its pitch
 #[derive(Component)]
 pub struct ResettingCameraPitch;
+
+/// Event to reset [`OrbitalCamera`]'s yaw
+#[derive(EntityEvent)]
+pub struct ResetCameraYaw(Entity);
+
+impl From<Entity> for ResetCameraYaw {
+    fn from(value: Entity) -> Self {
+        Self(value)
+    }
+}
 
 /// Event to reset [`OrbitalCamera`]'s pitch
 #[derive(EntityEvent)]
