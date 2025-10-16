@@ -2,6 +2,7 @@
 members = [
   "asset_crates/ragnarok_act",
   "asset_crates/ragnarok_gat",
+  "asset_crates/ragnarok_gnd",
   "asset_crates/ragnarok_grf",
   "asset_crates/ragnarok_pal",
   "asset_crates/ragnarok_rsm",
@@ -27,6 +28,7 @@ resolver = "2"
 [workspace.dependencies]
 ragnarok_act = { path = "asset_crates/ragnarok_act", default-features = false }
 ragnarok_gat = { path = "asset_crates/ragnarok_gat", default-features = false }
+ragnarok_gnd = { path = "asset_crates/ragnarok_gnd", default-features = false }
 ragnarok_grf = { path = "asset_crates/ragnarok_grf", default-features = false }
 ragnarok_pal = { path = "asset_crates/ragnarok_pal", default-features = false }
 ragnarok_rsm = { path = "asset_crates/ragnarok_rsm", default-features = false }

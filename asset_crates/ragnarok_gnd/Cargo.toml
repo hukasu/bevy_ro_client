@@ -1,0 +1,18 @@
+[package]
+name = "ragnarok_gnd"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lints]
+workspace = true
+
+[features]
+# Warnings while loading the act
+warning = ["ragnarok_rebuild_common/warning"]
+
+[dependencies]
+ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
+
+log = { workspace = true }
