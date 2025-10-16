@@ -35,3 +35,8 @@ pub struct ResetCameraYaw;
 #[derive(InputAction)]
 #[action_output(bool)]
 pub struct ResetCameraPitch;
+
+/// Action to reset camera zoom to default
+#[derive(InputAction)]
+#[action_output(bool)]
+pub struct ResetCameraZoom;
