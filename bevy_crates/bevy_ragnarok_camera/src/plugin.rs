@@ -68,9 +68,9 @@ fn clamp_orbital_camera(cameras: Populated<(&mut OrbitalCameraSettings, &Orbital
         if (orbital_camera_limits.yaw_range.end - orbital_camera_limits.yaw_range.start - TAU).abs()
             < f32::EPSILON
         {
-            if orbital_camera_settings.yaw < 0. {
+            if orbital_camera_settings.yaw < orbital_camera_limits.yaw_range.start {
                 orbital_camera_settings.yaw += TAU;
-            } else if orbital_camera_settings.yaw > TAU {
+            } else if orbital_camera_settings.yaw > orbital_camera_limits.yaw_range.end {
                 orbital_camera_settings.yaw -= TAU;
             }
         } else {
