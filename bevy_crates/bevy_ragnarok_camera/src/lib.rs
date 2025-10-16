@@ -83,6 +83,11 @@ pub struct ResettingCameraYaw;
 #[derive(Component)]
 pub struct ResettingCameraPitch;
 
+/// Marker component that indicates that the [`OrbitalCamera`]
+/// is resetting its zoom
+#[derive(Component)]
+pub struct ResettingCameraZoom;
+
 /// Event to reset [`OrbitalCamera`]'s yaw
 #[derive(EntityEvent)]
 pub struct ResetCameraYaw(Entity);
@@ -98,6 +103,16 @@ impl From<Entity> for ResetCameraYaw {
 pub struct ResetCameraPitch(Entity);
 
 impl From<Entity> for ResetCameraPitch {
+    fn from(value: Entity) -> Self {
+        Self(value)
+    }
+}
+
+/// Event to reset [`OrbitalCamera`]'s zoom
+#[derive(EntityEvent)]
+pub struct ResetCameraZoom(Entity);
+
+impl From<Entity> for ResetCameraZoom {
     fn from(value: Entity) -> Self {
         Self(value)
     }
