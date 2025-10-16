@@ -6,7 +6,7 @@ use std::ops::Range;
 
 #[cfg(feature = "reflect")]
 use bevy_ecs::reflect::ReflectComponent;
-use bevy_ecs::{component::Component, entity::Entity};
+use bevy_ecs::{component::Component, entity::Entity, event::EntityEvent};
 #[cfg(feature = "reflect")]
 use bevy_reflect::Reflect;
 
@@ -72,3 +72,18 @@ pub struct TrackedEntity(Entity);
 #[cfg_attr(feature = "reflect", derive(Reflect))]
 #[cfg_attr(feature = "reflect", reflect(Component))]
 pub struct TrackingEntity(Entity);
+
+/// Marker component that indicates that the [`OrbitalCamera`]
+/// is resetting its pitch
+#[derive(Component)]
+pub struct ResettingCameraPitch;
+
+/// Event to reset [`OrbitalCamera`]'s pitch
+#[derive(EntityEvent)]
+pub struct ResetCameraPitch(Entity);
+
+impl From<Entity> for ResetCameraPitch {
+    fn from(value: Entity) -> Self {
+        Self(value)
+    }
+}
