@@ -70,6 +70,10 @@ struct MouseRightAction;
 #[action_output(Vec2)]
 struct ShiftMouseRightAction;
 
+#[derive(InputAction)]
+#[action_output(Vec2)]
+struct ControlMouseRightAction;
+
 fn setup_orbital_camera(mut commands: Commands) {
     let orbital_camera = commands
         .spawn((
@@ -239,6 +243,7 @@ fn spawn_camera_pitch_action(commands: &mut Commands, camera: Entity) {
 }
 
 fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
+    // Zoom with mouse wheel
     let camera_zoom = commands
         .spawn((
             ChildOf(camera),
@@ -252,6 +257,35 @@ fn spawn_camera_zoom_action(commands: &mut Commands, camera: Entity) {
         ChildOf(camera_zoom),
         <BindingOf as Relationship>::from(camera_zoom),
         Binding::mouse_wheel(),
+    ));
+
+    // Zoom with CTRL + RIGHT mouse button
+    let control_mouse_right = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<ControlMouseRightAction>::new(),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(control_mouse_right),
+        <BindingOf as Relationship>::from(control_mouse_right),
+        MouseButton::Right.with_mod_keys(ModKeys::CONTROL),
+    ));
+
+    let camera_zoom = commands
+        .spawn((
+            ChildOf(camera),
+            ActionOf::<OrbitalCameraSecondaryContext>::new(camera),
+            Action::<CameraZoom>::new(),
+            Scale::splat(1. / 32.),
+            Chord::new(vec![control_mouse_right]),
+        ))
+        .id();
+    commands.spawn((
+        ChildOf(camera_zoom),
+        <BindingOf as Relationship>::from(camera_zoom),
+        Binding::mouse_motion(),
     ));
 }
 
