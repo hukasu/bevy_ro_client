@@ -119,7 +119,7 @@ fn camera_pitch(
     event: On<Fire<CameraPitch>>,
     mut orbital_camera: Single<&mut OrbitalCameraSettings, With<OrbitalCamera>>,
 ) {
-    orbital_camera.pitch += event.value.y;
+    orbital_camera.pitch -= event.value.y;
 }
 
 fn camera_zoom(
