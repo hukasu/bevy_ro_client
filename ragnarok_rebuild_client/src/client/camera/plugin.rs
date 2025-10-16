@@ -41,7 +41,7 @@ use crate::client::camera::{
 /// Time for a click to be interpreted as a [`Tap`]
 const TAP_TIMER: f32 = 0.15;
 /// Time between [`Tap`] to be interpreted as double tap
-const DOUBLE_TAP_INTERVAL: f32 = 0.175;
+const DOUBLE_TAP_INTERVAL: f32 = 0.2;
 
 pub struct Plugin;
 
