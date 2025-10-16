@@ -75,17 +75,17 @@ pub struct TrackingEntity(Entity);
 
 /// Marker component that indicates that the [`OrbitalCamera`]
 /// is resetting its yaw
-#[derive(Component)]
+#[derive(Default, Component)]
 pub struct ResettingCameraYaw;
 
 /// Marker component that indicates that the [`OrbitalCamera`]
 /// is resetting its pitch
-#[derive(Component)]
+#[derive(Default, Component)]
 pub struct ResettingCameraPitch;
 
 /// Marker component that indicates that the [`OrbitalCamera`]
 /// is resetting its zoom
-#[derive(Component)]
+#[derive(Default, Component)]
 pub struct ResettingCameraZoom;
 
 /// Event to reset [`OrbitalCamera`]'s yaw

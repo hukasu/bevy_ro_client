@@ -4,7 +4,9 @@ use std::f32::consts::TAU;
 
 use bevy_app::PostUpdate;
 use bevy_ecs::{
+    component::Component,
     entity::Entity,
+    event::EntityEvent,
     observer::On,
     query::{With, Without},
     relationship::RelationshipTarget,
@@ -46,9 +48,9 @@ impl bevy_app::Plugin for Plugin {
                 .before(TransformSystems::Propagate),
         );
 
-        app.add_observer(reset_camera_yaw);
-        app.add_observer(reset_camera_pitch);
-        app.add_observer(reset_camera_zoom);
+        app.add_observer(reset_camera_setting::<ResetCameraYaw, ResettingCameraYaw>);
+        app.add_observer(reset_camera_setting::<ResetCameraPitch, ResettingCameraPitch>);
+        app.add_observer(reset_camera_setting::<ResetCameraZoom, ResettingCameraZoom>);
 
         #[cfg(feature = "reflect")]
         {
@@ -137,42 +139,19 @@ fn track_entity(
     }
 }
 
-fn reset_camera_yaw(
-    event: On<ResetCameraYaw>,
+fn reset_camera_setting<T: EntityEvent, C: Component + Default>(
+    event: On<T>,
     mut commands: Commands,
     cameras: Query<(), With<OrbitalCamera>>,
 ) {
-    let camera = event.0;
+    let camera = event.event_target();
     if cameras.contains(camera) {
-        commands.entity(camera).insert(ResettingCameraYaw);
+        commands.entity(camera).insert(C::default());
     } else {
-        error!("ResetCamerayaw must be called on a OrbitalCamera.");
-    }
-}
-
-fn reset_camera_pitch(
-    event: On<ResetCameraPitch>,
-    mut commands: Commands,
-    cameras: Query<(), With<OrbitalCamera>>,
-) {
-    let camera = event.0;
-    if cameras.contains(camera) {
-        commands.entity(camera).insert(ResettingCameraPitch);
-    } else {
-        error!("ResetCameraPitch must be called on a OrbitalCamera.");
-    }
-}
-
-fn reset_camera_zoom(
-    event: On<ResetCameraZoom>,
-    mut commands: Commands,
-    cameras: Query<(), With<OrbitalCamera>>,
-) {
-    let camera = event.0;
-    if cameras.contains(camera) {
-        commands.entity(camera).insert(ResettingCameraZoom);
-    } else {
-        error!("ResetCameraZoom must be called on a OrbitalCamera.");
+        error!(
+            "{} must be called on a OrbitalCamera.",
+            std::any::type_name::<T>()
+        );
     }
 }
 
