@@ -5158,8 +5158,8 @@ dependencies = [
  "flate2",
  "log",
  "ragnarok_gat",
+ "ragnarok_gnd",
  "ragnarok_grf",
- "ragnarok_rebuild_assets",
  "ragnarok_rebuild_common",
  "serde",
 ]

@@ -14,7 +14,7 @@ warning = ["ragnarok_rebuild_common/warning"]
 
 [dependencies]
 ragnarok_gat = { workspace = true, optional = true }
-ragnarok_rebuild_assets = { path = "../../ragnarok_rebuild_assets", optional = true } # For Gnd
+ragnarok_gnd = { workspace = true, optional = true }
 ragnarok_grf = { workspace = true, optional = true }
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
