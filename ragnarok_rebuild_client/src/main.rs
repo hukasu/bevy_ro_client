@@ -87,6 +87,7 @@ fn main() {
                     format!("ragnarok_rebuild_common={log_level}"),
                     format!("ragnarok_act={log_level}"),
                     format!("ragnarok_gat={log_level}"),
+                    format!("ragnarok_gnd={log_level}"),
                     format!("ragnarok_grf={log_level}"),
                     format!("ragnarok_pal={log_level}"),
                     format!("ragnarok_rsm={log_level}"),
@@ -94,6 +95,7 @@ fn main() {
                     format!("ragnarok_spr={log_level}"),
                     format!("bevy_ragnarok_act={log_level}"),
                     format!("bevy_ragnarok_gat={log_level}"),
+                    format!("bevy_ragnarok_gnd={log_level}"),
                     format!("bevy_ragnarok_grf={log_level}"),
                     format!("bevy_ragnarok_pal={log_level}"),
                     format!("bevy_ragnarok_rsm={log_level}"),
@@ -145,6 +147,7 @@ impl bevy::app::PluginGroup for ClientPlugins {
                 audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
             })
             .add(bevy_ragnarok_gat::plugin::Plugin)
+            .add(bevy_ragnarok_gnd::Plugin)
             .add(bevy_ragnarok_pal::plugin::Plugin)
             .add(bevy_ragnarok_rsm::plugin::Plugin {
                 texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),

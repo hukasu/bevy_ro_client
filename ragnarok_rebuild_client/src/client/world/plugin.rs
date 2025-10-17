@@ -133,7 +133,7 @@ fn load_ground(
     };
 
     commands.entity(ground.entity).insert(LoadingGround(
-        asset_server.load(format!("data/{}", ground_path.ground_path)),
+        asset_server.load(format!("data/{}#Scene", ground_path.ground_path)),
     ));
 }
 

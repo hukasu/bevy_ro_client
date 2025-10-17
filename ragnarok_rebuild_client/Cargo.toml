@@ -17,6 +17,7 @@ with-inspector = [
   "bevy/embedded_watcher",
   "bevy_ragnarok_act/debug",
   "bevy_ragnarok_gat/debug",
+  "bevy_ragnarok_gnd/debug",
   "bevy_ragnarok_pal/debug",
   "bevy_ragnarok_rsm/debug",
   "bevy_ragnarok_rsw/debug",
@@ -26,9 +27,10 @@ with-inspector = [
 ]
 
 [dependencies]
-bevy_ragnarok_grf = { workspace = true }
 bevy_ragnarok_act = { workspace = true }
 bevy_ragnarok_gat = { workspace = true }
+bevy_ragnarok_gnd = { workspace = true }
+bevy_ragnarok_grf = { workspace = true }
 bevy_ragnarok_pal = { workspace = true }
 bevy_ragnarok_rsm = { workspace = true }
 bevy_ragnarok_rsw = { workspace = true }

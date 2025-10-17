@@ -9,10 +9,8 @@ use bevy::{
     },
 };
 
-use ragnarok_rebuild_bevy::{
-    assets::gnd,
-    audio::{Bgm, Sound},
-};
+use bevy_ragnarok_gnd::GroundScale;
+use ragnarok_rebuild_bevy::audio::{Bgm, Sound};
 
 use crate::client::world::ChangeMap;
 
@@ -35,7 +33,7 @@ impl bevy::app::Plugin for Plugin {
             .add_systems(Update, skip_login.run_if(in_state(GameState::Login)))
             .add_systems(
                 Update,
-                update_world_transform.run_if(resource_changed::<gnd::GroundScale>),
+                update_world_transform.run_if(resource_changed::<GroundScale>),
             )
             // Observers
             // TODO Change to observe on the the container entity
@@ -104,7 +102,7 @@ fn attach_sound_to_game(
 
 fn update_world_transform(
     mut games: Query<&mut Transform, With<Game>>,
-    ground_scale: Res<gnd::GroundScale>,
+    ground_scale: Res<GroundScale>,
 ) {
     bevy::log::trace!("Updating world transform.");
     let Ok(mut game_transform) = games
