@@ -17,21 +17,20 @@ ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../../ragnarok_rebuild_bevy" }
 ragnarok_gnd = { workspace = true }
 
-bevy_animation = { workspace = true, default-features = false }
 bevy_app = { workspace = true, default-features = false }
 bevy_asset = { workspace = true, default-features = false }
-bevy_audio = { workspace = true, default-features = false }
 bevy_camera = { workspace = true, default-features = false }
 bevy_color = { workspace = true, default-features = false }
 bevy_derive = { workspace = true, default-features = false }
 bevy_ecs = { workspace = true, default-features = false }
 bevy_gizmos = { workspace = true, default-features = false, optional = true }
-bevy_image = { workspace = true, default-features = false }
+bevy_image = { workspace = true, default-features = false, features = [
+  "zstd_rust",
+] }
 bevy_light = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
 bevy_mesh = { workspace = true, default-features = false }
 bevy_pbr = { workspace = true, default-features = false }
-bevy_platform = { workspace = true, default-features = false }
 bevy_reflect = { workspace = true, default-features = false }
 bevy_render = { workspace = true, default-features = false }
 bevy_scene = { workspace = true, default-features = false }
