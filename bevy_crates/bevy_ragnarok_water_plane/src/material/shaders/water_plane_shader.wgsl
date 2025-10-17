@@ -25,9 +25,9 @@ struct Wave {
     wave_pitch: f32,
 }
 
-@group(2) @binding(0) var water_texture: texture_2d<f32>;
-@group(2) @binding(1) var water_sample: sampler;
-@group(2) @binding(2) var<uniform> wave: Wave;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var water_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var water_sample: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var<uniform> wave: Wave;
 
 fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
