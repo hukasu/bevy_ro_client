@@ -24,10 +24,7 @@ use ragnarok_rebuild_common::WaterPlane;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    assets::{paths, water_plane},
-    helper,
-};
+use crate::{assets::paths, helper};
 
 use super::{components::Ground, material::GndMaterial, GroundScale};
 
@@ -363,35 +360,6 @@ impl AssetLoader {
         texture_ids.push(surface.texture_id as u32);
     }
 
-    #[must_use]
-    fn build_water_plane(
-        gnd: &gnd::Gnd,
-        water_plane: &WaterPlane,
-        name: &str,
-        world: &mut World,
-        load_context: &mut LoadContext,
-    ) -> Entity {
-        bevy::log::trace!("Generating {} for {:?}", name, load_context.path());
-        let mesh: Handle<Mesh> = load_context.add_labeled_asset(
-            format!("{}Mesh", name),
-            Self::water_plane_mesh(gnd, water_plane),
-        );
-        let material: [Handle<water_plane::WaterPlaneMaterial>; 32] =
-            std::array::from_fn(|i| Self::water_plane_material(load_context, water_plane, name, i));
-
-        world
-            .spawn((
-                Name::new(name.to_owned()),
-                Transform::default(),
-                Visibility::default(),
-                Mesh3d(mesh),
-                water_plane::WaterPlane::new(material, water_plane.texture_cyclical_interval),
-                NotShadowCaster,
-                NotShadowReceiver,
-            ))
-            .id()
-    }
-
     async fn build_ground_texture_atlas(
         load_context: &mut LoadContext<'_>,
         texture_paths: &[Box<str>],
@@ -545,47 +513,5 @@ impl AssetLoader {
             .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
             .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
             .with_inserted_indices(Indices::U16(indices))
-    }
-
-    #[must_use]
-    fn water_plane_material(
-        load_context: &mut LoadContext,
-        water_plane: &WaterPlane,
-        name: &str,
-        frame: usize,
-    ) -> Handle<water_plane::WaterPlaneMaterial> {
-        load_context.labeled_asset_scope(
-            format!("{}Material/Frame{}", name, frame),
-            |load_context| {
-                let image: Handle<Image> = load_context
-                    .loader()
-                    .with_settings(|m: &mut ImageLoaderSettings| {
-                        m.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                            label: Some("WaterSampler".to_owned()),
-                            address_mode_u: ImageAddressMode::Repeat,
-                            address_mode_v: ImageAddressMode::Repeat,
-                            address_mode_w: ImageAddressMode::Repeat,
-                            mag_filter: ImageFilterMode::Linear,
-                            min_filter: ImageFilterMode::Linear,
-                            ..Default::default()
-                        })
-                    })
-                    .load(format!(
-                        "{}water{}{:02}.jpg",
-                        paths::WATER_TEXTURE_FILES_FOLDER,
-                        water_plane.water_type,
-                        frame
-                    ));
-                water_plane::WaterPlaneMaterial {
-                    texture: image,
-                    wave: water_plane::Wave {
-                        wave_height: water_plane.wave_height,
-                        wave_speed: water_plane.wave_speed,
-                        wave_pitch: water_plane.wave_pitch.to_radians(),
-                    },
-                    opaque: water_plane.water_type == 4 || water_plane.water_type == 6,
-                }
-            },
-        )
     }
 }
