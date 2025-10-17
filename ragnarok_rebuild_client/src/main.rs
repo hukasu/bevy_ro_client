@@ -1,32 +1,6 @@
 mod client;
 #[cfg(feature = "with-inspector")]
 mod inspector_egui;
-#[cfg(not(feature = "with-inspector"))]
-mod other {
-    use bevy::{
-        ecs::system::Commands,
-        prelude::{App, IntoScheduleConfigs, Startup},
-    };
-    use bevy_ragnarok_rsw::events::LoadWorld;
-    use ragnarok_rebuild_bevy::tables;
-
-    pub struct Plugin;
-
-    impl bevy::app::Plugin for Plugin {
-        fn build(&self, app: &mut App) {
-            app.add_systems(
-                Startup,
-                spawn_camera.after(tables::system_sets::TableSystems::TableStartup),
-            );
-        }
-    }
-
-    fn spawn_camera(mut commands: Commands) {
-        commands.trigger(LoadWorld {
-            world: "prontera.rsw".into(),
-        });
-    }
-}
 
 use bevy::{
     app::{App, PluginGroup, PluginGroupBuilder},
@@ -121,10 +95,6 @@ fn main() {
     app.add_plugins(RemotePlugin::default());
     app.add_plugins(RagnarokPlugin);
 
-    #[cfg(not(feature = "with-inspector"))]
-    {
-        app.add_plugins(other::Plugin);
-    }
     #[cfg(feature = "with-inspector")]
     {
         app.add_plugins(inspector_egui::Plugin);
