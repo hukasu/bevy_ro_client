@@ -1,47 +1,58 @@
 use std::{collections::BTreeMap, convert::Infallible};
 
-use bevy::{
-    asset::{io::Reader, Handle, LoadContext, RenderAssetUsages},
-    ecs::world::World,
-    image::{
-        Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
-        ImageSamplerDescriptor,
-    },
-    light::{NotShadowCaster, NotShadowReceiver},
-    math::{Vec2, Vec3},
-    mesh::{Indices, Mesh, PrimitiveTopology},
-    pbr::MeshMaterial3d,
-    prelude::{Entity, Mesh3d, Name, Transform, Visibility},
-    render::{
-        render_resource::{Extent3d, TextureDimension, TextureFormat},
-        storage::ShaderStorageBuffer,
-    },
-    scene::Scene,
+use bevy_asset::{Handle, LoadContext, RenderAssetUsages, io::Reader};
+use bevy_camera::visibility::Visibility;
+use bevy_ecs::{entity::Entity, name::Name, world::World};
+use bevy_image::{
+    Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
+    ImageSamplerDescriptor,
 };
+use bevy_light::{NotShadowCaster, NotShadowReceiver};
+use bevy_math::{Vec2, Vec3};
+use bevy_mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology};
+use bevy_pbr::MeshMaterial3d;
+use bevy_render::{
+    render_resource::{Extent3d, TextureDimension, TextureFormat},
+    storage::ShaderStorageBuffer,
+};
+use bevy_scene::Scene;
+use bevy_transform::components::Transform;
 
-use ragnarok_rebuild_assets::gnd;
-use ragnarok_rebuild_common::WaterPlane;
-
+use log::{error, trace};
 use serde::{Deserialize, Serialize};
 
-use crate::{
+use ragnarok_gnd::{Error, Gnd, GroundMeshCube};
+use ragnarok_rebuild_bevy::{
     assets::{paths, water_plane},
     helper,
 };
+use ragnarok_rebuild_common::WaterPlane;
 
-use super::{components::Ground, material::GndMaterial, GroundScale};
+use crate::assets::GndAsset;
+
+use super::{GroundScale, components::Ground, material::GndMaterial};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct AssetLoaderSettings {
     pub water_plane: Option<WaterPlane>,
 }
 
+/// Asset loader for [`GndAsset`]
+///
+/// ## Labeled assets
+///
+/// * `Mesh`: [`Mesh`](bevy_mesh::Mesh) = Mesh built from the [`Gnd`]
+///   cubes.
+/// * `Material`: [`GndMaterial`] = Material generated from [`Gnd`]
+///   textures.
+/// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene containing all objects represented
+///   by the [`Gnd`].
 pub struct AssetLoader;
 
-impl bevy::asset::AssetLoader for AssetLoader {
-    type Asset = Scene;
+impl bevy_asset::AssetLoader for AssetLoader {
+    type Asset = GndAsset;
     type Settings = AssetLoaderSettings;
-    type Error = gnd::Error;
+    type Error = Error;
 
     async fn load(
         &self,
@@ -49,13 +60,22 @@ impl bevy::asset::AssetLoader for AssetLoader {
         settings: &Self::Settings,
         load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
-        bevy::log::trace!("Loading Gnd {:?}.", load_context.path());
+        trace!("Loading Gnd {:?}.", load_context.path());
 
         let mut data: Vec<u8> = vec![];
         reader.read_to_end(&mut data).await?;
-        let gnd = gnd::Gnd::from_reader(&mut data.as_slice())?;
+        let gnd = Gnd::from_reader(&mut data.as_slice())?;
 
-        Ok(Self::generate_ground(&gnd, settings, load_context).await)
+        let mesh = Self::build_cubes(&gnd, load_context);
+        let material = Self::build_ground_texture_atlas(&gnd, load_context).await;
+        let scene =
+            Self::build_scene(&gnd, mesh.clone(), material.clone(), settings, load_context).await;
+
+        Ok(GndAsset {
+            mesh,
+            material,
+            scene,
+        })
     }
 
     fn extensions(&self) -> &[&str] {
@@ -64,32 +84,34 @@ impl bevy::asset::AssetLoader for AssetLoader {
 }
 
 impl AssetLoader {
-    async fn generate_ground(
-        gnd: &gnd::Gnd,
+    async fn build_scene(
+        gnd: &Gnd,
+        mesh: Handle<Mesh>,
+        material: Handle<GndMaterial>,
         settings: &AssetLoaderSettings,
         load_context: &mut LoadContext<'_>,
-    ) -> Scene {
+    ) -> Handle<Scene> {
         let mut world = World::new();
 
         // 2x2 tiles per gnd cube
         world.insert_resource(GroundScale(2. / gnd.scale));
-        Self::generate_ground_mesh(gnd, &mut world, load_context).await;
+
+        world.spawn((
+            Name::new("Ground".to_owned()),
+            Ground,
+            Mesh3d(mesh),
+            MeshMaterial3d(material),
+            Transform::default(),
+            Visibility::default(),
+        ));
+
         Self::generate_water_planes(gnd, settings, &mut world, load_context);
 
-        Scene::new(world)
-    }
-
-    async fn generate_ground_mesh(
-        gnd: &gnd::Gnd,
-        world: &mut World,
-        load_context: &mut LoadContext<'_>,
-    ) {
-        let texture_atlas = Self::build_ground_texture_atlas(load_context, &gnd.textures).await;
-        Self::build_cubes(gnd, texture_atlas, world, load_context);
+        load_context.add_labeled_asset("Scene".to_owned(), Scene::new(world))
     }
 
     fn generate_water_planes(
-        gnd: &gnd::Gnd,
+        gnd: &Gnd,
         settings: &AssetLoaderSettings,
         world: &mut World,
         load_context: &mut LoadContext,
@@ -118,12 +140,7 @@ impl AssetLoader {
         }
     }
 
-    fn build_cubes(
-        gnd: &gnd::Gnd,
-        material: Handle<GndMaterial>,
-        world: &mut World,
-        load_context: &mut LoadContext,
-    ) {
+    fn build_cubes(gnd: &Gnd, load_context: &mut LoadContext) -> Handle<Mesh> {
         let mut vertices = vec![];
         let mut uvs = vec![];
         let mut texture_ids = vec![];
@@ -168,26 +185,19 @@ impl AssetLoader {
             RenderAssetUsages::RENDER_WORLD
         };
 
-        let mesh = load_context.add_labeled_asset(
+        load_context.add_labeled_asset(
             "Ground".to_string(),
             Mesh::new(PrimitiveTopology::TriangleList, asset_usage)
                 .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices)
                 .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
                 .with_inserted_attribute(GndMaterial::TEXTURE_ID_VERTEX_ATTRIBUTE, texture_ids)
                 .with_computed_flat_normals(),
-        );
-
-        world.spawn((
-            Name::new("Ground"),
-            Ground,
-            Mesh3d(mesh),
-            MeshMaterial3d(material),
-        ));
+        )
     }
 
     fn build_up_face(
-        gnd: &gnd::Gnd,
-        cube: &gnd::GroundMeshCube,
+        gnd: &Gnd,
+        cube: &GroundMeshCube,
         vertices: &mut Vec<Vec3>,
         uvs: &mut Vec<Vec2>,
         texture_ids: &mut Vec<u32>,
@@ -245,9 +255,9 @@ impl AssetLoader {
     }
 
     fn build_east_face(
-        gnd: &gnd::Gnd,
-        cube: &gnd::GroundMeshCube,
-        east_cube: &gnd::GroundMeshCube,
+        gnd: &Gnd,
+        cube: &GroundMeshCube,
+        east_cube: &GroundMeshCube,
         vertices: &mut Vec<Vec3>,
         uvs: &mut Vec<Vec2>,
         texture_ids: &mut Vec<u32>,
@@ -306,9 +316,9 @@ impl AssetLoader {
     }
 
     fn build_north_face(
-        gnd: &gnd::Gnd,
-        cube: &gnd::GroundMeshCube,
-        north_cube: &gnd::GroundMeshCube,
+        gnd: &Gnd,
+        cube: &GroundMeshCube,
+        north_cube: &GroundMeshCube,
         vertices: &mut Vec<Vec3>,
         uvs: &mut Vec<Vec2>,
         texture_ids: &mut Vec<u32>,
@@ -365,13 +375,13 @@ impl AssetLoader {
 
     #[must_use]
     fn build_water_plane(
-        gnd: &gnd::Gnd,
+        gnd: &Gnd,
         water_plane: &WaterPlane,
         name: &str,
         world: &mut World,
         load_context: &mut LoadContext,
     ) -> Entity {
-        bevy::log::trace!("Generating {} for {:?}", name, load_context.path());
+        trace!("Generating {} for {:?}", name, load_context.path());
         let mesh: Handle<Mesh> = load_context.add_labeled_asset(
             format!("{}Mesh", name),
             Self::water_plane_mesh(gnd, water_plane),
@@ -393,9 +403,10 @@ impl AssetLoader {
     }
 
     async fn build_ground_texture_atlas(
+        gnd: &Gnd,
         load_context: &mut LoadContext<'_>,
-        texture_paths: &[Box<str>],
     ) -> Handle<GndMaterial> {
+        let texture_paths = gnd.textures.as_ref();
         let mut images = Vec::with_capacity(texture_paths.len());
 
         for path in texture_paths.iter() {
@@ -409,7 +420,7 @@ impl AssetLoader {
                     images.push(image.take());
                 }
                 Err(err) => {
-                    bevy::log::error!("Could not load {} with error '{:?}'", path, err);
+                    error!("Could not load {} with error '{:?}'", path, err);
                     images.push(Image::new_fill(
                         Extent3d {
                             width: 8,
@@ -453,7 +464,7 @@ impl AssetLoader {
     }
 
     #[must_use]
-    fn water_plane_mesh(gnd: &gnd::Gnd, water_plane: &WaterPlane) -> Mesh {
+    fn water_plane_mesh(gnd: &Gnd, water_plane: &WaterPlane) -> Mesh {
         let mut vertices: Vec<Vec3> = vec![];
         let mut normals: Vec<Vec3> = vec![];
         let mut uvs: Vec<Vec2> = vec![];

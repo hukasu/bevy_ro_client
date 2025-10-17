@@ -1,3 +1,4 @@
+pub mod assets;
 mod components;
 #[cfg(feature = "debug")]
 mod debug;
@@ -5,7 +6,9 @@ mod loader;
 mod material;
 mod resources;
 
-use bevy::{app::Plugin as BevyPlugin, asset::AssetApp};
+use bevy_asset::AssetApp;
+
+use crate::assets::GndAsset;
 
 pub use self::{
     components::Ground,
@@ -15,18 +18,20 @@ pub use self::{
 
 pub struct Plugin;
 
-impl BevyPlugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app
-            // Types
-            .register_type::<Ground>()
-            .register_type::<GroundScale>()
-            // Resources
-            .init_resource::<GroundScale>()
-            // Asset Loader
-            .register_asset_loader(AssetLoader)
-            // Material
-            .add_plugins(material::Plugin);
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
+        // Resources
+        app.init_resource::<GroundScale>();
+
+        // Asset Loader
+        app.init_asset::<GndAsset>()
+            .register_asset_loader(AssetLoader);
+
+        // Material
+        app.add_plugins(material::Plugin);
+
+        // Types
+        app.register_type::<Ground>().register_type::<GroundScale>();
 
         #[cfg(feature = "debug")]
         app.add_plugins(debug::Plugin);

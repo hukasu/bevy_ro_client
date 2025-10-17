@@ -1,7 +1,6 @@
-use bevy::{
-    prelude::{Deref, DerefMut, ReflectResource, Resource},
-    reflect::Reflect,
-};
+use bevy_derive::{Deref, DerefMut};
+use bevy_ecs::{reflect::ReflectResource, resource::Resource};
+use bevy_reflect::Reflect;
 
 #[derive(Debug, Resource, Reflect, Deref, DerefMut)]
 #[reflect(Resource)]

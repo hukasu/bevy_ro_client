@@ -1,22 +1,21 @@
-use bevy::{
-    asset::{load_internal_asset, uuid_handle, Asset, AssetApp, Handle},
-    mesh::MeshVertexAttribute,
-    pbr::{Material, MaterialPlugin},
-    prelude::{AlphaMode, Image, Mesh, Shader},
-    reflect::Reflect,
-    render::{
-        render_resource::{AsBindGroup, VertexFormat},
-        storage::ShaderStorageBuffer,
-    },
-    shader::ShaderRef,
+use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, uuid_handle};
+use bevy_image::Image;
+use bevy_mesh::{Mesh, MeshVertexAttribute};
+use bevy_pbr::{Material, MaterialPlugin};
+use bevy_reflect::Reflect;
+use bevy_render::{
+    alpha::AlphaMode,
+    render_resource::{AsBindGroup, VertexFormat},
+    storage::ShaderStorageBuffer,
 };
+use bevy_shader::{Shader, ShaderRef};
 
 const GND_SHADER_HANDLE: Handle<Shader> = uuid_handle!("b7fa811a-e840-469e-b972-91bb81c55dfd");
 
 pub struct Plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
         app
             // Asset
             .init_asset::<GndMaterial>()
@@ -70,11 +69,11 @@ impl Material for GndMaterial {
     }
 
     fn specialize(
-        _pipeline: &bevy::pbr::MaterialPipeline,
-        descriptor: &mut bevy::render::render_resource::RenderPipelineDescriptor,
-        layout: &bevy::mesh::MeshVertexBufferLayoutRef,
-        _key: bevy::pbr::MaterialPipelineKey<Self>,
-    ) -> bevy::ecs::error::Result<(), bevy::render::render_resource::SpecializedMeshPipelineError>
+        _pipeline: &bevy_pbr::MaterialPipeline,
+        descriptor: &mut bevy_render::render_resource::RenderPipelineDescriptor,
+        layout: &bevy_mesh::MeshVertexBufferLayoutRef,
+        _key: bevy_pbr::MaterialPipelineKey<Self>,
+    ) -> bevy_ecs::error::Result<(), bevy_render::render_resource::SpecializedMeshPipelineError>
     {
         let vertex_layout = layout.0.get_layout(&[
             Mesh::ATTRIBUTE_POSITION.at_shader_location(0),

@@ -1,25 +1,28 @@
-use bevy::{
-    app::PostUpdate,
-    asset::Assets,
-    camera::visibility::VisibilitySystems,
-    color::{self, Color, Srgba},
-    math::Vec3,
-    mesh::{Indices, VertexAttributeValues},
-    prelude::{
-        Gizmos, GlobalTransform, IntoScheduleConfigs, Mesh, Mesh3d, Query, ReflectResource, Res,
-        Resource, ViewVisibility, With,
-    },
-    reflect::Reflect,
+use bevy_app::PostUpdate;
+use bevy_asset::Assets;
+use bevy_camera::visibility::{ViewVisibility, VisibilitySystems};
+use bevy_color::{Color, Srgba, palettes};
+use bevy_ecs::{
+    query::With,
+    reflect::ReflectResource,
+    resource::Resource,
+    schedule::IntoScheduleConfigs,
+    system::{Query, Res},
 };
+use bevy_gizmos::gizmos::Gizmos;
+use bevy_math::Vec3;
+use bevy_mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues};
+use bevy_reflect::Reflect;
+use bevy_transform::components::GlobalTransform;
 
-use crate::assets::gnd;
+use crate::Ground;
 
 const NORMAL_GIZMOS_LENGTH: f32 = 0.5;
 
 pub struct Plugin;
 
-impl bevy::app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
+impl bevy_app::Plugin for Plugin {
+    fn build(&self, app: &mut bevy_app::App) {
         app
             // Resources
             .register_type::<GndDebug>()
@@ -45,7 +48,7 @@ pub struct GndDebug {
 
 fn show_gnd_vertex_normal(
     mut gizmos: Gizmos,
-    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<gnd::Ground>>,
+    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<Ground>>,
     meshes: Res<Assets<Mesh>>,
 ) {
     for (ground_transform, ground_mesh, ground_in_view) in grounds.iter() {
@@ -99,10 +102,10 @@ fn show_gnd_vertex_normal_condition(gnd_debug: Res<GndDebug>) -> bool {
 
 fn show_gnd_edges(
     mut gizmos: Gizmos,
-    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<gnd::Ground>>,
+    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<Ground>>,
     meshes: Res<Assets<Mesh>>,
 ) {
-    const GIZMO_COLOR: Srgba = color::palettes::css::ORANGE;
+    const GIZMO_COLOR: Srgba = palettes::css::ORANGE;
     for (ground_transform, ground_mesh, ground_in_view) in grounds.iter() {
         if !**ground_in_view {
             continue;
