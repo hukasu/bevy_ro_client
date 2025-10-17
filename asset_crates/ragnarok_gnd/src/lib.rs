@@ -6,7 +6,7 @@ mod surface;
 use std::io::Read;
 
 use ragnarok_rebuild_common::{
-    euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version, WaterPlane,
+    Version, WaterPlane, euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt,
 };
 
 pub use self::{
