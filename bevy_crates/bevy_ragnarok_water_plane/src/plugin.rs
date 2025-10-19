@@ -1,12 +1,17 @@
 use bevy_app::{App, Update};
+use bevy_asset::{Assets, Handle, uuid_handle};
 use bevy_ecs::{
     entity::Entity,
     system::{Commands, Query, Res},
 };
+use bevy_math::{Vec2, Vec3, primitives::Plane3d};
+use bevy_mesh::Mesh;
 use bevy_pbr::MeshMaterial3d;
 use bevy_time::Time;
 
 use crate::{WaterPlane, material};
+
+const WATER_PLANE_MESH: Handle<Mesh> = uuid_handle!("7a77a34b-40ea-42ec-b935-1b57b38b17d7");
 
 pub struct Plugin;
 
@@ -20,6 +25,15 @@ impl bevy_app::Plugin for Plugin {
 
         // Register Types
         app.register_type::<WaterPlane>();
+    }
+
+    fn finish(&self, app: &mut App) {
+        if let Err(err) = app.world_mut().resource_mut::<Assets<Mesh>>().insert(
+            &WATER_PLANE_MESH,
+            Plane3d::new(Vec3::NEG_Y, Vec2::splat(0.5)).into(),
+        ) {
+            unreachable!("Should never error for Uuid handles. `{err}`");
+        };
     }
 }
 
