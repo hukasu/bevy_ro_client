@@ -1,16 +1,21 @@
 #import bevy_pbr::{
     mesh_functions,
-    pbr_fragment::pbr_input_from_vertex_output,
-    pbr_functions::alpha_discard,
-    pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND},
     view_transformations::position_world_to_clip,
+}
+#ifdef MESH_PIPELINE
+#import bevy_pbr::{
+    pbr_fragment::pbr_input_from_vertex_output,
+    pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND},
     mesh_view_bindings::globals,
 }
+#else
+#import bevy_render::globals::Globals
+@group(0) @binding(1) var<uniform> globals: Globals;
+#endif
 
 #ifdef PREPASS_PIPELINE
 #import bevy_pbr::{
     prepass_io::{Vertex, VertexOutput, FragmentOutput},
-    pbr_deferred_functions::deferred_output,
 }
 #else
 #import bevy_pbr::{
@@ -20,15 +25,18 @@
 #endif
 
 struct Wave {
-    wave_height: f32,
-    wave_speed: f32,
-    wave_pitch: f32,
+    level: f32,
+    height: f32,
+    speed: f32,
+    pitch: f32,
+    frames_per_second: f32,
 }
 
-@group(2) @binding(0) var water_texture: texture_2d<f32>;
-@group(2) @binding(1) var water_sample: sampler;
-@group(2) @binding(2) var<uniform> wave: Wave;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var water_texture: texture_2d_array<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var water_sample: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var<uniform> wave: Wave;
 
+#ifdef MESH_PIPELINE
 fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
 
@@ -39,36 +47,39 @@ fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
 
     return pbr_input;
 }
+#endif
 
 @vertex
 fn vertex(in: Vertex) -> VertexOutput {
     var vertex_output: VertexOutput;
     
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
-    var normalized_in = world_from_local * vec4(
-        in.position.x,
-        in.position.y,
-        in.position.z,
-        1.,
-    ) / 2.;
-    var position = vec4(
-        in.position + vec3(
-            0.,
-            wave.wave_height * sin((normalized_in.x - normalized_in.z) * wave.wave_pitch + globals.time * wave.wave_speed),
-            0.),
-        1.);
+    var normalized_in = world_from_local * vec4(in.position, 1.) / 2.;
+
+    let param = (normalized_in.x - normalized_in.z) * wave.pitch + globals.time * wave.speed;
+    let y_offset = wave.level + wave.height * sin(param);
+
+    var position = vec4(in.position + vec3(0., y_offset, 0.), 1.);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
-    
+
+#ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
+    let derivate = wave.height * wave.speed * cos(param);
+    let slope_angle = atan2(1, -derivate);
+
     vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
-        in.normal,
+        vec3(-pow(2., -0.5) * cos(slope_angle), -sin(slope_angle), -pow(2., -0.5) * cos(slope_angle)),
         in.instance_index
     );
+#endif
+#ifdef VERTEX_UVS_A
     vertex_output.uv = in.uv;
+#endif
 
     return vertex_output;
 }
 
+#ifdef MESH_PIPELINE
 @fragment
 fn fragment(
     in: VertexOutput,
@@ -76,8 +87,9 @@ fn fragment(
 ) -> FragmentOutput {
     var pbr_input = water_plane_default_material(in, is_front);
 
-    var scaled_uv = in.uv * (64. / vec2<f32>(textureDimensions(water_texture)));
-    pbr_input.material.base_color = textureSample(water_texture, water_sample, scaled_uv);
+    let layer = i32(wave.frames_per_second * globals.time) % 32;
+
+    pbr_input.material.base_color = textureSample(water_texture, water_sample, in.uv, layer);
 #ifndef OPAQUE_WATER_PLANE
     pbr_input.material.base_color.a = 144. / 255.;
 #endif
@@ -97,3 +109,28 @@ fn fragment(
 
     return out;
 }
+#endif // MESH_PIPELINE
+
+#ifdef PREPASS_PIPELINE
+#ifdef PREPASS_FRAGMENT
+@fragment
+fn prepass_fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) -> FragmentOut {
+    var out: FragmentOutput;
+#ifdef NORMAL_PREPASS
+    out.normal = in.world_normal;
+#endif
+    return out;
+}
+#else // PREPASS_FRAGMENT
+@fragment
+fn prepass_fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) {
+    return;
+}
+#endif // PREPASS_FRAGMENT
+#endif // PREPASS_PIPELINE

@@ -5,9 +5,8 @@ mod surface;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::{
-    euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version, WaterPlane,
-};
+use ragnarok_rebuild_common::{euc_kr::read_n_euc_kr_strings, reader_ext::ReaderExt, Version};
+use ragnarok_water_plane::WaterPlane;
 
 pub use self::{
     error::Error, ground_mesh_cube::GroundMeshCube, lightmap::Lightmap, surface::Surface,

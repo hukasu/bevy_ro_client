@@ -2,7 +2,7 @@ use std::io::Read;
 
 use serde::{Deserialize, Serialize};
 
-use crate::reader_ext::ReaderExt;
+use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct WaterPlane {

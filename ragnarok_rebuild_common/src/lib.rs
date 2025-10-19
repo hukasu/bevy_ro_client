@@ -5,6 +5,5 @@ pub mod reader_ext;
 mod version;
 #[cfg(feature = "warning")]
 pub mod warning;
-mod water_plane;
 
-pub use self::{color::Color, version::Version, water_plane::WaterPlane};
+pub use self::{color::Color, version::Version};
