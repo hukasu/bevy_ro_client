@@ -19,9 +19,12 @@ use bevy::{
         system::{Commands, Query, Res, ResMut, Single},
     },
     log::{debug, error, trace},
+    math::Vec3,
     scene::{Scene, SceneSpawner},
     state::{app::AppExtStates, commands::CommandsStatesExt, condition::in_state, state::OnEnter},
+    transform::components::Transform,
 };
+use bevy_ragnarok_gnd::Ground as GndGround;
 use bevy_ragnarok_rsw::{
     relationships::{
         AltitudeOfWorld, GroundOfWorld, ModelsOfWorld, WorldOfAltitude, WorldOfGround,
@@ -72,6 +75,10 @@ impl bevy::app::Plugin for Plugin {
         app.add_systems(
             OnEnter(MapChangeStates::LoadingModels),
             load_models.in_set(WorldSystems::Loading),
+        );
+        app.add_systems(
+            OnEnter(MapChangeStates::Loaded),
+            update_game_transform.in_set(WorldSystems::Cleanup),
         );
 
         app.add_observer(map_change);
@@ -303,6 +310,11 @@ fn wait_model_scene(
             }
         }
     }
+}
+
+fn update_game_transform(mut game: Single<&mut Transform, With<Game>>, ground: Single<&GndGround>) {
+    let scale = 2. / ground.scale;
+    game.scale = Vec3::new(scale, -scale, -scale);
 }
 
 fn new_world_spawned(
