@@ -40,7 +40,7 @@ impl Material for WaterPlaneMaterial {
         WATER_PLANE_SHADER_HANDLE.into()
     }
 
-    fn deferred_vertex_shader() -> ShaderRef {
+    fn prepass_vertex_shader() -> ShaderRef {
         WATER_PLANE_SHADER_HANDLE.into()
     }
 
@@ -48,7 +48,7 @@ impl Material for WaterPlaneMaterial {
         WATER_PLANE_SHADER_HANDLE.into()
     }
 
-    fn deferred_fragment_shader() -> ShaderRef {
+    fn prepass_fragment_shader() -> ShaderRef {
         WATER_PLANE_SHADER_HANDLE.into()
     }
 
@@ -58,6 +58,18 @@ impl Material for WaterPlaneMaterial {
         _layout: &MeshVertexBufferLayoutRef,
         key: MaterialPipelineKey<Self>,
     ) -> Result<(), SpecializedMeshPipelineError> {
+        descriptor.label = Some(
+            format!(
+                "water_plane_{}",
+                descriptor
+                    .label
+                    .as_ref()
+                    .map(|label| label.as_ref())
+                    .unwrap_or("shader")
+            )
+            .into(),
+        );
+
         if let Some(frag_descriptor) = &mut descriptor.fragment
             && key.bind_group_data.opaque
         {

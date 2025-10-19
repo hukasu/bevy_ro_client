@@ -1,16 +1,18 @@
 #import bevy_pbr::{
     mesh_functions,
-    pbr_fragment::pbr_input_from_vertex_output,
-    pbr_functions::alpha_discard,
-    pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND},
     view_transformations::position_world_to_clip,
     mesh_view_bindings::globals,
 }
+#ifdef MESH_PIPELINE
+#import bevy_pbr::{
+    pbr_fragment::pbr_input_from_vertex_output,
+    pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND},
+}
+#endif
 
 #ifdef PREPASS_PIPELINE
 #import bevy_pbr::{
-    prepass_io::{Vertex, VertexOutput, FragmentOutput},
-    pbr_deferred_functions::deferred_output,
+    prepass_io::{Vertex, VertexOutput},
 }
 #else
 #import bevy_pbr::{
@@ -29,6 +31,7 @@ struct Wave {
 @group(#{MATERIAL_BIND_GROUP}) @binding(1) var water_sample: sampler;
 @group(#{MATERIAL_BIND_GROUP}) @binding(2) var<uniform> wave: Wave;
 
+#ifdef MESH_PIPELINE
 fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
     var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
 
@@ -39,36 +42,39 @@ fn water_plane_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
 
     return pbr_input;
 }
+#endif
 
 @vertex
 fn vertex(in: Vertex) -> VertexOutput {
     var vertex_output: VertexOutput;
     
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
-    var normalized_in = world_from_local * vec4(
-        in.position.x,
-        in.position.y,
-        in.position.z,
-        1.,
-    ) / 2.;
-    var position = vec4(
-        in.position + vec3(
-            0.,
-            wave.wave_height * sin((normalized_in.x - normalized_in.z) * wave.wave_pitch + globals.time * wave.wave_speed),
-            0.),
-        1.);
+    var normalized_in = world_from_local * vec4(in.position, 1.) / 2.;
+
+    let param = (normalized_in.x - normalized_in.z) * wave.wave_pitch + globals.time * wave.wave_speed;
+    let y_offset = wave.wave_height * sin(param);
+
+    var position = vec4(in.position + vec3(0., y_offset, 0.), 1.);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
-    
+
+    let derivate = wave.wave_height * wave.wave_speed * cos(param);
+    let slope_angle = atan2(1, -derivate);
+
+#ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
     vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
-        in.normal,
+        vec3(-pow(2., -0.5) * cos(slope_angle), -sin(slope_angle), -pow(2., -0.5) * cos(slope_angle)),
         in.instance_index
     );
+#endif
+#ifdef VERTEX_UV_A
     vertex_output.uv = in.uv;
+#endif
 
     return vertex_output;
 }
 
+#ifdef MESH_PIPELINE
 @fragment
 fn fragment(
     in: VertexOutput,
@@ -97,3 +103,4 @@ fn fragment(
 
     return out;
 }
+#endif // MESH_PIPELINE
