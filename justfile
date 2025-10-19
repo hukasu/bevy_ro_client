@@ -56,6 +56,7 @@ clippy:
 
     @just bevy_ragnarok_camera
     @just bevy_ragnarok_quad_tree
+    @just bevy_ragnarok_water_plane
 
     @just ragnarok_rebuild_client
 
@@ -175,6 +176,14 @@ bevy_ragnarok_quad_tree $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples --no-default-features --features="reflect"
     cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples
     cargo clippy -p bevy_ragnarok_quad_tree --bins --lib --tests --examples --all-features
+
+[group("clippy")]
+bevy_ragnarok_water_plane $RUSTFLAGS="-Dwarnings":
+    cargo clippy -p bevy_ragnarok_water_plane --bins --lib --tests --examples --no-default-features
+    cargo clippy -p bevy_ragnarok_water_plane --bins --lib --tests --examples --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_water_plane --bins --lib --tests --examples --no-default-features --features="reflect"
+    cargo clippy -p bevy_ragnarok_water_plane --bins --lib --tests --examples
+    cargo clippy -p bevy_ragnarok_water_plane --bins --lib --tests --examples --all-features
 
 [group("clippy")]
 ragnarok_rebuild_client $RUSTFLAGS="-Dwarnings":
