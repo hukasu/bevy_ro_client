@@ -22,9 +22,9 @@
 #endif
 
 struct Wave {
-    wave_height: f32,
-    wave_speed: f32,
-    wave_pitch: f32,
+    height: f32,
+    speed: f32,
+    pitch: f32,
 }
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var water_texture: texture_2d<f32>;
@@ -51,14 +51,14 @@ fn vertex(in: Vertex) -> VertexOutput {
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     var normalized_in = world_from_local * vec4(in.position, 1.) / 2.;
 
-    let param = (normalized_in.x - normalized_in.z) * wave.wave_pitch + globals.time * wave.wave_speed;
-    let y_offset = wave.wave_height * sin(param);
+    let param = (normalized_in.x - normalized_in.z) * wave.pitch + globals.time * wave.speed;
+    let y_offset = wave.height * sin(param);
 
     var position = vec4(in.position + vec3(0., y_offset, 0.), 1.);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
 
-    let derivate = wave.wave_height * wave.wave_speed * cos(param);
+    let derivate = wave.height * wave.speed * cos(param);
     let slope_angle = atan2(1, -derivate);
 
 #ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
