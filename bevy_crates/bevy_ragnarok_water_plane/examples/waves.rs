@@ -41,7 +41,7 @@ fn setup(
     ));
 
     let plane = meshes.add(
-        Plane3d::new(Vec3::Y, Vec2::splat(2.))
+        Plane3d::new(Vec3::NEG_Y, Vec2::splat(2.))
             .mesh()
             .subdivisions(12)
             .build(),
@@ -74,6 +74,6 @@ fn setup(
     commands.spawn((
         Mesh3d(plane),
         WaterPlane::new(water_plane_materials, 32),
-        Transform::default(),
+        Transform::from_scale(Vec3::new(1., -1., -1.)),
     ));
 }
