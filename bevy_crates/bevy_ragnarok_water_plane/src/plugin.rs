@@ -97,7 +97,7 @@ fn prepare_water_plane(
                     wave_pitch: water_plane.wave_pitch,
                     frames_per_second: 60. / water_plane.texture_cyclical_interval as f32,
                 },
-                opaque: water_plane.water_type == 0,
+                opaque: water_plane.water_type == 4 || water_plane.water_type == 6,
             };
             let material_handle = water_plane_materials.add(material);
             water_plane_type_images
