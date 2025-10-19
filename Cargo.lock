@@ -5063,6 +5063,7 @@ dependencies = [
  "log",
  "ragnarok_pal",
  "ragnarok_rebuild_common",
+ "ragnarok_water_plane",
  "serde",
 ]
 
@@ -5076,6 +5077,7 @@ dependencies = [
  "futures",
  "ragnarok_rebuild_assets",
  "ragnarok_rebuild_common",
+ "ragnarok_water_plane",
  "serde",
  "sqlx",
  "toml",
@@ -5142,6 +5144,7 @@ dependencies = [
  "ragnarok_grf",
  "ragnarok_rebuild_assets",
  "ragnarok_rebuild_common",
+ "ragnarok_water_plane",
  "serde",
 ]
 
@@ -5152,6 +5155,14 @@ dependencies = [
  "ragnarok_grf",
  "ragnarok_pal",
  "ragnarok_rebuild_common",
+]
+
+[[package]]
+name = "ragnarok_water_plane"
+version = "0.1.0"
+dependencies = [
+ "ragnarok_rebuild_common",
+ "serde",
 ]
 
 [[package]]

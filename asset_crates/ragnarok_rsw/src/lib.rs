@@ -11,9 +11,8 @@ pub mod warnings;
 
 use std::io::Read;
 
-use ragnarok_rebuild_common::{
-    Version, WaterPlane, euc_kr::read_euc_kr_string, reader_ext::ReaderExt,
-};
+use ragnarok_rebuild_common::{Version, euc_kr::read_euc_kr_string, reader_ext::ReaderExt};
+use ragnarok_water_plane::WaterPlane;
 
 use crate::quad_tree::{QUAD_TREE_SIZE, QuadTree, Range};
 pub use crate::{

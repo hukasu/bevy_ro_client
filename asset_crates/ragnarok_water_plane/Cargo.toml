@@ -1,0 +1,14 @@
+[package]
+name = "ragnarok_water_plane"
+version = "0.1.0"
+edition = "2024"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lints]
+workspace = true
+
+[dependencies]
+ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
+
+serde = { workspace = true }

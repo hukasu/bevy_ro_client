@@ -14,6 +14,7 @@ members = [
   "bevy_crates/bevy_ragnarok_rsm",
   "bevy_crates/bevy_ragnarok_rsw",
   "bevy_crates/bevy_ragnarok_spr",
+  "asset_crates/ragnarok_water_plane",
   "bevy_crates/bevy_ragnarok_camera",
   "bevy_crates/bevy_ragnarok_quad_tree",
   "bevy_crates/bevy_ragnarok_water_plane",
@@ -41,6 +42,8 @@ bevy_ragnarok_pal = { path = "bevy_crates/bevy_ragnarok_pal", default-features =
 bevy_ragnarok_rsm = { path = "bevy_crates/bevy_ragnarok_rsm", default-features = false }
 bevy_ragnarok_rsw = { path = "bevy_crates/bevy_ragnarok_rsw", default-features = false }
 bevy_ragnarok_spr = { path = "bevy_crates/bevy_ragnarok_spr", default-features = false }
+
+ragnarok_water_plane = { path = "asset_crates/ragnarok_water_plane", default-features = false }
 
 bevy_ragnarok_camera = { path = "bevy_crates/bevy_ragnarok_camera", default-features = false }
 bevy_ragnarok_quad_tree = { path = "bevy_crates/bevy_ragnarok_quad_tree", default-features = false }

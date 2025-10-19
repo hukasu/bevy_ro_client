@@ -16,6 +16,9 @@ warning = ["ragnarok_rebuild_common/warning"]
 ragnarok_gat = { workspace = true, optional = true }
 ragnarok_rebuild_assets = { path = "../../ragnarok_rebuild_assets", optional = true } # For Gnd
 ragnarok_grf = { workspace = true, optional = true }
+
+ragnarok_water_plane = { workspace = true }
+
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 log = { workspace = true }

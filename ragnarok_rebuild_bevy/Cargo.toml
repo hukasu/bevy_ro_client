@@ -15,12 +15,15 @@ debug = ["bevy/bevy_gizmos"]
 workspace = true
 
 [dependencies]
+ragnarok_water_plane = { workspace = true }
+
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_assets = { path = "../ragnarok_rebuild_assets" }
 
 bevy = { workspace = true, features = [
   "bevy_animation",
   "bevy_asset",
+  "bevy_light",
   "bevy_pbr",
   "bevy_render",
   "bevy_scene",
