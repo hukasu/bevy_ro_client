@@ -9,7 +9,8 @@ edition = "2021"
 workspace = true
 
 [dependencies]
-ragnarok_pal = { path = "../asset_crates/ragnarok_pal" }
+ragnarok_pal = { workspace = true }
+
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 
 log = { workspace = true }

@@ -1,7 +1,7 @@
 use bevy_app::PostUpdate;
 use bevy_asset::Assets;
 use bevy_camera::visibility::{ViewVisibility, VisibilitySystems};
-use bevy_color::{Color, Srgba, palettes};
+use bevy_color::{self, Color, Srgba, palettes};
 use bevy_ecs::{
     query::With,
     reflect::ReflectResource,

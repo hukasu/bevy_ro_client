@@ -1,15 +1,10 @@
-use std::{collections::BTreeMap, convert::Infallible};
-
 use bevy_asset::{Handle, LoadContext, RenderAssetUsages, io::Reader};
 use bevy_camera::visibility::Visibility;
-use bevy_ecs::{entity::Entity, name::Name, world::World};
-use bevy_image::{
-    Image, ImageAddressMode, ImageFilterMode, ImageLoaderSettings, ImageSampler,
-    ImageSamplerDescriptor,
-};
-use bevy_light::{NotShadowCaster, NotShadowReceiver};
+use bevy_ecs::{name::Name, world::World};
+use bevy_image::Image;
+use bevy_log::{error, trace};
 use bevy_math::{Vec2, Vec3};
-use bevy_mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology};
+use bevy_mesh::{Mesh, Mesh3d, PrimitiveTopology};
 use bevy_pbr::MeshMaterial3d;
 use bevy_render::{
     render_resource::{Extent3d, TextureDimension, TextureFormat},
@@ -18,15 +13,11 @@ use bevy_render::{
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
-use log::{error, trace};
+use ragnarok_gnd::{Error, Gnd, GroundMeshCube};
+use ragnarok_rebuild_bevy::{assets::paths, helper};
 use serde::{Deserialize, Serialize};
 
-use ragnarok_gnd::{Error, Gnd, GroundMeshCube};
-use ragnarok_rebuild_bevy::{
-    assets::{paths, water_plane},
-    helper,
-};
-use ragnarok_rebuild_common::WaterPlane;
+use ragnarok_water_plane::WaterPlane;
 
 use crate::assets::GndAsset;
 
@@ -88,7 +79,7 @@ impl AssetLoader {
         gnd: &Gnd,
         mesh: Handle<Mesh>,
         material: Handle<GndMaterial>,
-        settings: &AssetLoaderSettings,
+        _settings: &AssetLoaderSettings,
         load_context: &mut LoadContext<'_>,
     ) -> Handle<Scene> {
         let mut world = World::new();
@@ -105,39 +96,7 @@ impl AssetLoader {
             Visibility::default(),
         ));
 
-        Self::generate_water_planes(gnd, settings, &mut world, load_context);
-
         load_context.add_labeled_asset("Scene".to_owned(), Scene::new(world))
-    }
-
-    fn generate_water_planes(
-        gnd: &Gnd,
-        settings: &AssetLoaderSettings,
-        world: &mut World,
-        load_context: &mut LoadContext,
-    ) {
-        let water_planes = world
-            .spawn((
-                Name::new("WaterPlanes"),
-                Transform::default(),
-                Visibility::default(),
-            ))
-            .id();
-
-        let rsw_water_plane = [&settings.water_plane].into_iter().filter_map(|plane| {
-            plane
-                .as_ref()
-                .map(|plane| ("RswWaterPlane".to_owned(), plane))
-        });
-        let gnd_water_planes = gnd
-            .water_planes
-            .iter()
-            .enumerate()
-            .map(|(i, plane)| (format!("WaterPlane{}", i), plane));
-        for (name, water_plane) in rsw_water_plane.chain(gnd_water_planes) {
-            let id = Self::build_water_plane(gnd, water_plane, &name, world, load_context);
-            world.entity_mut(water_planes).add_child(id);
-        }
     }
 
     fn build_cubes(gnd: &Gnd, load_context: &mut LoadContext) -> Handle<Mesh> {
@@ -373,35 +332,6 @@ impl AssetLoader {
         texture_ids.push(surface.texture_id as u32);
     }
 
-    #[must_use]
-    fn build_water_plane(
-        gnd: &Gnd,
-        water_plane: &WaterPlane,
-        name: &str,
-        world: &mut World,
-        load_context: &mut LoadContext,
-    ) -> Entity {
-        trace!("Generating {} for {:?}", name, load_context.path());
-        let mesh: Handle<Mesh> = load_context.add_labeled_asset(
-            format!("{}Mesh", name),
-            Self::water_plane_mesh(gnd, water_plane),
-        );
-        let material: [Handle<water_plane::WaterPlaneMaterial>; 32] =
-            std::array::from_fn(|i| Self::water_plane_material(load_context, water_plane, name, i));
-
-        world
-            .spawn((
-                Name::new(name.to_owned()),
-                Transform::default(),
-                Visibility::default(),
-                Mesh3d(mesh),
-                water_plane::WaterPlane::new(material, water_plane.texture_cyclical_interval),
-                NotShadowCaster,
-                NotShadowReceiver,
-            ))
-            .id()
-    }
-
     async fn build_ground_texture_atlas(
         gnd: &Gnd,
         load_context: &mut LoadContext<'_>,
@@ -461,141 +391,5 @@ impl AssetLoader {
                 texture_uvs: storage_buffer,
             },
         )
-    }
-
-    #[must_use]
-    fn water_plane_mesh(gnd: &Gnd, water_plane: &WaterPlane) -> Mesh {
-        let mut vertices: Vec<Vec3> = vec![];
-        let mut normals: Vec<Vec3> = vec![];
-        let mut uvs: Vec<Vec2> = vec![];
-        let mut indices: Vec<u16> = vec![];
-
-        let mut insert_vertex = |x: u32, z: u32| {
-            let vertex_x = (x as i32 - ((gnd.width / 2) as i32)) as f32 * gnd.scale;
-            let vertex_z = (z as i32 - ((gnd.height / 2) as i32)) as f32 * gnd.scale;
-            vertices.push(Vec3::new(vertex_x, water_plane.water_level, vertex_z));
-            normals.push(Vec3::NEG_Y);
-            uvs.push(Vec2::new(x as f32, z as f32));
-            vertices.len() as u16 - 1
-        };
-
-        let mut tile_cache: BTreeMap<(u32, u32), (u16, u16, u16, u16)> = BTreeMap::new();
-        for (i, _) in gnd
-            .ground_mesh_cubes
-            .iter()
-            .enumerate()
-            .filter(|(_, cube)| {
-                cube.upwards_facing_surface != -1
-                    && [
-                        cube.top_left_height,
-                        cube.top_right_height,
-                        cube.bottom_left_height,
-                        cube.bottom_right_height,
-                    ]
-                    .iter()
-                    // Ragnarok's weird coordinate system caused this
-                    .any(|height| height >= &(water_plane.water_level - water_plane.wave_height))
-            })
-        {
-            let x = i as u32 % gnd.width;
-            let z = i as u32 / gnd.width;
-
-            let bottom_left = if z > 0 && tile_cache.contains_key(&(x, z - 1)) {
-                // If tile to the south is already cached, use its index
-                let Some(cache) = tile_cache.get(&(x, z - 1)) else {
-                    unreachable!("Check if contains key returned true but could not get value.");
-                };
-                cache.2
-            } else if x > 0 && tile_cache.contains_key(&(x - 1, z)) {
-                // If tile to the west is already cached, use its index
-                let Some(cache) = tile_cache.get(&(x - 1, z)) else {
-                    unreachable!("Check if contains key returned true but could not get value.");
-                };
-                cache.1
-            } else {
-                insert_vertex(x, z)
-            };
-            let bottom_right = if z > 0 && tile_cache.contains_key(&(x, z - 1)) {
-                // If tile to the south is already cached, use its index
-                let Some(cache) = tile_cache.get(&(x, z - 1)) else {
-                    unreachable!("Check if contains key returned true but could not get value.");
-                };
-                cache.3
-            } else {
-                insert_vertex(x + 1, z)
-            };
-            let top_left = if x > 0 && tile_cache.contains_key(&(x - 1, z)) {
-                // If tile to the west is already cached, use its index
-                let Some(cache) = tile_cache.get(&(x - 1, z)) else {
-                    unreachable!("Check if contains key returned true but could not get value.");
-                };
-                cache.3
-            } else {
-                insert_vertex(x, z + 1)
-            };
-            let top_right = insert_vertex(x + 1, z + 1);
-
-            tile_cache.insert((x, z), (bottom_left, bottom_right, top_left, top_right));
-            indices.extend(&[
-                bottom_left,
-                bottom_right,
-                top_left,
-                bottom_right,
-                top_right,
-                top_left,
-            ]);
-        }
-        // dbg!(tile_cache);
-        let asset_usage = if cfg!(feature = "debug") {
-            RenderAssetUsages::all()
-        } else {
-            RenderAssetUsages::RENDER_WORLD
-        };
-        Mesh::new(PrimitiveTopology::TriangleList, asset_usage)
-            .with_inserted_attribute(Mesh::ATTRIBUTE_POSITION, vertices)
-            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, uvs)
-            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, normals)
-            .with_inserted_indices(Indices::U16(indices))
-    }
-
-    #[must_use]
-    fn water_plane_material(
-        load_context: &mut LoadContext,
-        water_plane: &WaterPlane,
-        name: &str,
-        frame: usize,
-    ) -> Handle<water_plane::WaterPlaneMaterial> {
-        load_context
-            .labeled_asset_scope(format!("{}Material/Frame{}", name, frame), |load_context| {
-                let image: Handle<Image> = load_context
-                    .loader()
-                    .with_settings(|m: &mut ImageLoaderSettings| {
-                        m.sampler = ImageSampler::Descriptor(ImageSamplerDescriptor {
-                            label: Some("WaterSampler".to_owned()),
-                            address_mode_u: ImageAddressMode::Repeat,
-                            address_mode_v: ImageAddressMode::Repeat,
-                            address_mode_w: ImageAddressMode::Repeat,
-                            mag_filter: ImageFilterMode::Linear,
-                            min_filter: ImageFilterMode::Linear,
-                            ..Default::default()
-                        })
-                    })
-                    .load(format!(
-                        "{}water{}{:02}.jpg",
-                        paths::WATER_TEXTURE_FILES_FOLDER,
-                        water_plane.water_type,
-                        frame
-                    ));
-                Ok::<_, Infallible>(water_plane::WaterPlaneMaterial {
-                    texture: image,
-                    wave: water_plane::Wave {
-                        wave_height: water_plane.wave_height,
-                        wave_speed: water_plane.wave_speed,
-                        wave_pitch: water_plane.wave_pitch.to_radians(),
-                    },
-                    opaque: water_plane.water_type == 4 || water_plane.water_type == 6,
-                })
-            })
-            .unwrap()
     }
 }

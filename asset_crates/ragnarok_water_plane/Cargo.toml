@@ -1,5 +1,5 @@
 [package]
-name = "ragnarok_gnd"
+name = "ragnarok_water_plane"
 version = "0.1.0"
 edition = "2024"
 
@@ -8,13 +8,7 @@ edition = "2024"
 [lints]
 workspace = true
 
-[features]
-# Warnings while loading the act
-warning = ["ragnarok_rebuild_common/warning"]
-
 [dependencies]
-ragnarok_water_plane = { workspace = true }
-
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
-log = { workspace = true }
+serde = { workspace = true }

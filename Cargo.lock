@@ -1422,18 +1422,20 @@ dependencies = [
  "bevy_gizmos",
  "bevy_image",
  "bevy_light",
+ "bevy_log",
  "bevy_math",
  "bevy_mesh",
  "bevy_pbr",
+ "bevy_ragnarok_water_plane",
  "bevy_reflect",
  "bevy_render",
  "bevy_scene",
  "bevy_shader",
  "bevy_transform",
- "log",
  "ragnarok_gnd",
  "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
+ "ragnarok_water_plane",
  "serde",
 ]
 
@@ -1553,6 +1555,29 @@ dependencies = [
  "bevy_shader",
  "ragnarok_rebuild_common",
  "ragnarok_spr",
+]
+
+[[package]]
+name = "bevy_ragnarok_water_plane"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_app",
+ "bevy_asset",
+ "bevy_camera",
+ "bevy_ecs",
+ "bevy_image",
+ "bevy_log",
+ "bevy_math",
+ "bevy_mesh",
+ "bevy_pbr",
+ "bevy_platform",
+ "bevy_reflect",
+ "bevy_render",
+ "bevy_shader",
+ "bevy_time",
+ "bevy_transform",
+ "ragnarok_water_plane",
 ]
 
 [[package]]
@@ -5049,6 +5074,7 @@ version = "0.1.0"
 dependencies = [
  "log",
  "ragnarok_rebuild_common",
+ "ragnarok_water_plane",
 ]
 
 [[package]]
@@ -5091,6 +5117,7 @@ dependencies = [
  "futures",
  "ragnarok_rebuild_assets",
  "ragnarok_rebuild_common",
+ "ragnarok_water_plane",
  "serde",
  "sqlx",
  "toml",
@@ -5158,6 +5185,7 @@ dependencies = [
  "ragnarok_gnd",
  "ragnarok_grf",
  "ragnarok_rebuild_common",
+ "ragnarok_water_plane",
  "serde",
 ]
 
@@ -5168,6 +5196,14 @@ dependencies = [
  "ragnarok_grf",
  "ragnarok_pal",
  "ragnarok_rebuild_common",
+]
+
+[[package]]
+name = "ragnarok_water_plane"
+version = "0.1.0"
+dependencies = [
+ "ragnarok_rebuild_common",
+ "serde",
 ]
 
 [[package]]
