@@ -1,6 +1,6 @@
 pub(crate) mod plugin;
 
-use bevy_asset::{Asset, Handle, uuid_handle};
+use bevy_asset::{Asset, AssetPath, Handle, embedded_path};
 use bevy_image::Image;
 use bevy_mesh::MeshVertexBufferLayoutRef;
 use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey};
@@ -11,10 +11,7 @@ use bevy_render::{
         AsBindGroup, RenderPipelineDescriptor, ShaderType, SpecializedMeshPipelineError,
     },
 };
-use bevy_shader::{Shader, ShaderRef};
-
-const WATER_PLANE_SHADER_HANDLE: Handle<Shader> =
-    uuid_handle!("13c76198-ee09-4c50-bbe4-5609d880269e");
+use bevy_shader::ShaderRef;
 
 #[derive(Debug, Clone, Asset, Reflect, AsBindGroup)]
 #[bind_group_data(WaterPlaneMaterialKey)]
@@ -37,19 +34,27 @@ impl Material for WaterPlaneMaterial {
     }
 
     fn vertex_shader() -> ShaderRef {
-        WATER_PLANE_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/water_plane_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        WATER_PLANE_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/water_plane_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        WATER_PLANE_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/water_plane_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        WATER_PLANE_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/water_plane_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn specialize(

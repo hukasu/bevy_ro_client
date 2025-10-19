@@ -1,9 +1,8 @@
 use bevy_app::App;
-use bevy_asset::{AssetApp, load_internal_asset};
+use bevy_asset::{AssetApp, embedded_asset};
 use bevy_pbr::MaterialPlugin;
-use bevy_shader::Shader;
 
-use crate::material::{WATER_PLANE_SHADER_HANDLE, WaterPlaneMaterial};
+use crate::material::WaterPlaneMaterial;
 
 pub struct Plugin;
 
@@ -16,11 +15,6 @@ impl bevy_app::Plugin for Plugin {
         app.add_plugins(MaterialPlugin::<WaterPlaneMaterial>::default());
 
         // Shader handles
-        load_internal_asset!(
-            app,
-            WATER_PLANE_SHADER_HANDLE,
-            "shaders/water_plane_shader.wgsl",
-            Shader::from_wgsl
-        );
+        embedded_asset!(app, "shaders/water_plane_shader.wgsl");
     }
 }
