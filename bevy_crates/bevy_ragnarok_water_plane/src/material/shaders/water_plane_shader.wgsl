@@ -25,6 +25,7 @@
 #endif
 
 struct Wave {
+    level: f32,
     height: f32,
     speed: f32,
     pitch: f32,
@@ -56,7 +57,7 @@ fn vertex(in: Vertex) -> VertexOutput {
     var normalized_in = world_from_local * vec4(in.position, 1.) / 2.;
 
     let param = (normalized_in.x - normalized_in.z) * wave.pitch + globals.time * wave.speed;
-    let y_offset = wave.height * sin(param);
+    let y_offset = wave.level + wave.height * sin(param);
 
     var position = vec4(in.position + vec3(0., y_offset, 0.), 1.);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);

@@ -92,6 +92,7 @@ fn prepare_water_plane(
             let material = WaterPlaneMaterial {
                 texture: texture_array.clone(),
                 wave: Wave {
+                    water_level: water_plane.water_level,
                     wave_height: water_plane.wave_height,
                     wave_speed: water_plane.wave_speed,
                     wave_pitch: water_plane.wave_pitch,

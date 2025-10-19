@@ -98,6 +98,7 @@ impl Material for WaterPlaneMaterial {
 
 #[derive(Debug, Clone, Reflect, ShaderType)]
 pub struct Wave {
+    pub water_level: f32,
     pub wave_height: f32,
     pub wave_speed: f32,
     pub wave_pitch: f32,
