@@ -70,12 +70,21 @@ impl Material for WaterPlaneMaterial {
             .into(),
         );
 
-        if let Some(frag_descriptor) = &mut descriptor.fragment
-            && key.bind_group_data.opaque
-        {
-            frag_descriptor
+        if let Some(frag_descriptor) = &mut descriptor.fragment {
+            if frag_descriptor
                 .shader_defs
-                .push("OPAQUE_WATER_PLANE".into());
+                .contains(&bevy_shader::ShaderDefVal::Bool(
+                    "PREPASS_PIPELINE".to_owned(),
+                    true,
+                ))
+            {
+                frag_descriptor.entry_point = Some("prepass_fragment".into());
+            }
+            if key.bind_group_data.opaque {
+                frag_descriptor
+                    .shader_defs
+                    .push("OPAQUE_WATER_PLANE".into());
+            }
         }
 
         Ok(())

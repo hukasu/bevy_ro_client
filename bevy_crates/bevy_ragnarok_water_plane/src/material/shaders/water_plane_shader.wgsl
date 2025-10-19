@@ -1,18 +1,21 @@
 #import bevy_pbr::{
     mesh_functions,
     view_transformations::position_world_to_clip,
-    mesh_view_bindings::globals,
 }
 #ifdef MESH_PIPELINE
 #import bevy_pbr::{
     pbr_fragment::pbr_input_from_vertex_output,
     pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_BLEND},
+    mesh_view_bindings::globals,
 }
+#else
+#import bevy_render::globals::Globals
+@group(0) @binding(1) var<uniform> globals: Globals;
 #endif
 
 #ifdef PREPASS_PIPELINE
 #import bevy_pbr::{
-    prepass_io::{Vertex, VertexOutput},
+    prepass_io::{Vertex, VertexOutput, FragmentOutput},
 }
 #else
 #import bevy_pbr::{
@@ -104,3 +107,27 @@ fn fragment(
     return out;
 }
 #endif // MESH_PIPELINE
+
+#ifdef PREPASS_PIPELINE
+#ifdef PREPASS_FRAGMENT
+@fragment
+fn prepass_fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) -> FragmentOut {
+    var out: FragmentOutput;
+#ifdef NORMAL_PREPASS
+    out.normal = in.world_normal;
+#endif
+    return out;
+}
+#else // PREPASS_FRAGMENT
+@fragment
+fn prepass_fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) {
+    return;
+}
+#endif // PREPASS_FRAGMENT
+#endif // PREPASS_PIPELINE
