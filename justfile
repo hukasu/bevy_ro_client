@@ -7,6 +7,10 @@ gat_debug:
     cargo run --bin gat_debug --features="warning ragnarok_grf"
 
 [group("asset_debug")]
+gnd_debug:
+    cargo run --bin gnd_debug --features="warning ragnarok_grf"
+
+[group("asset_debug")]
 pal_debug:
     cargo run --bin pal_debug --features="warning ragnarok_grf"
 
