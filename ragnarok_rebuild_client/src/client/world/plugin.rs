@@ -128,7 +128,7 @@ fn load_ground(
     let (world, world_of_models) = world.into_inner();
 
     let Ok((ground, ground_path)) = children.get(*world_of_models.collection()) else {
-        debug!("{world} does not have animated props.");
+        debug!("{world} does not ground.");
         return;
     };
 
@@ -148,7 +148,7 @@ fn load_altitude(
 
     let Ok((altitude, Altitude { altitude_path })) = children.get(*world_of_altitude.collection())
     else {
-        debug!("{world} does not have animated props.");
+        debug!("{world} does not have altitude.");
         return;
     };
 
