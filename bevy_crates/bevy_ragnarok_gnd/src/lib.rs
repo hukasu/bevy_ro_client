@@ -1,39 +1,17 @@
 pub mod assets;
-mod components;
 #[cfg(feature = "debug")]
 mod debug;
-mod loader;
 mod material;
-mod resources;
+pub mod plugin;
 
-use bevy_asset::AssetApp;
+use bevy_ecs::{component::Component, reflect::ReflectComponent};
+use bevy_reflect::Reflect;
 
-use crate::assets::GndAsset;
-
-pub use self::{
-    components::Ground,
-    loader::{AssetLoader, AssetLoaderSettings},
-    resources::GroundScale,
-};
-
-pub struct Plugin;
-
-impl bevy_app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy_app::App) {
-        // Resources
-        app.init_resource::<GroundScale>();
-
-        // Asset Loader
-        app.init_asset::<GndAsset>()
-            .register_asset_loader(AssetLoader);
-
-        // Material
-        app.add_plugins(material::Plugin);
-
-        // Types
-        app.register_type::<Ground>().register_type::<GroundScale>();
-
-        #[cfg(feature = "debug")]
-        app.add_plugins(debug::Plugin);
-    }
+/// An entity that represents the ground mesh of the map
+#[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
+pub struct Ground {
+    /// This is the unit length of a ground cube.
+    /// Each ground cube contains 2x2 tiles.
+    scale: f32,
 }

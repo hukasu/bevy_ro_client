@@ -19,9 +19,7 @@ use serde::{Deserialize, Serialize};
 
 use ragnarok_water_plane::WaterPlane;
 
-use crate::assets::GndAsset;
-
-use super::{GroundScale, components::Ground, material::GndMaterial};
+use crate::{Ground, assets::GndAsset, material::GndMaterial};
 
 #[derive(Debug, Default, Deserialize, Serialize)]
 pub struct AssetLoaderSettings {
@@ -84,12 +82,9 @@ impl AssetLoader {
     ) -> Handle<Scene> {
         let mut world = World::new();
 
-        // 2x2 tiles per gnd cube
-        world.insert_resource(GroundScale(2. / gnd.scale));
-
         world.spawn((
             Name::new("Ground".to_owned()),
-            Ground,
+            Ground { scale: gnd.scale },
             Mesh3d(mesh),
             MeshMaterial3d(material),
             Transform::default(),
