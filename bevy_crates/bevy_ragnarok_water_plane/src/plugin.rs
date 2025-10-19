@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use bevy_app::{App, PreUpdate};
 use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages, uuid_handle};
+use bevy_camera::primitives::Aabb;
 use bevy_ecs::{
     entity::Entity,
     query::Without,
@@ -10,7 +11,7 @@ use bevy_ecs::{
     system::{Commands, Populated, Res, ResMut},
 };
 use bevy_image::Image;
-use bevy_math::{Vec2, Vec3, primitives::Plane3d};
+use bevy_math::{Vec2, Vec3, Vec3A, primitives::Plane3d};
 use bevy_mesh::{Mesh, Mesh3d, MeshBuilder, Meshable};
 use bevy_pbr::MeshMaterial3d;
 use bevy_platform::collections::HashMap;
@@ -85,6 +86,10 @@ fn prepare_water_plane(
             commands.entity(entity).insert((
                 Mesh3d(WATER_PLANE_MESH.clone()),
                 MeshMaterial3d(water_plane_material.clone()),
+                Aabb {
+                    center: Vec3A::new(0., water_plane.water_level, 0.),
+                    half_extents: Vec3A::new(0.5, water_plane.wave_height, 0.5),
+                },
             ));
         } else if let Some(texture_array) =
             water_plane_type_images.images.get(&water_plane.water_type)
