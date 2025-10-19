@@ -28,9 +28,10 @@ struct Wave {
     height: f32,
     speed: f32,
     pitch: f32,
+    frames_per_second: f32,
 }
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0) var water_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var water_texture: texture_2d_array<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(1) var water_sample: sampler;
 @group(#{MATERIAL_BIND_GROUP}) @binding(2) var<uniform> wave: Wave;
 
@@ -61,16 +62,16 @@ fn vertex(in: Vertex) -> VertexOutput {
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
 
+#ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
     let derivate = wave.height * wave.speed * cos(param);
     let slope_angle = atan2(1, -derivate);
 
-#ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
     vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
         vec3(-pow(2., -0.5) * cos(slope_angle), -sin(slope_angle), -pow(2., -0.5) * cos(slope_angle)),
         in.instance_index
     );
 #endif
-#ifdef VERTEX_UV_A
+#ifdef VERTEX_UVS_A
     vertex_output.uv = in.uv;
 #endif
 
@@ -85,8 +86,9 @@ fn fragment(
 ) -> FragmentOutput {
     var pbr_input = water_plane_default_material(in, is_front);
 
-    var scaled_uv = in.uv * (64. / vec2<f32>(textureDimensions(water_texture)));
-    pbr_input.material.base_color = textureSample(water_texture, water_sample, scaled_uv);
+    let layer = i32(wave.frames_per_second * globals.time) % 32;
+
+    pbr_input.material.base_color = textureSample(water_texture, water_sample, in.uv, layer);
 #ifndef OPAQUE_WATER_PLANE
     pbr_input.material.base_color.a = 144. / 255.;
 #endif

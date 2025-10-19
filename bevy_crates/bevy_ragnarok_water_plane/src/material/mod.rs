@@ -16,7 +16,7 @@ use bevy_shader::ShaderRef;
 #[derive(Debug, Clone, Asset, Reflect, AsBindGroup)]
 #[bind_group_data(WaterPlaneMaterialKey)]
 pub struct WaterPlaneMaterial {
-    #[texture(0)]
+    #[texture(0, dimension = "2d_array")]
     #[sampler(1)]
     pub texture: Handle<Image>,
     #[uniform(2)]
@@ -101,6 +101,9 @@ pub struct Wave {
     pub wave_height: f32,
     pub wave_speed: f32,
     pub wave_pitch: f32,
+    /// The framerate in a Ragnarok Online water plane is defined in cycles. To
+    /// convert from cycles to frames per second do `60 / cycles`
+    pub frames_per_second: f32,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

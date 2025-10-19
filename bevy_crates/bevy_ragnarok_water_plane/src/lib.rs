@@ -3,32 +3,29 @@
 pub mod material;
 pub mod plugin;
 
-use std::time::Duration;
-
-use bevy_asset::Handle;
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
 use bevy_reflect::Reflect;
-use bevy_time::{Timer, TimerMode};
 
-use crate::material::WaterPlaneMaterial;
-
-#[derive(Debug, Component, Reflect)]
+#[derive(Debug, Clone, Copy, Component, Reflect)]
 #[reflect(Component)]
 pub struct WaterPlane {
-    current_frame: usize,
-    frames: [Handle<WaterPlaneMaterial>; 32],
-    timer: Timer,
+    pub water_level: f32,
+    pub water_type: i32,
+    pub wave_height: f32,
+    pub wave_speed: f32,
+    pub wave_pitch: f32,
+    pub texture_cyclical_interval: i32,
 }
 
-impl WaterPlane {
-    pub fn new(textures: [Handle<WaterPlaneMaterial>; 32], cycle: i32) -> Self {
+impl From<ragnarok_water_plane::WaterPlane> for WaterPlane {
+    fn from(value: ragnarok_water_plane::WaterPlane) -> Self {
         Self {
-            current_frame: 0,
-            frames: textures,
-            timer: Timer::new(
-                Duration::from_secs_f32(cycle as f32 / 60.),
-                TimerMode::Repeating,
-            ),
+            water_level: value.water_level,
+            water_type: value.water_type,
+            wave_height: value.wave_height,
+            wave_speed: value.wave_speed,
+            wave_pitch: value.wave_pitch,
+            texture_cyclical_interval: value.texture_cyclical_interval,
         }
     }
 }

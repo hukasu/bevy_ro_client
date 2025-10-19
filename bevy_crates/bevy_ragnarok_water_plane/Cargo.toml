@@ -13,6 +13,8 @@ debug = []
 reflect = []
 
 [dependencies]
+ragnarok_water_plane = { workspace = true }
+
 bevy_app = { workspace = true, default-features = false }
 bevy_asset = { workspace = true, default-features = false }
 bevy_camera = { workspace = true, default-features = false }
@@ -22,6 +24,7 @@ bevy_log = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
 bevy_mesh = { workspace = true, default-features = false }
 bevy_pbr = { workspace = true, default-features = false }
+bevy_platform = { workspace = true, default-features = false }
 bevy_reflect = { workspace = true, default-features = false }
 bevy_render = { workspace = true, default-features = false }
 bevy_shader = { workspace = true, default-features = false }
@@ -41,6 +44,7 @@ bevy = { workspace = true, features = [
   "bevy_window",
   "bevy_winit",
   "debug",
+  "jpeg",
   "tonemapping_luts",
   "wayland",
   "zstd_rust",
