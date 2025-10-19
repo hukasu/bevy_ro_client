@@ -2,6 +2,8 @@ mod error;
 mod ground_mesh_cube;
 mod lightmap;
 mod surface;
+#[cfg(feature = "warning")]
+pub mod warnings;
 
 use std::io::Read;
 
