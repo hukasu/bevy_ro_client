@@ -75,7 +75,7 @@ struct WaterPlaneCache {
 fn build_water_plane(
     event: On<Insert, WaterPlaneBuilder>,
     mut commands: Commands,
-    water_plane_builders: Query<(&WaterPlaneBuilder, &Transform)>,
+    water_plane_builders: Query<&WaterPlaneBuilder>,
     mut water_plane_cache: ResMut<WaterPlaneCache>,
     mut meshes: ResMut<Assets<Mesh>>,
     water_planes: Res<Assets<WaterPlaneAsset>>,
@@ -86,8 +86,7 @@ fn build_water_plane(
         .entity(water_plane_builder_entity)
         .despawn_children();
 
-    let Ok((water_plane_builder, transform)) = water_plane_builders.get(water_plane_builder_entity)
-    else {
+    let Ok(water_plane_builder) = water_plane_builders.get(water_plane_builder_entity) else {
         unreachable!("WaterPlaneBuilder must be available.");
     };
     let Some(water_plane) = water_planes.get(water_plane_builder.water_plane.id()) else {
@@ -201,15 +200,14 @@ fn build_water_plane(
                 handle
             };
 
-            let plane_transform = Transform::from_translation(
-                transform.translation + Vec3::new(x_offset, 0., z_offset),
-            );
+            let plane_transform =
+                Transform::from_translation(Vec3::new(x_offset, water_plane.water_level, z_offset));
 
             commands.spawn((
                 Name::new(format!("Water Plane {x}/{z}")),
                 WaterPlane(water_plane_builder.water_plane.clone()),
                 Aabb {
-                    center: Vec3A::new(0., water_plane.water_level, 0.),
+                    center: Vec3A::new(0., 0., 0.),
                     half_extents: Vec3A::new(
                         0.5 * shape_width as f32,
                         water_plane.wave_height,
@@ -251,7 +249,6 @@ fn prepare_water_plane(
             let material = WaterPlaneMaterial {
                 texture: texture_array.clone(),
                 wave: Wave {
-                    water_level: water_plane.water_level,
                     wave_height: water_plane.wave_height,
                     wave_speed: water_plane.wave_speed,
                     wave_pitch: water_plane.wave_pitch,
