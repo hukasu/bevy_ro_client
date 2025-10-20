@@ -6,6 +6,7 @@ use bevy_log::{error, trace};
 use bevy_math::{Vec2, Vec3};
 use bevy_mesh::{Mesh, Mesh3d, PrimitiveTopology};
 use bevy_pbr::MeshMaterial3d;
+use bevy_ragnarok_water_plane::{WaterPlaneAsset, WaterPlaneBuilder};
 use bevy_render::{
     render_resource::{Extent3d, TextureDimension, TextureFormat},
     storage::ShaderStorageBuffer,
@@ -15,16 +16,8 @@ use bevy_transform::components::Transform;
 
 use ragnarok_gnd::{Error, Gnd, GroundMeshCube};
 use ragnarok_rebuild_bevy::{assets::paths, helper};
-use serde::{Deserialize, Serialize};
-
-use ragnarok_water_plane::WaterPlane;
 
 use crate::{Ground, assets::GndAsset, material::GndMaterial};
-
-#[derive(Debug, Default, Deserialize, Serialize)]
-pub struct AssetLoaderSettings {
-    pub water_plane: Option<WaterPlane>,
-}
 
 /// Asset loader for [`GndAsset`]
 ///
@@ -40,13 +33,13 @@ pub struct AssetLoader;
 
 impl bevy_asset::AssetLoader for AssetLoader {
     type Asset = GndAsset;
-    type Settings = AssetLoaderSettings;
+    type Settings = ();
     type Error = Error;
 
     async fn load(
         &self,
         reader: &mut dyn Reader,
-        settings: &Self::Settings,
+        _settings: &Self::Settings,
         load_context: &mut LoadContext<'_>,
     ) -> Result<Self::Asset, Self::Error> {
         trace!("Loading Gnd {:?}.", load_context.path());
@@ -57,8 +50,7 @@ impl bevy_asset::AssetLoader for AssetLoader {
 
         let mesh = Self::build_cubes(&gnd, load_context);
         let material = Self::build_ground_texture_atlas(&gnd, load_context).await;
-        let scene =
-            Self::build_scene(&gnd, mesh.clone(), material.clone(), settings, load_context).await;
+        let scene = Self::build_scene(&gnd, mesh.clone(), material.clone(), load_context).await;
 
         Ok(GndAsset {
             mesh,
@@ -77,7 +69,6 @@ impl AssetLoader {
         gnd: &Gnd,
         mesh: Handle<Mesh>,
         material: Handle<GndMaterial>,
-        _settings: &AssetLoaderSettings,
         load_context: &mut LoadContext<'_>,
     ) -> Handle<Scene> {
         let mut world = World::new();
@@ -90,6 +81,21 @@ impl AssetLoader {
             Transform::default(),
             Visibility::default(),
         ));
+        for (i, water_plane) in gnd.water_planes.iter().enumerate() {
+            world.spawn((
+                Name::new("WaterPlane".to_owned()),
+                WaterPlaneBuilder {
+                    width: gnd.width - 2,
+                    height: gnd.height - 2,
+                    water_plane: load_context.add_labeled_asset(
+                        format!("WaterPlane{i}"),
+                        WaterPlaneAsset::from(water_plane),
+                    ),
+                },
+                Transform::from_translation(Vec3::new(0., 0., 0.)),
+                Visibility::default(),
+            ));
+        }
 
         load_context.add_labeled_asset("Scene".to_owned(), Scene::new(world))
     }
