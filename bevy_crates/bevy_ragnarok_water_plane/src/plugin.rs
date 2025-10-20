@@ -188,3 +188,312 @@ fn build_texture_array(
         loading.remove(&water_type);
     }
 }
+
+/// Builds the [`Mesh`] for a shape.
+///
+/// The shape is encoded as a [`u16`] the 4 highest bits are the
+/// bottom row of a 4x4 cube, the following 4 bits are the next row, etc.
+///
+/// e.g., `0b1100110011000000` is
+/// ```ignore
+/// 0000
+/// 1100
+/// 1100
+/// 1100
+/// ```
+fn build_mesh(shape: u16) -> Mesh {
+    info!("Building mesh for shape {shape}");
+    let (width, height, u_offset, v_offset) = match shape {
+        0b1000000000000000 => (1u16, 1u16, 0., 0.),
+        0b1000100000000000 => (1, 2, 0., 0.),
+        0b1000100010000000 => (1, 3, 0., 0.),
+        0b1000100010001000 => (1, 4, 0., 0.),
+        0b1100000000000000 => (2, 1, 0., 0.),
+        0b1100110000000000 => (2, 2, 0., 0.),
+        0b1100110011000000 => (2, 3, 0., 0.),
+        0b1100110011001100 => (2, 4, 0., 0.),
+        0b1110000000000000 => (3, 1, 0., 0.),
+        0b1110111000000000 => (3, 2, 0., 0.),
+        0b1110111011100000 => (3, 3, 0., 0.),
+        0b1110111011101110 => (3, 4, 0., 0.),
+        0b1111000000000000 => (4, 1, 0., 0.),
+        0b1111111100000000 => (4, 2, 0., 0.),
+        0b1111111111110000 => (4, 3, 0., 0.),
+        0b1111111111111111 => (4, 4, 0., 0.),
+        0b0000000000001000 => (1, 1, 0., 0.75),
+        0b0000000010001000 => (1, 2, 0., 0.5),
+        0b0000100010001000 => (1, 3, 0., 0.25),
+        0b0000000000001100 => (2, 1, 0., 0.75),
+        0b0000000011001100 => (2, 2, 0., 0.5),
+        0b0000110011001100 => (2, 3, 0., 0.25),
+        0b0000000000001110 => (3, 1, 0., 0.75),
+        0b0000000011101110 => (3, 2, 0., 0.5),
+        0b0000111011101110 => (3, 3, 0., 0.25),
+        0b0000000000001111 => (4, 1, 0., 0.75),
+        0b0000000011111111 => (4, 2, 0., 0.5),
+        0b0000111111111111 => (4, 3, 0., 0.25),
+        0b0001000000000000 => (1, 1, 0.75, 0.),
+        0b0001000100000000 => (1, 2, 0.75, 0.),
+        0b0001000100010000 => (1, 3, 0.75, 0.),
+        0b0001000100010001 => (1, 4, 0.75, 0.),
+        0b0011000000000000 => (2, 1, 0.5, 0.),
+        0b0011001100000000 => (2, 2, 0.5, 0.),
+        0b0011001100110000 => (2, 3, 0.5, 0.),
+        0b0011001100110011 => (2, 4, 0.5, 0.),
+        0b0111000000000000 => (3, 1, 0.25, 0.),
+        0b0111011100000000 => (3, 2, 0.25, 0.),
+        0b0111011101110000 => (3, 3, 0.25, 0.),
+        0b0111011101110111 => (3, 4, 0.25, 0.),
+        0b0000000000000001 => (1, 1, 0.75, 0.75),
+        0b0000000000010001 => (1, 2, 0.75, 0.5),
+        0b0000000100010001 => (1, 3, 0.75, 0.25),
+        0b0000000000000011 => (2, 1, 0.5, 0.75),
+        0b0000000000110011 => (2, 2, 0.5, 0.5),
+        0b0000001100110011 => (2, 3, 0.5, 0.25),
+        0b0000000000000111 => (3, 1, 0.25, 0.75),
+        0b0000000001110111 => (3, 2, 0.25, 0.5),
+        0b0000011101110111 => (3, 3, 0.25, 0.25),
+        _ => unreachable!("{shape} is a invalid shape."),
+    };
+
+    let vertices = (0..=width)
+        .flat_map(|x| {
+            (0..=height).map(move |z| {
+                Vec3::new(
+                    -(width as f32 / 2.) + (x as f32),
+                    0.,
+                    -(height as f32 / 2.) + (z as f32),
+                )
+            })
+        })
+        .collect::<Vec<_>>();
+    let uvs = (0..=width)
+        .flat_map(|x| {
+            (0..=height)
+                .map(move |z| Vec2::new(u_offset + 0.25 * (x as f32), v_offset + 0.25 * (z as f32)))
+        })
+        .collect::<Vec<_>>();
+    let indices = (0..width)
+        .flat_map(|x| {
+            (0..height).flat_map(move |z| {
+                [
+                    x * (height + 1) + z,
+                    (x + 1) * (height + 1) + (z + 1),
+                    x * (height + 1) + (z + 1),
+                    (x + 1) * (height + 1) + (z + 1),
+                    x * (height + 1) + z,
+                    (x + 1) * (height + 1) + z,
+                ]
+            })
+        })
+        .collect::<Vec<_>>();
+
+    let mut mesh = Mesh::new(
+        PrimitiveTopology::TriangleList,
+        RenderAssetUsages::RENDER_WORLD,
+    );
+
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, vec![Vec3::NEG_Y; vertices.len()]);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, vertices);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+    mesh.insert_indices(Indices::U16(indices));
+
+    mesh
+}
+
+#[cfg(test)]
+mod tests {
+    use bevy_mesh::VertexAttributeValues;
+
+    use super::*;
+
+    #[expect(clippy::unwrap_used)]
+    #[test]
+    fn test_build_mesh() {
+        let mesh = build_mesh(0b1000000000000000);
+        assert_eq!(
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap(),
+            vec![
+                [-0.5, 0., -0.5],
+                [-0.5, 0., 0.5],
+                [0.5, 0., -0.5],
+                [0.5, 0., 0.5],
+            ]
+        );
+        let VertexAttributeValues::Float32x2(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        else {
+            panic!("Wrong values for uv");
+        };
+        assert_eq!(uvs, &vec![[0., 0.], [0., 0.25], [0.25, 0.], [0.25, 0.25]]);
+        let Indices::U16(indices) = mesh.indices().unwrap() else {
+            panic!("Wrong type of indices");
+        };
+        assert_eq!(indices, &vec![0, 3, 1, 3, 0, 2]);
+
+        let mesh = build_mesh(0b0001000000000000);
+        assert_eq!(
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap(),
+            vec![
+                [-0.5, 0., -0.5],
+                [-0.5, 0., 0.5],
+                [0.5, 0., -0.5],
+                [0.5, 0., 0.5],
+            ]
+        );
+        let VertexAttributeValues::Float32x2(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        else {
+            panic!("Wrong values for uv");
+        };
+        assert_eq!(uvs, &vec![[0.75, 0.], [0.75, 0.25], [1., 0.], [1., 0.25]]);
+
+        let mesh = build_mesh(0b0000000000001000);
+        assert_eq!(
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap(),
+            vec![
+                [-0.5, 0., -0.5],
+                [-0.5, 0., 0.5],
+                [0.5, 0., -0.5],
+                [0.5, 0., 0.5],
+            ]
+        );
+        let VertexAttributeValues::Float32x2(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        else {
+            panic!("Wrong values for uv");
+        };
+        assert_eq!(uvs, &vec![[0., 0.75], [0., 1.], [0.25, 0.75], [0.25, 1.]]);
+
+        let mesh = build_mesh(0b0000000000000001);
+        assert_eq!(
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap(),
+            vec![
+                [-0.5, 0., -0.5],
+                [-0.5, 0., 0.5],
+                [0.5, 0., -0.5],
+                [0.5, 0., 0.5],
+            ]
+        );
+        let VertexAttributeValues::Float32x2(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        else {
+            panic!("Wrong values for uv");
+        };
+        assert_eq!(uvs, &vec![[0.75, 0.75], [0.75, 1.], [1., 0.75], [1., 1.]]);
+
+        let mesh = build_mesh(0b0000000000110011);
+        assert_eq!(
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap(),
+            vec![
+                [-1., 0., -1.],
+                [-1., 0., 0.],
+                [-1., 0., 1.],
+                [0., 0., -1.],
+                [0., 0., 0.],
+                [0., 0., 1.],
+                [1., 0., -1.],
+                [1., 0., 0.],
+                [1., 0., 1.],
+            ]
+        );
+        let VertexAttributeValues::Float32x2(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        else {
+            panic!("Wrong values for uv");
+        };
+        assert_eq!(
+            uvs,
+            &vec![
+                [0.5, 0.5],
+                [0.5, 0.75],
+                [0.5, 1.],
+                [0.75, 0.5],
+                [0.75, 0.75],
+                [0.75, 1.],
+                [1., 0.5],
+                [1., 0.75],
+                [1., 1.],
+            ]
+        );
+
+        let mesh = build_mesh(0b1111111111111111);
+        assert_eq!(
+            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
+                .unwrap()
+                .as_float3()
+                .unwrap(),
+            vec![
+                [-2., 0., -2.],
+                [-2., 0., -1.],
+                [-2., 0., 0.],
+                [-2., 0., 1.],
+                [-2., 0., 2.],
+                [-1., 0., -2.],
+                [-1., 0., -1.],
+                [-1., 0., 0.],
+                [-1., 0., 1.],
+                [-1., 0., 2.],
+                [0., 0., -2.],
+                [0., 0., -1.],
+                [0., 0., 0.],
+                [0., 0., 1.],
+                [0., 0., 2.],
+                [1., 0., -2.],
+                [1., 0., -1.],
+                [1., 0., 0.],
+                [1., 0., 1.],
+                [1., 0., 2.],
+                [2., 0., -2.],
+                [2., 0., -1.],
+                [2., 0., 0.],
+                [2., 0., 1.],
+                [2., 0., 2.],
+            ]
+        );
+        let VertexAttributeValues::Float32x2(uvs) = mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap()
+        else {
+            panic!("Wrong values for uv");
+        };
+        assert_eq!(
+            uvs,
+            &vec![
+                [0., 0.],
+                [0., 0.25],
+                [0., 0.5],
+                [0., 0.75],
+                [0., 1.],
+                [0.25, 0.],
+                [0.25, 0.25],
+                [0.25, 0.5],
+                [0.25, 0.75],
+                [0.25, 1.],
+                [0.5, 0.],
+                [0.5, 0.25],
+                [0.5, 0.5],
+                [0.5, 0.75],
+                [0.5, 1.],
+                [0.75, 0.],
+                [0.75, 0.25],
+                [0.75, 0.5],
+                [0.75, 0.75],
+                [0.75, 1.],
+                [1., 0.],
+                [1., 0.25],
+                [1., 0.5],
+                [1., 0.75],
+                [1., 1.],
+            ]
+        );
+    }
+}
