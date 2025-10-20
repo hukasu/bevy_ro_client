@@ -75,7 +75,11 @@ impl AssetLoader {
 
         world.spawn((
             Name::new("Ground".to_owned()),
-            Ground { scale: gnd.scale },
+            Ground {
+                width: gnd.width,
+                height: gnd.height,
+                scale: gnd.scale,
+            },
             Mesh3d(mesh),
             MeshMaterial3d(material),
             Transform::default(),

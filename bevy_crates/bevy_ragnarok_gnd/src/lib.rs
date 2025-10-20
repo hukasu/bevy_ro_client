@@ -11,6 +11,8 @@ use bevy_reflect::Reflect;
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]
 pub struct Ground {
+    pub width: u32,
+    pub height: u32,
     /// This is the unit length of a ground cube.
     /// Each ground cube contains 2x2 tiles.
     pub scale: f32,
