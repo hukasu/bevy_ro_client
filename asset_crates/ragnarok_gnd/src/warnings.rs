@@ -21,7 +21,20 @@ impl Deref for GndWarning<'_> {
 }
 
 impl Display for GndWarning<'_> {
-    fn fmt(&self, _f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        self.report_dimensions(f)?;
+        Ok(())
+    }
+}
+
+impl GndWarning<'_> {
+    fn report_dimensions(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if !self.width.is_multiple_of(2) {
+            writeln!(f, "width is not multiple of 2. {}", self.width)?;
+        }
+        if !self.height.is_multiple_of(2) {
+            writeln!(f, "height is not multiple of 2. {}", self.width)?;
+        }
         Ok(())
     }
 }
