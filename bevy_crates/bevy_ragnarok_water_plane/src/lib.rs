@@ -3,6 +3,8 @@
 pub mod material;
 pub mod plugin;
 
+use std::borrow::Borrow;
+
 use bevy_asset::{Asset, Handle, ReflectAsset};
 use bevy_derive::Deref;
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
@@ -41,8 +43,9 @@ pub struct WaterPlaneAsset {
     pub texture_cyclical_interval: i32,
 }
 
-impl From<ragnarok_water_plane::WaterPlane> for WaterPlaneAsset {
-    fn from(value: ragnarok_water_plane::WaterPlane) -> Self {
+impl<T: Borrow<ragnarok_water_plane::WaterPlane>> From<T> for WaterPlaneAsset {
+    fn from(value: T) -> Self {
+        let value = value.borrow();
         Self {
             water_level: value.water_level,
             water_type: value.water_type,
