@@ -1,28 +1,33 @@
 use std::borrow::Cow;
 
 use bevy_app::{App, PreUpdate};
-use bevy_asset::{AssetServer, Assets, Handle, RenderAssetUsages, uuid_handle};
-use bevy_camera::primitives::Aabb;
+use bevy_asset::{AssetApp, AssetServer, Assets, Handle, RenderAssetUsages};
+use bevy_camera::{primitives::Aabb, visibility::Visibility};
 use bevy_ecs::{
     entity::Entity,
+    event::EntityEvent,
+    hierarchy::ChildOf,
+    lifecycle::Insert,
+    name::Name,
+    observer::On,
     query::Without,
     resource::Resource,
     schedule::IntoScheduleConfigs,
-    system::{Commands, Populated, Res, ResMut},
+    system::{Commands, Populated, Query, Res, ResMut},
 };
 use bevy_image::Image;
-use bevy_math::{Vec2, Vec3, Vec3A, primitives::Plane3d};
-use bevy_mesh::{Mesh, Mesh3d, MeshBuilder, Meshable};
+use bevy_log::trace;
+use bevy_math::{Vec2, Vec3, Vec3A};
+use bevy_mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology};
 use bevy_pbr::MeshMaterial3d;
 use bevy_platform::collections::HashMap;
 use bevy_render::render_resource::{Extent3d, TextureDimension, TextureFormat};
+use bevy_transform::components::Transform;
 
 use crate::{
-    WaterPlane,
+    WaterPlane, WaterPlaneAsset, WaterPlaneBuilder,
     material::{self, WaterPlaneMaterial, Wave},
 };
-
-const WATER_PLANE_MESH: Handle<Mesh> = uuid_handle!("7a77a34b-40ea-42ec-b935-1b57b38b17d7");
 
 pub struct Plugin {
     pub texture_prefix: Cow<'static, str>,
@@ -30,67 +35,216 @@ pub struct Plugin {
 
 impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(WaterPlaneTypeImages {
+        app.insert_resource(WaterPlaneCache {
             prefix: self.texture_prefix.clone(),
             materials: Default::default(),
             images: Default::default(),
             loading: Default::default(),
+            meshes: Default::default(),
         });
+
+        // Assets
+        app.init_asset::<WaterPlaneAsset>();
 
         // Systems
         app.add_systems(
             PreUpdate,
             (build_texture_array, prepare_water_plane).chain(),
         );
+        app.add_observer(build_water_plane);
 
         // Material
         app.add_plugins(material::plugin::Plugin);
 
         // Register Types
         app.register_type::<WaterPlane>();
-    }
-
-    fn finish(&self, app: &mut App) {
-        if let Err(err) = app.world_mut().resource_mut::<Assets<Mesh>>().insert(
-            &WATER_PLANE_MESH,
-            Plane3d::new(Vec3::NEG_Y, Vec2::splat(0.5))
-                .mesh()
-                .subdivisions(4)
-                .build(),
-        ) {
-            unreachable!("Should never error for Uuid handles. `{err}`");
-        };
+        app.register_type::<WaterPlaneBuilder>();
+        app.register_asset_reflect::<WaterPlaneAsset>();
     }
 }
 
 #[derive(Resource)]
-struct WaterPlaneTypeImages {
+struct WaterPlaneCache {
     prefix: Cow<'static, str>,
     materials: HashMap<i32, Handle<WaterPlaneMaterial>>,
     images: HashMap<i32, Handle<Image>>,
     loading: HashMap<i32, [Handle<Image>; 32]>,
+    meshes: HashMap<u16, Handle<Mesh>>,
+}
+
+fn build_water_plane(
+    event: On<Insert, WaterPlaneBuilder>,
+    mut commands: Commands,
+    water_plane_builders: Query<(&WaterPlaneBuilder, &Transform)>,
+    mut water_plane_cache: ResMut<WaterPlaneCache>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    water_planes: Res<Assets<WaterPlaneAsset>>,
+) {
+    let water_plane_builder_entity = event.event_target();
+
+    commands
+        .entity(water_plane_builder_entity)
+        .despawn_children();
+
+    let Ok((water_plane_builder, transform)) = water_plane_builders.get(water_plane_builder_entity)
+    else {
+        unreachable!("WaterPlaneBuilder must be available.");
+    };
+    let Some(water_plane) = water_planes.get(water_plane_builder.water_plane.id()) else {
+        unreachable!("WaterPlaneBuilder must hold a valid handle.");
+    };
+
+    let (width, width_aligned) = if (water_plane_builder.width / 2) % 4 == 0 {
+        (water_plane_builder.width / 4, true)
+    } else {
+        (water_plane_builder.width.div_ceil(8) * 2, false)
+    };
+    let (height, height_aligned) = if (water_plane_builder.height / 2) % 4 == 0 {
+        (water_plane_builder.height / 4, true)
+    } else {
+        (water_plane_builder.height.div_ceil(8) * 2, false)
+    };
+
+    for x in 0..width {
+        let (bottom_row_shape, shape_width, x_offset) = if x == 0 && !width_aligned {
+            let base = 0b0001000000000000;
+            let mut shape = base;
+            let shape_width = (water_plane_builder.width / 2) % 4;
+            for _ in 0..(shape_width - 1) {
+                shape <<= 1;
+                shape |= base;
+            }
+
+            (
+                shape,
+                shape_width,
+                -4. * ((width - 2) / 2) as f32 - shape_width as f32 * 0.5,
+            )
+        } else if x == width - 1 && !width_aligned {
+            let base = 0b1000000000000000;
+            let mut shape = base;
+            let shape_width = (water_plane_builder.width / 2) % 4;
+            for _ in 0..(shape_width - 1) {
+                shape >>= 1;
+                shape |= base;
+            }
+
+            (
+                shape,
+                shape_width,
+                4. * ((width - 2) / 2) as f32 + shape_width as f32 * 0.5,
+            )
+        } else {
+            let x_offset = if x >= width / 2 {
+                (x - (width / 2)) as f32 * 4. + 2.
+            } else {
+                ((width / 2) - x) as f32 * -4. + 2.
+            };
+
+            (0b1111000000000000, 4, x_offset)
+        };
+
+        for z in 0..height {
+            let (shape, shape_height, z_offset) = if z == 0 && !height_aligned {
+                let base = bottom_row_shape >> 12;
+                let mut shape = base;
+                let shape_height = (water_plane_builder.height / 2) % 4;
+                for _ in 0..(shape_height - 1) {
+                    shape <<= 4;
+                    shape |= base;
+                }
+
+                (
+                    shape,
+                    shape_height,
+                    -4. * ((height - 2) / 2) as f32 - shape_height as f32 * 0.5,
+                )
+            } else if z == height - 1 && !height_aligned {
+                let base = bottom_row_shape;
+                let mut shape = base;
+                let shape_height = (water_plane_builder.height / 2) % 4;
+                for _ in 0..(shape_height - 1) {
+                    shape >>= 4;
+                    shape |= base;
+                }
+
+                (
+                    shape,
+                    shape_height,
+                    4. * ((height - 2) / 2) as f32 + shape_height as f32 * 0.5,
+                )
+            } else {
+                let base = bottom_row_shape;
+                let mut shape = base;
+                let shape_height = 4;
+                for _ in 0..(shape_height - 1) {
+                    shape >>= 4;
+                    shape |= base;
+                }
+
+                let z_offset = if z >= height / 2 {
+                    (z - (height / 2)) as f32 * 4. + 2.
+                } else {
+                    ((height / 2) - z) as f32 * -4. + 2.
+                };
+
+                (shape, shape_height, z_offset)
+            };
+
+            trace!("WaterPlane {x}/{z} requests shape {shape}");
+            let mesh = if let Some(mesh) = water_plane_cache.meshes.get(&shape) {
+                mesh.clone()
+            } else {
+                let mesh = build_mesh(shape);
+                let handle = meshes.add(mesh);
+                water_plane_cache.meshes.insert(shape, handle.clone());
+                handle
+            };
+
+            let plane_transform = Transform::from_translation(
+                transform.translation + Vec3::new(x_offset, 0., z_offset),
+            );
+
+            commands.spawn((
+                Name::new(format!("Water Plane {x}/{z}")),
+                WaterPlane(water_plane_builder.water_plane.clone()),
+                Aabb {
+                    center: Vec3A::new(0., water_plane.water_level, 0.),
+                    half_extents: Vec3A::new(
+                        0.5 * shape_width as f32,
+                        water_plane.wave_height,
+                        0.5 * shape_height as f32,
+                    ),
+                },
+                Mesh3d(mesh),
+                plane_transform,
+                Visibility::default(),
+                ChildOf(water_plane_builder_entity),
+            ));
+        }
+    }
 }
 
 fn prepare_water_plane(
     mut commands: Commands,
     water_planes: Populated<(Entity, &WaterPlane), Without<MeshMaterial3d<WaterPlaneMaterial>>>,
     asset_server: Res<AssetServer>,
+    water_plane_assets: Res<Assets<WaterPlaneAsset>>,
     mut water_plane_materials: ResMut<Assets<WaterPlaneMaterial>>,
-    mut water_plane_type_images: ResMut<WaterPlaneTypeImages>,
+    mut water_plane_type_images: ResMut<WaterPlaneCache>,
 ) {
     for (entity, water_plane) in water_planes.into_inner() {
+        let Some(water_plane) = water_plane_assets.get(water_plane.0.id()) else {
+            continue;
+        };
+
         if let Some(water_plane_material) = water_plane_type_images
             .materials
             .get(&water_plane.water_type)
         {
-            commands.entity(entity).insert((
-                Mesh3d(WATER_PLANE_MESH.clone()),
-                MeshMaterial3d(water_plane_material.clone()),
-                Aabb {
-                    center: Vec3A::new(0., water_plane.water_level, 0.),
-                    half_extents: Vec3A::new(0.5, water_plane.wave_height, 0.5),
-                },
-            ));
+            commands
+                .entity(entity)
+                .insert(MeshMaterial3d(water_plane_material.clone()));
         } else if let Some(texture_array) =
             water_plane_type_images.images.get(&water_plane.water_type)
         {
@@ -116,11 +270,12 @@ fn prepare_water_plane(
             .loading
             .contains_key(&water_plane.water_type)
         {
-            let WaterPlaneTypeImages {
+            let WaterPlaneCache {
                 prefix,
                 materials: _,
                 images: _,
                 loading,
+                meshes: _,
             } = water_plane_type_images.as_mut();
             loading.insert(
                 water_plane.water_type,
@@ -136,14 +291,15 @@ fn prepare_water_plane(
 }
 
 fn build_texture_array(
-    mut water_plane_type_images: ResMut<WaterPlaneTypeImages>,
+    mut water_plane_type_images: ResMut<WaterPlaneCache>,
     mut images: ResMut<Assets<Image>>,
 ) {
-    let WaterPlaneTypeImages {
+    let WaterPlaneCache {
         prefix: _,
         materials: _,
         images: water_plane_texture_array,
         loading,
+        meshes: _,
     } = water_plane_type_images.as_mut();
 
     let mut completed: Vec<i32> = vec![];
@@ -202,7 +358,7 @@ fn build_texture_array(
 /// 1100
 /// ```
 fn build_mesh(shape: u16) -> Mesh {
-    info!("Building mesh for shape {shape}");
+    trace!("Building mesh for shape {shape}");
     let (width, height, u_offset, v_offset) = match shape {
         0b1000000000000000 => (1u16, 1u16, 0., 0.),
         0b1000100000000000 => (1, 2, 0., 0.),

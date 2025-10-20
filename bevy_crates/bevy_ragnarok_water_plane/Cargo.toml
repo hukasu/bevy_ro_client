@@ -18,6 +18,7 @@ ragnarok_water_plane = { workspace = true }
 bevy_app = { workspace = true, default-features = false }
 bevy_asset = { workspace = true, default-features = false }
 bevy_camera = { workspace = true, default-features = false }
+bevy_derive = { workspace = true, default-features = false }
 bevy_ecs = { workspace = true, default-features = false }
 bevy_image = { workspace = true, default-features = false }
 bevy_log = { workspace = true, default-features = false }
