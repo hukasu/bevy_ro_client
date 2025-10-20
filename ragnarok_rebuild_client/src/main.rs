@@ -131,5 +131,8 @@ impl bevy::app::PluginGroup for ClientPlugins {
             .add(bevy_ragnarok_spr::plugin::Plugin)
             .add(bevy_ragnarok_camera::plugin::Plugin)
             .add(bevy_ragnarok_quad_tree::plugin::Plugin)
+            .add(bevy_ragnarok_water_plane::plugin::Plugin {
+                texture_prefix: paths::WATER_TEXTURE_FILES_FOLDER.into(),
+            })
     }
 }

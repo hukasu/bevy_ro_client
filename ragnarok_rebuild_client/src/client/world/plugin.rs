@@ -5,10 +5,11 @@ use bevy::state::state::State;
 use bevy::{
     app::{AppExit, PreUpdate},
     asset::{AssetServer, Handle, RecursiveDependencyLoadState},
+    camera::visibility::Visibility,
     ecs::{
         component::Component,
         entity::Entity,
-        hierarchy::Children,
+        hierarchy::{ChildOf, Children},
         lifecycle::{Add, Remove},
         name::NameOrEntity,
         observer::On,
@@ -32,6 +33,7 @@ use bevy_ragnarok_rsw::{
     },
     Altitude, AnimatedProp, Ground, World,
 };
+use bevy_ragnarok_water_plane::WaterPlaneBuilder;
 
 use crate::client::{
     world::{ChangeMap, MapChangeStates, WorldOfGame},
@@ -71,6 +73,10 @@ impl bevy::app::Plugin for Plugin {
         app.add_systems(
             OnEnter(MapChangeStates::LoadingAltitude),
             load_altitude.in_set(WorldSystems::Loading),
+        );
+        app.add_systems(
+            OnEnter(MapChangeStates::LoadingRswWaterPlane),
+            load_rsw_water_plane.in_set(WorldSystems::Loading),
         );
         app.add_systems(
             OnEnter(MapChangeStates::LoadingModels),
@@ -170,6 +176,29 @@ fn load_altitude(
             },
         )));
 }
+/// Load [`WaterPlane`](bevy_ragnarok_water_plane::WaterPlane) of [`World`]
+fn load_rsw_water_plane(
+    mut commands: Commands,
+    world: Single<(NameOrEntity, &World), With<World>>,
+    ground: Single<&GndGround>,
+) {
+    let (world_entity, world) = world.into_inner();
+
+    if let Some(water_plane) = &world.water_plane {
+        commands.spawn((
+            ChildOf(world_entity.entity),
+            WaterPlaneBuilder {
+                width: ground.width - 4,
+                height: ground.height - 4,
+                water_plane: water_plane.clone(),
+            },
+            Transform::from_scale(Vec3::new(ground.scale, 1., ground.scale)),
+            Visibility::default(),
+        ));
+    }
+
+    commands.set_state(MapChangeStates::LoadingModels);
+}
 
 /// Load models of [`World`]
 fn load_models(
@@ -257,7 +286,7 @@ fn wait_altitude_scene(
     mut scene_spawner: ResMut<SceneSpawner>,
 ) {
     if altitudes.is_empty() {
-        commands.set_state(MapChangeStates::LoadingModels);
+        commands.set_state(MapChangeStates::LoadingRswWaterPlane);
         return;
     }
 

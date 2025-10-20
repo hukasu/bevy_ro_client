@@ -5146,6 +5146,7 @@ dependencies = [
  "bevy_ragnarok_rsm",
  "bevy_ragnarok_rsw",
  "bevy_ragnarok_spr",
+ "bevy_ragnarok_water_plane",
  "ragnarok_rebuild_bevy",
  "ragnarok_rebuild_common",
  "serde",

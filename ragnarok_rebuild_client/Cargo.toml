@@ -38,6 +38,7 @@ bevy_ragnarok_spr = { workspace = true }
 
 bevy_ragnarok_camera = { workspace = true }
 bevy_ragnarok_quad_tree = { workspace = true }
+bevy_ragnarok_water_plane = { workspace = true }
 
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
