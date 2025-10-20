@@ -8,6 +8,7 @@ use std::borrow::Cow;
 use bevy_asset::Handle;
 use bevy_audio::AudioSource;
 use bevy_ecs::{component::Component, reflect::ReflectComponent};
+use bevy_ragnarok_water_plane::WaterPlaneAsset;
 use bevy_reflect::Reflect;
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
@@ -20,7 +21,9 @@ use bevy_transform::components::Transform;
 /// multiple [`AnimatedProp`],
 /// multiple [`PointLight`](bevy_pbr::PointLight),
 /// and multiple [`EnvironmentalSounds`](crate::EnvironmentalSound)
-pub struct World;
+pub struct World {
+    pub water_plane: Option<Handle<WaterPlaneAsset>>,
+}
 
 #[derive(Debug, Component, Reflect)]
 #[reflect(Component)]

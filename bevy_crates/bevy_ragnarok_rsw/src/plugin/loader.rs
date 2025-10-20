@@ -14,6 +14,7 @@ use bevy_ecs::{
 use bevy_light::{AmbientLight, DirectionalLight, PointLight};
 use bevy_math::{EulerRot, Quat, Vec3, Vec3A};
 use bevy_ragnarok_quad_tree::QuadTreeNode;
+use bevy_ragnarok_water_plane::WaterPlaneAsset;
 use bevy_scene::Scene;
 use bevy_time::Timer;
 use bevy_transform::components::Transform;
@@ -32,6 +33,8 @@ use crate::{
 ///
 /// * `Scene`: [`Scene`](bevy_scene::Scene) = Scene containing all objects represented
 ///   by the [`Rsw`].
+/// * `WaterPlane`: [`WaterPlaneAsset`] = Water plane from the [`Rsw`]. On newer version
+///   of [`Rsw`] this is not available.
 pub struct AssetLoader {
     /// Prefix for .wav files
     pub sound_path_prefix: PathBuf,
@@ -93,7 +96,14 @@ impl AssetLoader {
         let rsw_world = world
             .spawn((
                 Name::new(filename.to_string()),
-                World,
+                World {
+                    water_plane: rsw.water_configuration.map(|water_plane| {
+                        load_context.add_labeled_asset(
+                            "WaterPlane".to_owned(),
+                            WaterPlaneAsset::from(water_plane),
+                        )
+                    }),
+                },
                 Transform::default(),
                 Visibility::default(),
             ))

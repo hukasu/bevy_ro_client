@@ -1527,6 +1527,7 @@ dependencies = [
  "bevy_pbr",
  "bevy_platform",
  "bevy_ragnarok_quad_tree",
+ "bevy_ragnarok_water_plane",
  "bevy_reflect",
  "bevy_render",
  "bevy_scene",
