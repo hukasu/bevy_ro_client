@@ -23,6 +23,7 @@ impl Deref for GndWarning<'_> {
 impl Display for GndWarning<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.report_dimensions(f)?;
+        self.report_surfaces(f)?;
         Ok(())
     }
 }
@@ -34,6 +35,15 @@ impl GndWarning<'_> {
         }
         if !self.height.is_multiple_of(2) {
             writeln!(f, "height is not multiple of 2. {}", self.width)?;
+        }
+        Ok(())
+    }
+
+    fn report_surfaces(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (i, surface) in self.surfaces.iter().enumerate() {
+            if usize::from(surface.texture_id) >= self.textures.len() {
+                writeln!(f, "Surface {i} has invalid texture. {}", surface.texture_id)?;
+            }
         }
         Ok(())
     }
