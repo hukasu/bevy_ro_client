@@ -117,7 +117,9 @@ impl bevy::app::PluginGroup for ClientPlugins {
                 audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
             })
             .add(bevy_ragnarok_gat::plugin::Plugin)
-            .add(bevy_ragnarok_gnd::plugin::Plugin)
+            .add(bevy_ragnarok_gnd::plugin::Plugin {
+                texture_prefix: paths::TEXTURE_FILES_FOLDER.into(),
+            })
             .add(bevy_ragnarok_pal::plugin::Plugin)
             .add(bevy_ragnarok_rsm::plugin::Plugin {
                 texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
