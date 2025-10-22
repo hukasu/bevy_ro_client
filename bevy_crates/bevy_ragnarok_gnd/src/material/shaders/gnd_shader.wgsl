@@ -137,7 +137,7 @@ fn vertex(
     return vertex_output;
 }
 
-#ifndef PREPASS_PIPELINE
+#ifdef MESH_PIPELINE
 @fragment
 fn fragment(
     in: VertexOutput,
@@ -164,10 +164,6 @@ fn fragment(
     // alpha discard
     pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
 
-#ifdef PREPASS_PIPELINE
-    // in deferred mode we can't modify anything after that, as lighting is run in a separate fullscreen shader.
-    let out = deferred_output(in, pbr_input);
-#else
     var out: FragmentOutput;
     // apply lighting
     out.color = apply_pbr_lighting(pbr_input);
@@ -175,11 +171,10 @@ fn fragment(
     // apply in-shader post processing (fog, alpha-premultiply, and also tonemapping, debanding if the camera is non-hdr)
     // note this does not include fullscreen postprocessing effects like bloom.
     out.color = main_pass_post_lighting_processing(pbr_input, out.color);
-#endif
 
     return out;
 }
-#endif // PREPASS_PIPELINE
+#endif // MESH_PIPELINE
 
 #ifdef PREPASS_PIPELINE
 #ifdef PREPASS_FRAGMENT
