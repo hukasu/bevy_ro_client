@@ -146,4 +146,100 @@ impl Gnd {
                 .collect())
         }
     }
+
+    /// Return the heights of the top face.
+    ///
+    /// The order is
+    /// ```ignore
+    /// 2 ----- 3
+    /// |       |
+    /// |       |
+    /// 0 ----- 1
+    /// ```
+    pub fn get_top_face_heights(&self, x: usize, z: usize) -> Option<[f32; 4]> {
+        let Ok(width) = usize::try_from(self.width) else {
+            unreachable!("Width must fit on usize");
+        };
+        let Ok(height) = usize::try_from(self.height) else {
+            unreachable!("Height must fit on usize");
+        };
+
+        if x >= width || z >= height {
+            return None;
+        }
+
+        let cube = &self.ground_mesh_cubes[x + z * width];
+        Some([
+            cube.bottom_left_height,
+            cube.bottom_right_height,
+            cube.top_left_height,
+            cube.top_right_height,
+        ])
+    }
+
+    /// Return the heights of the east face.
+    ///
+    /// The order is
+    /// ```ignore
+    ///           3
+    ///          /|
+    /// + ----- 2 |
+    /// |       | 1
+    /// |       |/
+    /// + ----- 0
+    /// ```
+    pub fn get_east_face_heights(&self, x: usize, z: usize) -> Option<[f32; 4]> {
+        let Ok(width) = usize::try_from(self.width) else {
+            unreachable!("Width must fit on usize");
+        };
+        let Ok(height) = usize::try_from(self.height) else {
+            unreachable!("Height must fit on usize");
+        };
+
+        if x + 1 >= width || z >= height {
+            return None;
+        }
+
+        let cur_cube = &self.ground_mesh_cubes[x + z * width];
+        let east_cube = &self.ground_mesh_cubes[(x + 1) + z * width];
+        Some([
+            cur_cube.bottom_right_height,
+            east_cube.bottom_left_height,
+            cur_cube.top_right_height,
+            east_cube.top_left_height,
+        ])
+    }
+
+    /// Return the heights of the north face.
+    ///
+    /// The order is
+    /// ```ignore
+    ///   2 ----- 3
+    ///  /       /|
+    /// 0 ----- 1 |
+    /// |       | +
+    /// |       |/
+    /// + ----- +
+    /// ```
+    pub fn get_north_face_heights(&self, x: usize, z: usize) -> Option<[f32; 4]> {
+        let Ok(width) = usize::try_from(self.width) else {
+            unreachable!("Width must fit on usize");
+        };
+        let Ok(height) = usize::try_from(self.height) else {
+            unreachable!("Height must fit on usize");
+        };
+
+        if x >= width || z + 1 >= height {
+            return None;
+        }
+
+        let cur_cube = &self.ground_mesh_cubes[x + z * width];
+        let north_cube = &self.ground_mesh_cubes[x + (z + 1) * width];
+        Some([
+            cur_cube.top_left_height,
+            cur_cube.top_right_height,
+            north_cube.bottom_left_height,
+            north_cube.bottom_right_height,
+        ])
+    }
 }
