@@ -151,7 +151,6 @@ impl AssetLoader {
                                 top_left: cube_heights[2],
                                 top_right: cube_heights[3],
                                 surface_id: u32::try_from(surface_id).unwrap_or(u32::MAX),
-                                texture_id: u32::from(surface.texture_id),
                                 surfaces: surfaces.clone(),
                                 texture: textures[usize::from(surface.texture_id)].clone(),
                             },

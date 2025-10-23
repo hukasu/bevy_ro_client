@@ -43,7 +43,6 @@ pub struct GndMaterial {
     pub top_left: f32,
     pub top_right: f32,
     pub surface_id: u32,
-    pub texture_id: u32,
     #[storage(1, binding_array(11), read_only)]
     pub surfaces: Handle<ShaderStorageBuffer>,
     #[texture(2)]
@@ -102,7 +101,6 @@ pub struct GndCubeFace {
     pub top_left: f32,
     pub top_right: f32,
     pub surface_id: u32,
-    pub texture_id: u32,
 }
 
 impl AsBindGroupShaderType<GndCubeFace> for GndMaterial {
@@ -113,7 +111,6 @@ impl AsBindGroupShaderType<GndCubeFace> for GndMaterial {
             top_left: self.top_left,
             top_right: self.top_right,
             surface_id: self.surface_id,
-            texture_id: self.texture_id,
         }
     }
 }

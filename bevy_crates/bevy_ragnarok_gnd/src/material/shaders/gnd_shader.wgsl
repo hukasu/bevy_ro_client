@@ -28,7 +28,6 @@ struct GndCubeFace {
     top_left: f32,
     top_right: f32,
     surface_id: u32,
-    texture_id: u32,
 }
 
 struct GndSurface {
