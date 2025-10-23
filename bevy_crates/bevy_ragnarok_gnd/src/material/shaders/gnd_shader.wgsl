@@ -27,7 +27,6 @@ struct GndCubeFace {
     bottom_right: f32,
     top_left: f32,
     top_right: f32,
-    surface_id: u32,
 }
 
 struct GndSurface {
@@ -40,22 +39,25 @@ struct GndSurface {
 #ifdef BINDLESS
 
 struct GndBindings {
-    cube_face: u32,
-    surface: u32,
     texture: u32,
     texture_sampler: u32,
+    cube_face: u32,
+    surface_id: u32,
+    surface: u32,
 }
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<storage> gnd_bindings: array<GndBindings>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(10) var<storage> gnd_cube_faces: array<GndCubeFace>;
-@group(#{MATERIAL_BIND_GROUP}) @binding(11) var<storage> gnd_surfaces: array<GndSurface>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(11) var<storage> gnd_surface_ids: array<u32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(12) var<storage> gnd_surfaces: array<GndSurface>;
 
 #else // BINDLESS
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> gnd_cube_face: GndCubeFace;
-@group(#{MATERIAL_BIND_GROUP}) @binding(1) var<storage> gnd_surface: array<GndSurface>;
-@group(#{MATERIAL_BIND_GROUP}) @binding(2) var gnd_texture: texture_2d<f32>;
-@group(#{MATERIAL_BIND_GROUP}) @binding(3) var gnd_texture_sampler: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var gnd_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var gnd_texture_sampler: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var<uniform> gnd_cube_face: GndCubeFace;
+@group(#{MATERIAL_BIND_GROUP}) @binding(3) var<storage> gnd_surface_ids: array<u32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(4) var<storage> gnd_surfaces: array<GndSurface>;
 
 #endif // BINDLESS
 
@@ -80,13 +82,16 @@ fn vertex(
     var vertex_output: VertexOutput;
 
     let first_vertex_index = mesh[in.instance_index].first_vertex_index;
+    let tag = mesh[in.instance_index].tag;
 #ifdef BINDLESS
     let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
     let cube_face = gnd_cube_faces[gnd_bindings[slot].cube_face];
-    let surface = gnd_surfaces[gnd_bindings[slot].surface + cube_face.surface_id];
+    let surface_id = gnd_surface_ids[gnd_bindings[slot].surface_id + tag];
+    let surface = gnd_surfaces[gnd_bindings[slot].surface + surface_id];
 #else // BINDLESS
     let cube_face = gnd_cube_face;
-    let surface = gnd_surface[cube_face.surface_id];
+    let surface_id = gnd_surface_ids[tag];
+    let surface = gnd_surfaces[surface_id];
 #endif // BINDLESS
 
 #ifdef MORPH_TARGETS

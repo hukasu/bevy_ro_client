@@ -35,20 +35,21 @@ impl bevy_app::Plugin for Plugin {
 }
 
 #[derive(Clone, Asset, Reflect, AsBindGroup)]
-#[data(0, GndCubeFace, binding_array(10))]
-#[bindless(index_table(range(0..4)))]
+#[data(2, GndCubeFace, binding_array(10))]
+#[bindless(index_table(range(0..5)))]
 pub struct GndMaterial {
+    #[texture(0)]
+    #[sampler(1)]
+    #[dependency]
+    pub texture: Handle<Image>,
     pub bottom_left: f32,
     pub bottom_right: f32,
     pub top_left: f32,
     pub top_right: f32,
-    pub surface_id: u32,
-    #[storage(1, binding_array(11), read_only)]
+    #[storage(3, binding_array(11), read_only)]
+    pub surface_ids: Handle<ShaderStorageBuffer>,
+    #[storage(4, binding_array(12), read_only)]
     pub surfaces: Handle<ShaderStorageBuffer>,
-    #[texture(2)]
-    #[sampler(3)]
-    #[dependency]
-    pub texture: Handle<Image>,
 }
 
 impl Material for GndMaterial {
@@ -100,7 +101,6 @@ pub struct GndCubeFace {
     pub bottom_right: f32,
     pub top_left: f32,
     pub top_right: f32,
-    pub surface_id: u32,
 }
 
 impl AsBindGroupShaderType<GndCubeFace> for GndMaterial {
@@ -110,7 +110,6 @@ impl AsBindGroupShaderType<GndCubeFace> for GndMaterial {
             bottom_right: self.bottom_right,
             top_left: self.top_left,
             top_right: self.top_right,
-            surface_id: self.surface_id,
         }
     }
 }

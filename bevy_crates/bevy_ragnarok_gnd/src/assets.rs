@@ -15,6 +15,12 @@ pub struct GndAsset {
     pub scene: Handle<Scene>,
     /// Handles to texture [`Image`]
     pub textures: Vec<Handle<Image>>,
+    /// Handle to [`ShaderStorageBuffer`] built from
+    /// [`GroundMeshCubes::upwards_facing_surface`](ragnarok_gnd::GroundMeshCube::upwards_facing_surface),
+    /// [`GroundMeshCubes::east_facing_surface`](ragnarok_gnd::GroundMeshCube::east_facing_surface), and
+    /// [`GroundMeshCubes::north_facing_surface`](ragnarok_gnd::GroundMeshCube::north_facing_surface),
+    /// in this order.
+    pub surface_ids: Handle<ShaderStorageBuffer>,
     /// Handle to [`ShaderStorageBuffer`] built from [`Gnd::surfaces`](ragnarok_gnd::Gnd::surfaces)
     pub surfaces: Handle<ShaderStorageBuffer>,
     /// Materials built from [`Gnd::surfaces`](ragnarok_gnd::Gnd::ground_mesh_cubes).

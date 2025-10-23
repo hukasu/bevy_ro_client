@@ -55,12 +55,20 @@ impl bevy_asset::AssetLoader for AssetLoader {
 
         let textures = self.load_textures(&gnd, load_context);
         let surfaces = Self::build_surfaces(&gnd, load_context);
-        let materials = Self::build_materials(&gnd, &textures, surfaces.clone(), load_context);
+        let surface_ids = Self::build_surface_ids(&gnd, load_context);
+        let materials = Self::build_materials(
+            &gnd,
+            &textures,
+            surface_ids.clone(),
+            surfaces.clone(),
+            load_context,
+        );
         let scene = Self::build_scene(&gnd, &materials, load_context);
 
         Ok(GndAsset {
             scene,
             textures,
+            surface_ids,
             surfaces,
             materials,
         })
@@ -102,9 +110,28 @@ impl AssetLoader {
         )
     }
 
+    fn build_surface_ids(
+        gnd: &Gnd,
+        load_context: &mut LoadContext<'_>,
+    ) -> Handle<ShaderStorageBuffer> {
+        let mut surface_ids = Vec::with_capacity(gnd.ground_mesh_cubes.len() * 3 * 4);
+
+        for cube in &gnd.ground_mesh_cubes {
+            surface_ids.extend_from_slice(&cube.upwards_facing_surface.to_le_bytes());
+            surface_ids.extend_from_slice(&cube.east_facing_surface.to_le_bytes());
+            surface_ids.extend_from_slice(&cube.north_facing_surface.to_le_bytes());
+        }
+
+        load_context.add_labeled_asset(
+            "SurfaceIds".to_owned(),
+            ShaderStorageBuffer::new(&surface_ids, RenderAssetUsages::RENDER_WORLD),
+        )
+    }
+
     fn build_materials(
         gnd: &Gnd,
         textures: &[Handle<Image>],
+        surface_ids: Handle<ShaderStorageBuffer>,
         surfaces: Handle<ShaderStorageBuffer>,
         load_context: &mut LoadContext<'_>,
     ) -> Vec<GndCubeMaterials> {
@@ -150,7 +177,7 @@ impl AssetLoader {
                                 bottom_right: cube_heights[1],
                                 top_left: cube_heights[2],
                                 top_right: cube_heights[3],
-                                surface_id: u32::try_from(surface_id).unwrap_or(u32::MAX),
+                                surface_ids: surface_ids.clone(),
                                 surfaces: surfaces.clone(),
                                 texture: textures[usize::from(surface.texture_id)].clone(),
                             },
