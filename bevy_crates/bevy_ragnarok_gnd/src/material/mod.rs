@@ -1,11 +1,9 @@
-use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, uuid_handle};
+use bevy_asset::{Asset, AssetApp, AssetPath, Handle, embedded_asset, embedded_path};
 use bevy_image::Image;
 use bevy_pbr::{Material, MaterialPlugin};
 use bevy_reflect::Reflect;
 use bevy_render::{alpha::AlphaMode, render_resource::AsBindGroup, storage::ShaderStorageBuffer};
-use bevy_shader::{Shader, ShaderRef};
-
-const GND_SHADER_HANDLE: Handle<Shader> = uuid_handle!("b7fa811a-e840-469e-b972-91bb81c55dfd");
+use bevy_shader::ShaderRef;
 
 pub struct Plugin;
 
@@ -19,12 +17,7 @@ impl bevy_app::Plugin for Plugin {
             .add_plugins(MaterialPlugin::<GndMaterial>::default());
 
         // Shader handles
-        load_internal_asset!(
-            app,
-            GND_SHADER_HANDLE,
-            "shaders/gnd_shader.wgsl",
-            Shader::from_wgsl
-        );
+        embedded_asset!(app, "shaders/gnd_shader.wgsl");
     }
 }
 
@@ -49,19 +42,27 @@ impl Material for GndMaterial {
     }
 
     fn prepass_vertex_shader() -> ShaderRef {
-        GND_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/gnd_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn vertex_shader() -> ShaderRef {
-        GND_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/gnd_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn prepass_fragment_shader() -> ShaderRef {
-        GND_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/gnd_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn fragment_shader() -> ShaderRef {
-        GND_SHADER_HANDLE.into()
+        AssetPath::from_path_buf(embedded_path!("shaders/gnd_shader.wgsl"))
+            .with_source("embedded")
+            .into()
     }
 
     fn specialize(
