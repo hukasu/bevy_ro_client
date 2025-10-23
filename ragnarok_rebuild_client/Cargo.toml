@@ -12,6 +12,7 @@ workspace = true
 with-inspector = [
   "bevy-inspector-egui",
   "ragnarok_rebuild_bevy/debug",
+  "bevy/bevy_dev_tools",
   "bevy/default_font",
   "bevy/file_watcher",
   "bevy/embedded_watcher",
@@ -55,6 +56,7 @@ bevy = { workspace = true, default-features = false, features = [
   "bevy_state",
   "bevy_text",
   "bevy_ui",
+  "bevy_ui_render",
   "bevy_window",
   "bevy_winit",
   "wayland",

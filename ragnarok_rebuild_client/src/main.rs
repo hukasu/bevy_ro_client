@@ -2,6 +2,8 @@ mod client;
 #[cfg(feature = "with-inspector")]
 mod inspector_egui;
 
+#[cfg(feature = "with-inspector")]
+use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
 use bevy::{
     app::{App, PluginGroup, PluginGroupBuilder},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
@@ -99,6 +101,7 @@ fn main() {
 
     #[cfg(feature = "with-inspector")]
     {
+        app.add_plugins(FpsOverlayPlugin::default());
         app.add_plugins(inspector_egui::Plugin);
     }
 
