@@ -56,11 +56,13 @@ impl bevy_asset::AssetLoader for AssetLoader {
         let textures = self.load_textures(&gnd, load_context);
         let surfaces = Self::build_surfaces(&gnd, load_context);
         let surface_ids = Self::build_surface_ids(&gnd, load_context);
+        let cube_faces = Self::build_cube_faces(&gnd, load_context);
         let materials = Self::build_materials(
             &gnd,
             &textures,
             surface_ids.clone(),
             surfaces.clone(),
+            cube_faces.clone(),
             load_context,
         );
         let scene = Self::build_scene(&gnd, &materials, load_context);
@@ -70,6 +72,7 @@ impl bevy_asset::AssetLoader for AssetLoader {
             textures,
             surface_ids,
             surfaces,
+            cube_faces,
             materials,
         })
     }
@@ -92,6 +95,8 @@ impl AssetLoader {
         load_context: &mut LoadContext<'_>,
     ) -> Handle<ShaderStorageBuffer> {
         let mut surfaces = Vec::with_capacity(gnd.surfaces.len() * 8 * 4);
+        #[cfg(debug_assertions)]
+        let initial_capacity = surfaces.capacity();
 
         for surface in &gnd.surfaces {
             surfaces.extend_from_slice(&surface.bottom_left[0].to_le_bytes());
@@ -104,6 +109,9 @@ impl AssetLoader {
             surfaces.extend_from_slice(&surface.top_right[1].to_le_bytes());
         }
 
+        #[cfg(debug_assertions)]
+        assert_eq!(initial_capacity, surfaces.capacity());
+
         load_context.add_labeled_asset(
             "Surfaces".to_owned(),
             ShaderStorageBuffer::new(&surfaces, RenderAssetUsages::RENDER_WORLD),
@@ -115,6 +123,8 @@ impl AssetLoader {
         load_context: &mut LoadContext<'_>,
     ) -> Handle<ShaderStorageBuffer> {
         let mut surface_ids = Vec::with_capacity(gnd.ground_mesh_cubes.len() * 3 * 4);
+        #[cfg(debug_assertions)]
+        let initial_capacity = surface_ids.capacity();
 
         for cube in &gnd.ground_mesh_cubes {
             surface_ids.extend_from_slice(&cube.upwards_facing_surface.to_le_bytes());
@@ -122,9 +132,50 @@ impl AssetLoader {
             surface_ids.extend_from_slice(&cube.north_facing_surface.to_le_bytes());
         }
 
+        #[cfg(debug_assertions)]
+        assert_eq!(initial_capacity, surface_ids.capacity());
+
         load_context.add_labeled_asset(
             "SurfaceIds".to_owned(),
             ShaderStorageBuffer::new(&surface_ids, RenderAssetUsages::RENDER_WORLD),
+        )
+    }
+
+    fn build_cube_faces(
+        gnd: &Gnd,
+        load_context: &mut LoadContext<'_>,
+    ) -> Handle<ShaderStorageBuffer> {
+        let mut cube_faces = Vec::with_capacity(gnd.ground_mesh_cubes.len() * 3 * 4 * 4);
+        #[cfg(debug_assertions)]
+        let initial_capacity = cube_faces.capacity();
+
+        let Ok(width) = usize::try_from(gnd.width) else {
+            unreachable!("Width must fit on usize");
+        };
+
+        for i in 0..gnd.ground_mesh_cubes.len() {
+            let x = i % width;
+            let z = i / width;
+
+            for heights in [
+                gnd.get_top_face_heights(x, z),
+                gnd.get_east_face_heights(x, z),
+                gnd.get_north_face_heights(x, z),
+            ] {
+                let heights = heights.unwrap_or([0., 0., 0., 0.]);
+                cube_faces.extend_from_slice(&heights[0].to_le_bytes());
+                cube_faces.extend_from_slice(&heights[1].to_le_bytes());
+                cube_faces.extend_from_slice(&heights[2].to_le_bytes());
+                cube_faces.extend_from_slice(&heights[3].to_le_bytes());
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        assert_eq!(initial_capacity, cube_faces.capacity());
+
+        load_context.add_labeled_asset(
+            "CubeFaces".to_owned(),
+            ShaderStorageBuffer::new(&cube_faces, RenderAssetUsages::RENDER_WORLD),
         )
     }
 
@@ -133,6 +184,7 @@ impl AssetLoader {
         textures: &[Handle<Image>],
         surface_ids: Handle<ShaderStorageBuffer>,
         surfaces: Handle<ShaderStorageBuffer>,
+        cube_faces: Handle<ShaderStorageBuffer>,
         load_context: &mut LoadContext<'_>,
     ) -> Vec<GndCubeMaterials> {
         let Ok(width) = usize::try_from(gnd.width) else {
@@ -149,37 +201,20 @@ impl AssetLoader {
                 let up_cube = &gnd.ground_mesh_cubes[x + z * width];
 
                 let [up_material, east_material, north_material] = [
-                    (
-                        "Up",
-                        gnd.get_top_face_heights(x, z),
-                        usize::try_from(up_cube.upwards_facing_surface),
-                    ),
-                    (
-                        "East",
-                        gnd.get_east_face_heights(x, z),
-                        usize::try_from(up_cube.east_facing_surface),
-                    ),
-                    (
-                        "North",
-                        gnd.get_north_face_heights(x, z),
-                        usize::try_from(up_cube.north_facing_surface),
-                    ),
+                    ("Up", usize::try_from(up_cube.upwards_facing_surface)),
+                    ("East", usize::try_from(up_cube.east_facing_surface)),
+                    ("North", usize::try_from(up_cube.north_facing_surface)),
                 ]
-                .map(|(discriminator, heights, surface_id)| {
-                    if let Some(cube_heights) = heights
-                        && let Ok(surface_id) = surface_id
-                    {
+                .map(|(discriminator, surface_id)| {
+                    if let Ok(surface_id) = surface_id {
                         let surface = &gnd.surfaces[surface_id];
                         let up = load_context.add_labeled_asset(
                             format!("Material{x}/{z}/{discriminator}"),
                             GndMaterial {
-                                bottom_left: cube_heights[0],
-                                bottom_right: cube_heights[1],
-                                top_left: cube_heights[2],
-                                top_right: cube_heights[3],
+                                texture: textures[usize::from(surface.texture_id)].clone(),
+                                cube_faces: cube_faces.clone(),
                                 surface_ids: surface_ids.clone(),
                                 surfaces: surfaces.clone(),
-                                texture: textures[usize::from(surface.texture_id)].clone(),
                             },
                         );
                         Some(up)

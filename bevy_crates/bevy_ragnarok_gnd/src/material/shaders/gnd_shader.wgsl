@@ -55,7 +55,7 @@ struct GndBindings {
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var gnd_texture: texture_2d<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(1) var gnd_texture_sampler: sampler;
-@group(#{MATERIAL_BIND_GROUP}) @binding(2) var<uniform> gnd_cube_face: GndCubeFace;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var<storage> gnd_cube_faces: array<GndCubeFace>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(3) var<storage> gnd_surface_ids: array<u32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(4) var<storage> gnd_surfaces: array<GndSurface>;
 
@@ -85,11 +85,11 @@ fn vertex(
     let tag = mesh[in.instance_index].tag;
 #ifdef BINDLESS
     let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
-    let cube_face = gnd_cube_faces[gnd_bindings[slot].cube_face];
+    let cube_face = gnd_cube_faces[gnd_bindings[slot].cube_face + tag];
     let surface_id = gnd_surface_ids[gnd_bindings[slot].surface_id + tag];
     let surface = gnd_surfaces[gnd_bindings[slot].surface + surface_id];
 #else // BINDLESS
-    let cube_face = gnd_cube_face;
+    let cube_face = gnd_cube_faces[tag];
     let surface_id = gnd_surface_ids[tag];
     let surface = gnd_surfaces[surface_id];
 #endif // BINDLESS

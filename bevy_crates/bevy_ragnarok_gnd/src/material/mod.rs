@@ -2,13 +2,7 @@ use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, uuid_handle};
 use bevy_image::Image;
 use bevy_pbr::{Material, MaterialPlugin};
 use bevy_reflect::Reflect;
-use bevy_render::{
-    alpha::AlphaMode,
-    render_asset::RenderAssets,
-    render_resource::{AsBindGroup, AsBindGroupShaderType, ShaderType},
-    storage::ShaderStorageBuffer,
-    texture::GpuImage,
-};
+use bevy_render::{alpha::AlphaMode, render_resource::AsBindGroup, storage::ShaderStorageBuffer};
 use bevy_shader::{Shader, ShaderRef};
 
 const GND_SHADER_HANDLE: Handle<Shader> = uuid_handle!("b7fa811a-e840-469e-b972-91bb81c55dfd");
@@ -35,17 +29,14 @@ impl bevy_app::Plugin for Plugin {
 }
 
 #[derive(Clone, Asset, Reflect, AsBindGroup)]
-#[data(2, GndCubeFace, binding_array(10))]
 #[bindless(index_table(range(0..5)))]
 pub struct GndMaterial {
     #[texture(0)]
     #[sampler(1)]
     #[dependency]
     pub texture: Handle<Image>,
-    pub bottom_left: f32,
-    pub bottom_right: f32,
-    pub top_left: f32,
-    pub top_right: f32,
+    #[storage(2, binding_array(10), read_only)]
+    pub cube_faces: Handle<ShaderStorageBuffer>,
     #[storage(3, binding_array(11), read_only)]
     pub surface_ids: Handle<ShaderStorageBuffer>,
     #[storage(4, binding_array(12), read_only)]
@@ -92,24 +83,5 @@ impl Material for GndMaterial {
             .into(),
         );
         Ok(())
-    }
-}
-
-#[derive(Debug, ShaderType)]
-pub struct GndCubeFace {
-    pub bottom_left: f32,
-    pub bottom_right: f32,
-    pub top_left: f32,
-    pub top_right: f32,
-}
-
-impl AsBindGroupShaderType<GndCubeFace> for GndMaterial {
-    fn as_bind_group_shader_type(&self, _images: &RenderAssets<GpuImage>) -> GndCubeFace {
-        GndCubeFace {
-            bottom_left: self.bottom_left,
-            bottom_right: self.bottom_right,
-            top_left: self.top_left,
-            top_right: self.top_right,
-        }
     }
 }
