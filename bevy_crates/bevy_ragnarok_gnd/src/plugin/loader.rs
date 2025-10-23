@@ -2,7 +2,7 @@ use std::{borrow::Cow, collections::HashMap};
 
 use bevy_asset::{Handle, LoadContext, io::Reader};
 use bevy_camera::{primitives::Aabb, visibility::Visibility};
-use bevy_ecs::{entity::Entity, hierarchy::ChildOf, name::Name, world::World};
+use bevy_ecs::{bundle::Bundle, entity::Entity, hierarchy::ChildOf, name::Name, world::World};
 use bevy_image::Image;
 use bevy_log::trace;
 use bevy_math::{USizeVec3, Vec2, Vec3};
@@ -263,71 +263,65 @@ impl AssetLoader {
                 ))
                 .id();
 
-            Self::build_cube_face(
-                world,
-                cube_entity,
-                "Up",
-                GND_TOP_MESH.clone(),
-                aabb,
-                materials
-                    .get(&USizeVec3::new(
-                        x,
-                        z,
-                        usize::try_from(cube.upwards_facing_surface).unwrap_or(usize::MAX),
-                    ))
-                    .cloned(),
-            );
+            if let Some(material) = materials.get(&USizeVec3::new(
+                x,
+                z,
+                usize::try_from(cube.upwards_facing_surface).unwrap_or(usize::MAX),
+            )) {
+                world.spawn(Self::build_cube_face(
+                    cube_entity,
+                    "Up",
+                    GND_TOP_MESH.clone(),
+                    aabb,
+                    material.clone(),
+                ));
+            }
 
-            Self::build_cube_face(
-                world,
-                cube_entity,
-                "East",
-                GND_EAST_MESH.clone(),
-                aabb,
-                materials
-                    .get(&USizeVec3::new(
-                        x,
-                        z,
-                        usize::try_from(cube.east_facing_surface).unwrap_or(usize::MAX),
-                    ))
-                    .cloned(),
-            );
+            if let Some(material) = materials.get(&USizeVec3::new(
+                x,
+                z,
+                usize::try_from(cube.east_facing_surface).unwrap_or(usize::MAX),
+            )) {
+                world.spawn(Self::build_cube_face(
+                    cube_entity,
+                    "East",
+                    GND_EAST_MESH.clone(),
+                    aabb,
+                    material.clone(),
+                ));
+            }
 
-            Self::build_cube_face(
-                world,
-                cube_entity,
-                "North",
-                GND_NORTH_MESH.clone(),
-                aabb,
-                materials
-                    .get(&USizeVec3::new(
-                        x,
-                        z,
-                        usize::try_from(cube.north_facing_surface).unwrap_or(usize::MAX),
-                    ))
-                    .cloned(),
-            );
+            if let Some(material) = materials.get(&USizeVec3::new(
+                x,
+                z,
+                usize::try_from(cube.north_facing_surface).unwrap_or(usize::MAX),
+            )) {
+                world.spawn(Self::build_cube_face(
+                    cube_entity,
+                    "North",
+                    GND_NORTH_MESH.clone(),
+                    aabb,
+                    material.clone(),
+                ));
+            }
         }
     }
 
     fn build_cube_face(
-        world: &mut World,
         cube_entity: Entity,
         discriminator: &'static str,
         mesh: Handle<Mesh>,
         aabb: Aabb,
-        material: Option<Handle<GndMaterial>>,
-    ) {
-        if let Some(material) = material {
-            world.spawn((
-                Name::new(format!("{discriminator} Face")),
-                aabb,
-                Mesh3d(mesh),
-                MeshMaterial3d(material),
-                Transform::default(),
-                Visibility::default(),
-                ChildOf(cube_entity),
-            ));
-        }
+        material: Handle<GndMaterial>,
+    ) -> impl Bundle {
+        (
+            Name::new(format!("{discriminator} Face")),
+            aabb,
+            Mesh3d(mesh),
+            MeshMaterial3d(material),
+            Transform::default(),
+            Visibility::default(),
+            ChildOf(cube_entity),
+        )
     }
 }
