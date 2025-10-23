@@ -26,22 +26,6 @@ pub struct GndAsset {
     /// Handle to [`ShaderStorageBuffer`] built from
     /// [`GroundMeshCubes`](ragnarok_gnd::GroundMeshCube) faces.
     pub cube_faces: Handle<ShaderStorageBuffer>,
-    /// Materials built from [`Gnd::surfaces`](ragnarok_gnd::Gnd::ground_mesh_cubes).
-    pub materials: Vec<GndCubeMaterials>,
-}
-
-/// Handles to [`GndMaterial`] built from [`Gnd::surfaces`](ragnarok_gnd::Gnd::ground_mesh_cubes).
-pub struct GndCubeMaterials {
-    /// Handle to the top surface. Will be [`None`] if
-    /// [`GroundMeshCube::upwards_facing_surface`](ragnarok_gnd::GroundMeshCube::upwards_facing_surface)
-    /// is `-1`.
-    pub up_material: Option<Handle<GndMaterial>>,
-    /// Handle to the east surface. Will be [`None`] if
-    /// [`GroundMeshCube::east_facing_surface`](ragnarok_gnd::GroundMeshCube::east_facing_surface)
-    /// is `-1`.
-    pub east_material: Option<Handle<GndMaterial>>,
-    /// Handle to the north surface. Will be [`None`] if
-    /// [`GroundMeshCube::north_facing_surface`](ragnarok_gnd::GroundMeshCube::north_facing_surface)
-    /// is `-1`.
-    pub north_material: Option<Handle<GndMaterial>>,
+    /// Materials built from [`Gnd::textures`](ragnarok_gnd::Gnd::textures).
+    pub materials: Vec<Handle<GndMaterial>>,
 }

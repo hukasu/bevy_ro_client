@@ -17,7 +17,7 @@ use ragnarok_gnd::{Error, Gnd};
 
 use crate::{
     Ground,
-    assets::{GndAsset, GndCubeMaterials},
+    assets::GndAsset,
     material::GndMaterial,
     plugin::{GND_EAST_MESH, GND_NORTH_MESH, GND_TOP_MESH},
 };
@@ -58,7 +58,6 @@ impl bevy_asset::AssetLoader for AssetLoader {
         let surface_ids = Self::build_surface_ids(&gnd, load_context);
         let cube_faces = Self::build_cube_faces(&gnd, load_context);
         let materials = Self::build_materials(
-            &gnd,
             &textures,
             surface_ids.clone(),
             surfaces.clone(),
@@ -180,63 +179,35 @@ impl AssetLoader {
     }
 
     fn build_materials(
-        gnd: &Gnd,
         textures: &[Handle<Image>],
         surface_ids: Handle<ShaderStorageBuffer>,
         surfaces: Handle<ShaderStorageBuffer>,
         cube_faces: Handle<ShaderStorageBuffer>,
         load_context: &mut LoadContext<'_>,
-    ) -> Vec<GndCubeMaterials> {
-        let Ok(width) = usize::try_from(gnd.width) else {
-            unreachable!("Width must fit on usize");
-        };
-        let Ok(height) = usize::try_from(gnd.height) else {
-            unreachable!("Height must fit on usize");
-        };
+    ) -> Vec<Handle<GndMaterial>> {
+        let mut materials = Vec::with_capacity(textures.len());
+        #[cfg(debug_assertions)]
+        let initial_capacity = materials.capacity();
 
-        let mut materials = Vec::with_capacity(width + height);
-
-        for z in 0..height {
-            for x in 0..width {
-                let up_cube = &gnd.ground_mesh_cubes[x + z * width];
-
-                let [up_material, east_material, north_material] = [
-                    ("Up", usize::try_from(up_cube.upwards_facing_surface)),
-                    ("East", usize::try_from(up_cube.east_facing_surface)),
-                    ("North", usize::try_from(up_cube.north_facing_surface)),
-                ]
-                .map(|(discriminator, surface_id)| {
-                    if let Ok(surface_id) = surface_id {
-                        let surface = &gnd.surfaces[surface_id];
-                        let up = load_context.add_labeled_asset(
-                            format!("Material{x}/{z}/{discriminator}"),
-                            GndMaterial {
-                                texture: textures[usize::from(surface.texture_id)].clone(),
-                                cube_faces: cube_faces.clone(),
-                                surface_ids: surface_ids.clone(),
-                                surfaces: surfaces.clone(),
-                            },
-                        );
-                        Some(up)
-                    } else {
-                        None
-                    }
-                });
-
-                materials.push(GndCubeMaterials {
-                    up_material,
-                    east_material,
-                    north_material,
-                });
-            }
+        for (i, texture) in textures.iter().enumerate() {
+            let material = GndMaterial {
+                texture: texture.clone(),
+                cube_faces: cube_faces.clone(),
+                surface_ids: surface_ids.clone(),
+                surfaces: surfaces.clone(),
+            };
+            materials.push(load_context.add_labeled_asset(format!("Material{i}"), material));
         }
+
+        #[cfg(debug_assertions)]
+        assert_eq!(initial_capacity, materials.capacity());
 
         materials
     }
 
     fn build_scene(
         gnd: &Gnd,
-        materials: &[GndCubeMaterials],
+        materials: &[Handle<GndMaterial>],
         load_context: &mut LoadContext<'_>,
     ) -> Handle<Scene> {
         let mut world = World::new();
@@ -275,7 +246,12 @@ impl AssetLoader {
         load_context.add_labeled_asset("Scene".to_owned(), Scene::new(world))
     }
 
-    fn build_cubes(world: &mut World, gnd: &Gnd, ground: Entity, materials: &[GndCubeMaterials]) {
+    fn build_cubes(
+        world: &mut World,
+        gnd: &Gnd,
+        ground: Entity,
+        materials: &[Handle<GndMaterial>],
+    ) {
         let Ok(width) = usize::try_from(gnd.width) else {
             unreachable!("Width must fit on usize");
         };
@@ -283,75 +259,57 @@ impl AssetLoader {
             unreachable!("Height must fit on usize");
         };
 
-        for i in 0..gnd.ground_mesh_cubes.len() {
-            let x = i % width;
-            let z = i / width;
-
-            let tx = x as f32 - (width as f32) / 2. + 0.5;
-            let tz = z as f32 - (height as f32) / 2. + 0.5;
-            let transform = Transform::from_translation(Vec3::new(tx, 0., tz));
-
-            let top_face = gnd.get_top_face_heights(x, z).map(|heights| {
-                [
-                    Vec3::new(-0.5, heights[0], -0.5),
-                    Vec3::new(0.5, heights[1], -0.5),
-                    Vec3::new(-0.5, heights[2], 0.5),
-                    Vec3::new(0.5, heights[3], 0.5),
-                ]
-            });
-            let east_face = gnd.get_east_face_heights(x, z).map(|heights| {
-                [
-                    Vec3::new(0.5, heights[0], -0.5),
-                    Vec3::new(0.5, heights[1], -0.5),
-                    Vec3::new(0.5, heights[2], 0.5),
-                    Vec3::new(0.5, heights[3], 0.5),
-                ]
-            });
-            let north_face = gnd.get_north_face_heights(x, z).map(|heights| {
-                [
-                    Vec3::new(-0.5, heights[0], 0.5),
-                    Vec3::new(0.5, heights[1], 0.5),
-                    Vec3::new(-0.5, heights[2], 0.5),
-                    Vec3::new(0.5, heights[3], 0.5),
-                ]
-            });
-            let Some(aabb) =
-                Aabb::enclosing([top_face, east_face, north_face].iter().flatten().flatten())
-            else {
-                unreachable!("Should never be empty.");
-            };
-
-            let cube_entity = world
+        for z in 0..height {
+            let row = world
                 .spawn((
-                    Name::new(format!("Cube {x}/{z}")),
-                    transform,
+                    Name::new(format!("Row {z}")),
+                    Transform::default(),
                     Visibility::default(),
                     ChildOf(ground),
                 ))
                 .id();
+            for x in 0..width {
+                let tx = x as f32 - (width as f32) / 2. + 0.5;
+                let tz = z as f32 - (height as f32) / 2. + 0.5;
+                let transform = Transform::from_translation(Vec3::new(tx, 0., tz));
 
-            let cube_materials = &materials[x + z * width];
+                let aabb = Self::cube_aabb(gnd, x, z);
 
-            for (i, (discriminator, mesh, material)) in [
-                ("Up", &GND_TOP_MESH, &cube_materials.up_material),
-                ("East", &GND_EAST_MESH, &cube_materials.east_material),
-                ("North", &GND_NORTH_MESH, &cube_materials.north_material),
-            ]
-            .into_iter()
-            .enumerate()
-            {
-                if let Some(material) = material {
-                    let Ok(tag) = u32::try_from((x + z * width) * 3 + i) else {
-                        unreachable!("Tag must fit in u32.");
-                    };
-                    world.spawn(Self::build_cube_face(
-                        tag,
-                        cube_entity,
-                        discriminator,
-                        mesh.clone(),
-                        aabb,
-                        material.clone(),
-                    ));
+                let cube_entity = world
+                    .spawn((
+                        Name::new(format!("Cube {x}/{z}")),
+                        transform,
+                        Visibility::default(),
+                        ChildOf(row),
+                    ))
+                    .id();
+
+                let cube = &gnd.ground_mesh_cubes[x + z * width];
+
+                for (i, (discriminator, mesh, surface_id)) in [
+                    ("Up", &GND_TOP_MESH, cube.upwards_facing_surface),
+                    ("East", &GND_EAST_MESH, cube.east_facing_surface),
+                    ("North", &GND_NORTH_MESH, cube.north_facing_surface),
+                ]
+                .into_iter()
+                .enumerate()
+                {
+                    if let Ok(surface_id) = usize::try_from(surface_id) {
+                        let surface = &gnd.surfaces[surface_id];
+
+                        let Ok(tag) = u32::try_from((x + z * width) * 3 + i) else {
+                            unreachable!("Tag must fit in u32");
+                        };
+
+                        world.spawn(Self::build_cube_face(
+                            tag,
+                            cube_entity,
+                            discriminator,
+                            mesh.clone(),
+                            aabb,
+                            materials[usize::from(surface.texture_id)].clone(),
+                        ));
+                    }
                 }
             }
         }
@@ -375,5 +333,38 @@ impl AssetLoader {
             Visibility::default(),
             ChildOf(cube_entity),
         )
+    }
+
+    fn cube_aabb(gnd: &Gnd, x: usize, z: usize) -> Aabb {
+        let top_face = gnd.get_top_face_heights(x, z).map(|heights| {
+            [
+                Vec3::new(-0.5, heights[0], -0.5),
+                Vec3::new(0.5, heights[1], -0.5),
+                Vec3::new(-0.5, heights[2], 0.5),
+                Vec3::new(0.5, heights[3], 0.5),
+            ]
+        });
+        let east_face = gnd.get_east_face_heights(x, z).map(|heights| {
+            [
+                Vec3::new(0.5, heights[0], -0.5),
+                Vec3::new(0.5, heights[1], -0.5),
+                Vec3::new(0.5, heights[2], 0.5),
+                Vec3::new(0.5, heights[3], 0.5),
+            ]
+        });
+        let north_face = gnd.get_north_face_heights(x, z).map(|heights| {
+            [
+                Vec3::new(-0.5, heights[0], 0.5),
+                Vec3::new(0.5, heights[1], 0.5),
+                Vec3::new(-0.5, heights[2], 0.5),
+                Vec3::new(0.5, heights[3], 0.5),
+            ]
+        });
+        let Some(aabb) =
+            Aabb::enclosing([top_face, east_face, north_face].iter().flatten().flatten())
+        else {
+            unreachable!("Should never be empty.");
+        };
+        aabb
     }
 }
