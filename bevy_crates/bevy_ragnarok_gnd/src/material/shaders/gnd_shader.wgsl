@@ -52,7 +52,7 @@ struct GndBindings {
 
 #else // BINDLESS
 
-@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<storage> gnd_cube_face: GndCubeFace;
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<uniform> gnd_cube_face: GndCubeFace;
 @group(#{MATERIAL_BIND_GROUP}) @binding(1) var<storage> gnd_surface: array<GndSurface>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(2) var gnd_texture: texture_2d<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(3) var gnd_texture_sampler: sampler;
@@ -86,7 +86,7 @@ fn vertex(
     let surface = gnd_surfaces[gnd_bindings[slot].surface + cube_face.surface_id];
 #else // BINDLESS
     let cube_face = gnd_cube_face;
-    let surface = gnd_surface[surface_id];
+    let surface = gnd_surface[cube_face.surface_id];
 #endif // BINDLESS
 
 #ifdef MORPH_TARGETS
@@ -153,7 +153,7 @@ fn fragment(
     let texture_sampler = bindless_samplers_filtering[gnd_bindings[slot].texture_sampler];
 #else // BINDLESS
     let texture = gnd_texture;
-    let texture_sampler = gnd_sampler;
+    let texture_sampler = gnd_texture_sampler;
 #endif // BINDLESS
 
     pbr_input.material.base_color = textureSample(texture, texture_sampler, in.uv);
