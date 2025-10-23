@@ -1,6 +1,6 @@
 mod loader;
 
-use std::{borrow::Cow, f32::consts::PI};
+use std::borrow::Cow;
 
 use bevy_app::AppExit;
 use bevy_asset::{AssetApp, Assets, Handle, uuid_handle};
@@ -56,7 +56,7 @@ impl bevy_app::Plugin for Plugin {
 
         if let Err(err) = meshes.insert(
             GND_EAST_MESH.id(),
-            Plane3d::new(Vec3::NEG_X, Vec2::splat(0.5))
+            Plane3d::new(Vec3::X, Vec2::splat(0.5))
                 .mesh()
                 .build()
                 .translated_by(Vec3::new(0.5, 0., 0.)),
@@ -68,10 +68,10 @@ impl bevy_app::Plugin for Plugin {
 
         if let Err(err) = meshes.insert(
             GND_NORTH_MESH.id(),
-            Plane3d::new(Vec3::Z, Vec2::splat(0.5))
+            Plane3d::new(Vec3::NEG_Z, Vec2::splat(0.5))
                 .mesh()
                 .build()
-                .rotated_by(Quat::from_rotation_y(PI))
+                .rotated_by(Quat::from_xyzw(0.0, 1., 0.0, 0.0))
                 .translated_by(Vec3::new(0., 0., 0.5)),
         ) {
             error!("{err}");

@@ -123,8 +123,25 @@ fn vertex(
     vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
     
 #ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
+    var normal: vec3<f32> = in.normal;
+    if all(in.normal == vec3(1., 0., 0.)) {
+        let bottom_right_high = cube_face.bottom_left > cube_face.bottom_right;
+        let bottom_left_high = cube_face.top_left > cube_face.top_right;
+
+        if bottom_right_high || bottom_left_high {
+            normal = vec3(-1.) * in.normal;
+        }
+    } else if all(in.normal == vec3(0., 0., 1.)) {
+        let bottom_right_high = cube_face.bottom_right > cube_face.top_right;
+        let bottom_left_high = cube_face.bottom_left > cube_face.top_left;
+
+        if bottom_right_high || bottom_left_high { 
+            normal = vec3(-1.) * in.normal;
+        }
+    }
+
     vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
-        in.normal,
+        normal,
         in.instance_index
     );
 #endif
