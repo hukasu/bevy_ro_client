@@ -263,58 +263,31 @@ impl AssetLoader {
                 ))
                 .id();
 
-            if let Some(material) = materials.get(&USizeVec3::new(
-                x,
-                z,
-                usize::try_from(cube.upwards_facing_surface).unwrap_or(usize::MAX),
-            )) {
-                let Ok(tag) = u32::try_from((x + z * width) * 3 + 2) else {
-                    unreachable!("Tag must fit in u32.");
-                };
-                world.spawn(Self::build_cube_face(
-                    tag,
-                    cube_entity,
-                    "Up",
-                    GND_TOP_MESH.clone(),
-                    aabb,
-                    material.clone(),
-                ));
-            }
-
-            if let Some(material) = materials.get(&USizeVec3::new(
-                x,
-                z,
-                usize::try_from(cube.east_facing_surface).unwrap_or(usize::MAX),
-            )) {
-                let Ok(tag) = u32::try_from((x + z * width) * 3 + 2) else {
-                    unreachable!("Tag must fit in u32.");
-                };
-                world.spawn(Self::build_cube_face(
-                    tag,
-                    cube_entity,
-                    "East",
-                    GND_EAST_MESH.clone(),
-                    aabb,
-                    material.clone(),
-                ));
-            }
-
-            if let Some(material) = materials.get(&USizeVec3::new(
-                x,
-                z,
-                usize::try_from(cube.north_facing_surface).unwrap_or(usize::MAX),
-            )) {
-                let Ok(tag) = u32::try_from((x + z * width) * 3 + 2) else {
-                    unreachable!("Tag must fit in u32.");
-                };
-                world.spawn(Self::build_cube_face(
-                    tag,
-                    cube_entity,
-                    "North",
-                    GND_NORTH_MESH.clone(),
-                    aabb,
-                    material.clone(),
-                ));
+            for (i, (discriminator, surface_id, mesh)) in [
+                ("Up", cube.upwards_facing_surface, GND_TOP_MESH),
+                ("East", cube.east_facing_surface, GND_EAST_MESH),
+                ("North", cube.north_facing_surface, GND_NORTH_MESH),
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                if let Some(material) = materials.get(&USizeVec3::new(
+                    x,
+                    z,
+                    usize::try_from(surface_id).unwrap_or(usize::MAX),
+                )) {
+                    let Ok(tag) = u32::try_from((x + z * width) * 3 + i) else {
+                        unreachable!("Tag must fit in u32.");
+                    };
+                    world.spawn(Self::build_cube_face(
+                        tag,
+                        cube_entity,
+                        discriminator,
+                        mesh.clone(),
+                        aabb,
+                        material.clone(),
+                    ));
+                }
             }
         }
     }
