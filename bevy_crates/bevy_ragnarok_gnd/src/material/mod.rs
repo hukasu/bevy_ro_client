@@ -1,12 +1,12 @@
 use bevy_asset::{Asset, AssetApp, Handle, load_internal_asset, uuid_handle};
 use bevy_image::Image;
-use bevy_math::Vec2;
 use bevy_pbr::{Material, MaterialPlugin};
 use bevy_reflect::Reflect;
 use bevy_render::{
     alpha::AlphaMode,
     render_asset::RenderAssets,
     render_resource::{AsBindGroup, AsBindGroupShaderType, ShaderType},
+    storage::ShaderStorageBuffer,
     texture::GpuImage,
 };
 use bevy_shader::{Shader, ShaderRef};
@@ -36,19 +36,19 @@ impl bevy_app::Plugin for Plugin {
 
 #[derive(Clone, Asset, Reflect, AsBindGroup)]
 #[data(0, GndCubeFace, binding_array(10))]
-#[data(1, GndSurface, binding_array(11))]
 #[bindless(index_table(range(0..4)))]
 pub struct GndMaterial {
     pub bottom_left: f32,
     pub bottom_right: f32,
     pub top_left: f32,
     pub top_right: f32,
-    pub bottom_left_uv: Vec2,
-    pub bottom_right_uv: Vec2,
-    pub top_left_uv: Vec2,
-    pub top_right_uv: Vec2,
+    pub surface_id: u32,
+    pub texture_id: u32,
+    #[storage(1, binding_array(11), read_only)]
+    pub surfaces: Handle<ShaderStorageBuffer>,
     #[texture(2)]
     #[sampler(3)]
+    #[dependency]
     pub texture: Handle<Image>,
 }
 
@@ -101,6 +101,8 @@ pub struct GndCubeFace {
     pub bottom_right: f32,
     pub top_left: f32,
     pub top_right: f32,
+    pub surface_id: u32,
+    pub texture_id: u32,
 }
 
 impl AsBindGroupShaderType<GndCubeFace> for GndMaterial {
@@ -110,25 +112,8 @@ impl AsBindGroupShaderType<GndCubeFace> for GndMaterial {
             bottom_right: self.bottom_right,
             top_left: self.top_left,
             top_right: self.top_right,
-        }
-    }
-}
-
-#[derive(Debug, ShaderType)]
-pub struct GndSurface {
-    pub bottom_left_uv: Vec2,
-    pub bottom_right_uv: Vec2,
-    pub top_left_uv: Vec2,
-    pub top_right_uv: Vec2,
-}
-
-impl AsBindGroupShaderType<GndSurface> for GndMaterial {
-    fn as_bind_group_shader_type(&self, _images: &RenderAssets<GpuImage>) -> GndSurface {
-        GndSurface {
-            bottom_left_uv: self.bottom_left_uv,
-            bottom_right_uv: self.bottom_right_uv,
-            top_left_uv: self.top_left_uv,
-            top_right_uv: self.top_right_uv,
+            surface_id: self.surface_id,
+            texture_id: self.texture_id,
         }
     }
 }

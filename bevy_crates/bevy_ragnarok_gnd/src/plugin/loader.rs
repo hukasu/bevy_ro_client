@@ -1,14 +1,15 @@
-use std::{borrow::Cow, collections::HashMap};
+use std::borrow::Cow;
 
-use bevy_asset::{Handle, LoadContext, io::Reader};
+use bevy_asset::{Handle, LoadContext, RenderAssetUsages, io::Reader};
 use bevy_camera::{primitives::Aabb, visibility::Visibility};
 use bevy_ecs::{bundle::Bundle, entity::Entity, hierarchy::ChildOf, name::Name, world::World};
 use bevy_image::Image;
 use bevy_log::trace;
-use bevy_math::{USizeVec3, Vec2, Vec3};
+use bevy_math::Vec3;
 use bevy_mesh::{Mesh, Mesh3d, MeshTag};
 use bevy_pbr::MeshMaterial3d;
 use bevy_ragnarok_water_plane::{WaterPlaneAsset, WaterPlaneBuilder};
+use bevy_render::storage::ShaderStorageBuffer;
 use bevy_scene::Scene;
 use bevy_transform::components::Transform;
 
@@ -16,7 +17,7 @@ use ragnarok_gnd::{Error, Gnd};
 
 use crate::{
     Ground,
-    assets::GndAsset,
+    assets::{GndAsset, GndCubeMaterials},
     material::GndMaterial,
     plugin::{GND_EAST_MESH, GND_NORTH_MESH, GND_TOP_MESH},
 };
@@ -53,12 +54,14 @@ impl bevy_asset::AssetLoader for AssetLoader {
         let gnd = Gnd::from_reader(&mut data.as_slice())?;
 
         let textures = self.load_textures(&gnd, load_context);
-        let materials = Self::build_materials(&gnd, &textures, load_context);
+        let surfaces = Self::build_surfaces(&gnd, load_context);
+        let materials = Self::build_materials(&gnd, &textures, surfaces.clone(), load_context);
         let scene = Self::build_scene(&gnd, &materials, load_context);
 
         Ok(GndAsset {
             scene,
             textures,
+            surfaces,
             materials,
         })
     }
@@ -76,11 +79,35 @@ impl AssetLoader {
             .collect()
     }
 
+    fn build_surfaces(
+        gnd: &Gnd,
+        load_context: &mut LoadContext<'_>,
+    ) -> Handle<ShaderStorageBuffer> {
+        let mut surfaces = Vec::with_capacity(gnd.surfaces.len() * 8 * 4);
+
+        for surface in &gnd.surfaces {
+            surfaces.extend_from_slice(&surface.bottom_left[0].to_le_bytes());
+            surfaces.extend_from_slice(&surface.bottom_left[1].to_le_bytes());
+            surfaces.extend_from_slice(&surface.bottom_right[0].to_le_bytes());
+            surfaces.extend_from_slice(&surface.bottom_right[1].to_le_bytes());
+            surfaces.extend_from_slice(&surface.top_left[0].to_le_bytes());
+            surfaces.extend_from_slice(&surface.top_left[1].to_le_bytes());
+            surfaces.extend_from_slice(&surface.top_right[0].to_le_bytes());
+            surfaces.extend_from_slice(&surface.top_right[1].to_le_bytes());
+        }
+
+        load_context.add_labeled_asset(
+            "Surfaces".to_owned(),
+            ShaderStorageBuffer::new(&surfaces, RenderAssetUsages::RENDER_WORLD),
+        )
+    }
+
     fn build_materials(
         gnd: &Gnd,
         textures: &[Handle<Image>],
+        surfaces: Handle<ShaderStorageBuffer>,
         load_context: &mut LoadContext<'_>,
-    ) -> HashMap<USizeVec3, Handle<GndMaterial>> {
+    ) -> Vec<GndCubeMaterials> {
         let Ok(width) = usize::try_from(gnd.width) else {
             unreachable!("Width must fit on usize");
         };
@@ -88,74 +115,58 @@ impl AssetLoader {
             unreachable!("Height must fit on usize");
         };
 
-        let mut materials = HashMap::new();
+        let mut materials = Vec::with_capacity(width + height);
 
-        for x in 0..width {
-            for z in 0..height {
+        for z in 0..height {
+            for x in 0..width {
                 let up_cube = &gnd.ground_mesh_cubes[x + z * width];
 
-                if let Some(up_cube_heights) = gnd.get_top_face_heights(x, z)
-                    && let Ok(up_surface_id) = usize::try_from(up_cube.upwards_facing_surface)
-                {
-                    let up_surface = &gnd.surfaces[up_surface_id];
-                    let up = load_context.add_labeled_asset(
-                        format!("Material{x}/{z}/Up"),
-                        GndMaterial {
-                            bottom_left: up_cube_heights[0],
-                            bottom_right: up_cube_heights[1],
-                            top_left: up_cube_heights[2],
-                            top_right: up_cube_heights[3],
-                            bottom_left_uv: Vec2::from_array(up_surface.bottom_left),
-                            bottom_right_uv: Vec2::from_array(up_surface.bottom_right),
-                            top_left_uv: Vec2::from_array(up_surface.top_left),
-                            top_right_uv: Vec2::from_array(up_surface.top_right),
-                            texture: textures[usize::from(up_surface.texture_id)].clone(),
-                        },
-                    );
-                    materials.insert(USizeVec3::new(x, z, up_surface_id), up);
-                }
+                let [up_material, east_material, north_material] = [
+                    (
+                        "Up",
+                        gnd.get_top_face_heights(x, z),
+                        usize::try_from(up_cube.upwards_facing_surface),
+                    ),
+                    (
+                        "East",
+                        gnd.get_east_face_heights(x, z),
+                        usize::try_from(up_cube.east_facing_surface),
+                    ),
+                    (
+                        "North",
+                        gnd.get_north_face_heights(x, z),
+                        usize::try_from(up_cube.north_facing_surface),
+                    ),
+                ]
+                .map(|(discriminator, heights, surface_id)| {
+                    if let Some(cube_heights) = heights
+                        && let Ok(surface_id) = surface_id
+                    {
+                        let surface = &gnd.surfaces[surface_id];
+                        let up = load_context.add_labeled_asset(
+                            format!("Material{x}/{z}/{discriminator}"),
+                            GndMaterial {
+                                bottom_left: cube_heights[0],
+                                bottom_right: cube_heights[1],
+                                top_left: cube_heights[2],
+                                top_right: cube_heights[3],
+                                surface_id: u32::try_from(surface_id).unwrap_or(u32::MAX),
+                                texture_id: u32::from(surface.texture_id),
+                                surfaces: surfaces.clone(),
+                                texture: textures[usize::from(surface.texture_id)].clone(),
+                            },
+                        );
+                        Some(up)
+                    } else {
+                        None
+                    }
+                });
 
-                if let Some(east_cube_heights) = gnd.get_east_face_heights(x, z)
-                    && let Ok(east_surface_id) = usize::try_from(up_cube.east_facing_surface)
-                {
-                    let east_surface = &gnd.surfaces[east_surface_id];
-                    let east = load_context.add_labeled_asset(
-                        format!("Material{x}/{z}/East"),
-                        GndMaterial {
-                            bottom_left: east_cube_heights[0],
-                            bottom_right: east_cube_heights[1],
-                            top_left: east_cube_heights[2],
-                            top_right: east_cube_heights[3],
-                            bottom_left_uv: Vec2::from_array(east_surface.bottom_left),
-                            bottom_right_uv: Vec2::from_array(east_surface.bottom_right),
-                            top_left_uv: Vec2::from_array(east_surface.top_left),
-                            top_right_uv: Vec2::from_array(east_surface.top_right),
-                            texture: textures[usize::from(east_surface.texture_id)].clone(),
-                        },
-                    );
-                    materials.insert(USizeVec3::new(x, z, east_surface_id), east);
-                }
-
-                if let Some(north_cube_heights) = gnd.get_north_face_heights(x, z)
-                    && let Ok(north_surface_id) = usize::try_from(up_cube.north_facing_surface)
-                {
-                    let north_surface = &gnd.surfaces[north_surface_id];
-                    let north = load_context.add_labeled_asset(
-                        format!("Material{x}/{z}/North"),
-                        GndMaterial {
-                            bottom_left: north_cube_heights[0],
-                            bottom_right: north_cube_heights[1],
-                            top_left: north_cube_heights[2],
-                            top_right: north_cube_heights[3],
-                            bottom_left_uv: Vec2::from_array(north_surface.bottom_left),
-                            bottom_right_uv: Vec2::from_array(north_surface.bottom_right),
-                            top_left_uv: Vec2::from_array(north_surface.top_left),
-                            top_right_uv: Vec2::from_array(north_surface.top_right),
-                            texture: textures[usize::from(north_surface.texture_id)].clone(),
-                        },
-                    );
-                    materials.insert(USizeVec3::new(x, z, north_surface_id), north);
-                }
+                materials.push(GndCubeMaterials {
+                    up_material,
+                    east_material,
+                    north_material,
+                });
             }
         }
 
@@ -164,7 +175,7 @@ impl AssetLoader {
 
     fn build_scene(
         gnd: &Gnd,
-        materials: &HashMap<USizeVec3, Handle<GndMaterial>>,
+        materials: &[GndCubeMaterials],
         load_context: &mut LoadContext<'_>,
     ) -> Handle<Scene> {
         let mut world = World::new();
@@ -203,12 +214,7 @@ impl AssetLoader {
         load_context.add_labeled_asset("Scene".to_owned(), Scene::new(world))
     }
 
-    fn build_cubes(
-        world: &mut World,
-        gnd: &Gnd,
-        ground: Entity,
-        materials: &HashMap<USizeVec3, Handle<GndMaterial>>,
-    ) {
+    fn build_cubes(world: &mut World, gnd: &Gnd, ground: Entity, materials: &[GndCubeMaterials]) {
         let Ok(width) = usize::try_from(gnd.width) else {
             unreachable!("Width must fit on usize");
         };
@@ -216,7 +222,7 @@ impl AssetLoader {
             unreachable!("Height must fit on usize");
         };
 
-        for (i, cube) in gnd.ground_mesh_cubes.iter().enumerate() {
+        for i in 0..gnd.ground_mesh_cubes.len() {
             let x = i % width;
             let z = i / width;
 
@@ -263,19 +269,17 @@ impl AssetLoader {
                 ))
                 .id();
 
-            for (i, (discriminator, surface_id, mesh)) in [
-                ("Up", cube.upwards_facing_surface, GND_TOP_MESH),
-                ("East", cube.east_facing_surface, GND_EAST_MESH),
-                ("North", cube.north_facing_surface, GND_NORTH_MESH),
+            let cube_materials = &materials[x + z * width];
+
+            for (i, (discriminator, mesh, material)) in [
+                ("Up", &GND_TOP_MESH, &cube_materials.up_material),
+                ("East", &GND_EAST_MESH, &cube_materials.east_material),
+                ("North", &GND_NORTH_MESH, &cube_materials.north_material),
             ]
             .into_iter()
             .enumerate()
             {
-                if let Some(material) = materials.get(&USizeVec3::new(
-                    x,
-                    z,
-                    usize::try_from(surface_id).unwrap_or(usize::MAX),
-                )) {
+                if let Some(material) = material {
                     let Ok(tag) = u32::try_from((x + z * width) * 3 + i) else {
                         unreachable!("Tag must fit in u32.");
                     };

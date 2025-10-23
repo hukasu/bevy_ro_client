@@ -35,6 +35,7 @@ bevy_log = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
 bevy_mesh = { workspace = true, default-features = false }
 bevy_pbr = { workspace = true, default-features = false }
+bevy_platform = { workspace = true, default-features = false }
 bevy_reflect = { workspace = true, default-features = false }
 bevy_render = { workspace = true, default-features = false }
 bevy_scene = { workspace = true, default-features = false }

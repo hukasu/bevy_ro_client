@@ -27,6 +27,8 @@ struct GndCubeFace {
     bottom_right: f32,
     top_left: f32,
     top_right: f32,
+    surface_id: u32,
+    texture_id: u32,
 }
 
 struct GndSurface {
@@ -52,7 +54,7 @@ struct GndBindings {
 #else // BINDLESS
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<storage> gnd_cube_face: GndCubeFace;
-@group(#{MATERIAL_BIND_GROUP}) @binding(1) var<storage> gnd_surface: GndSurface;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var<storage> gnd_surface: array<GndSurface>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(2) var gnd_texture: texture_2d<f32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(3) var gnd_texture_sampler: sampler;
 
@@ -82,10 +84,10 @@ fn vertex(
 #ifdef BINDLESS
     let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
     let cube_face = gnd_cube_faces[gnd_bindings[slot].cube_face];
-    let surface = gnd_surfaces[gnd_bindings[slot].surface];
+    let surface = gnd_surfaces[gnd_bindings[slot].surface + cube_face.surface_id];
 #else // BINDLESS
     let cube_face = gnd_cube_face;
-    let surface = gnd_surface;
+    let surface = gnd_surface[surface_id];
 #endif // BINDLESS
 
 #ifdef MORPH_TARGETS

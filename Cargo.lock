@@ -1426,6 +1426,7 @@ dependencies = [
  "bevy_math",
  "bevy_mesh",
  "bevy_pbr",
+ "bevy_platform",
  "bevy_ragnarok_water_plane",
  "bevy_reflect",
  "bevy_render",
