@@ -6,7 +6,7 @@ use bevy_ecs::{bundle::Bundle, entity::Entity, hierarchy::ChildOf, name::Name, w
 use bevy_image::Image;
 use bevy_log::trace;
 use bevy_math::{USizeVec3, Vec2, Vec3};
-use bevy_mesh::{Mesh, Mesh3d};
+use bevy_mesh::{Mesh, Mesh3d, MeshTag};
 use bevy_pbr::MeshMaterial3d;
 use bevy_ragnarok_water_plane::{WaterPlaneAsset, WaterPlaneBuilder};
 use bevy_scene::Scene;
@@ -268,7 +268,11 @@ impl AssetLoader {
                 z,
                 usize::try_from(cube.upwards_facing_surface).unwrap_or(usize::MAX),
             )) {
+                let Ok(tag) = u32::try_from((x + z * width) * 3 + 2) else {
+                    unreachable!("Tag must fit in u32.");
+                };
                 world.spawn(Self::build_cube_face(
+                    tag,
                     cube_entity,
                     "Up",
                     GND_TOP_MESH.clone(),
@@ -282,7 +286,11 @@ impl AssetLoader {
                 z,
                 usize::try_from(cube.east_facing_surface).unwrap_or(usize::MAX),
             )) {
+                let Ok(tag) = u32::try_from((x + z * width) * 3 + 2) else {
+                    unreachable!("Tag must fit in u32.");
+                };
                 world.spawn(Self::build_cube_face(
+                    tag,
                     cube_entity,
                     "East",
                     GND_EAST_MESH.clone(),
@@ -296,7 +304,11 @@ impl AssetLoader {
                 z,
                 usize::try_from(cube.north_facing_surface).unwrap_or(usize::MAX),
             )) {
+                let Ok(tag) = u32::try_from((x + z * width) * 3 + 2) else {
+                    unreachable!("Tag must fit in u32.");
+                };
                 world.spawn(Self::build_cube_face(
+                    tag,
                     cube_entity,
                     "North",
                     GND_NORTH_MESH.clone(),
@@ -308,6 +320,7 @@ impl AssetLoader {
     }
 
     fn build_cube_face(
+        tag: u32,
         cube_entity: Entity,
         discriminator: &'static str,
         mesh: Handle<Mesh>,
@@ -319,6 +332,7 @@ impl AssetLoader {
             aabb,
             Mesh3d(mesh),
             MeshMaterial3d(material),
+            MeshTag(tag),
             Transform::default(),
             Visibility::default(),
             ChildOf(cube_entity),
