@@ -10,33 +10,28 @@ workspace = true
 
 [features]
 # Graphical debugging of meshes
-debug = ["dep:bevy_gizmos"]
+debug = ["dep:bevy_color", "dep:bevy_gizmos"]
 
 [dependencies]
-ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 ragnarok_gnd = { workspace = true }
 
-ragnarok_water_plane = { workspace = true }
 bevy_ragnarok_water_plane = { workspace = true }
 
 bevy_app = { workspace = true, default-features = false }
 bevy_asset = { workspace = true, default-features = false }
 bevy_camera = { workspace = true, default-features = false }
-bevy_color = { workspace = true, default-features = false }
-bevy_derive = { workspace = true, default-features = false }
+bevy_color = { workspace = true, default-features = false, optional = true }
 bevy_ecs = { workspace = true, default-features = false }
-bevy_gizmos = { workspace = true, default-features = false, optional = true }
+bevy_gizmos = { workspace = true, default-features = false, optional = true, features = [
+  "bevy_render",
+] }
 bevy_image = { workspace = true, default-features = false }
-bevy_light = { workspace = true, default-features = false }
 bevy_log = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
 bevy_mesh = { workspace = true, default-features = false }
 bevy_pbr = { workspace = true, default-features = false }
-bevy_platform = { workspace = true, default-features = false }
 bevy_reflect = { workspace = true, default-features = false }
 bevy_render = { workspace = true, default-features = false }
 bevy_scene = { workspace = true, default-features = false }
 bevy_shader = { workspace = true, default-features = false }
 bevy_transform = { workspace = true, default-features = false }
-
-serde = { workspace = true }
