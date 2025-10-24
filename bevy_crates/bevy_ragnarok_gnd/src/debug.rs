@@ -1,169 +1,80 @@
-use bevy_app::PostUpdate;
-use bevy_asset::Assets;
-use bevy_camera::visibility::{ViewVisibility, VisibilitySystems};
-use bevy_color::{self, Color, Srgba, palettes};
+use bevy_app::Update;
+use bevy_color::{self, palettes};
 use bevy_ecs::{
+    event::Event,
+    hierarchy::Children,
+    observer::On,
     query::With,
     reflect::ReflectResource,
     resource::Resource,
-    schedule::IntoScheduleConfigs,
-    system::{Query, Res},
+    schedule::{IntoScheduleConfigs, common_conditions::resource_changed},
+    system::{Commands, Local, Query, Res, ResMut},
 };
-use bevy_gizmos::gizmos::Gizmos;
-use bevy_math::Vec3;
-use bevy_mesh::{Indices, Mesh, Mesh3d, VertexAttributeValues};
+use bevy_gizmos::aabb::ShowAabbGizmo;
+use bevy_log::debug;
 use bevy_reflect::Reflect;
-use bevy_transform::components::GlobalTransform;
 
-use crate::Ground;
+use crate::Cube;
 
-const NORMAL_GIZMOS_LENGTH: f32 = 0.5;
-
-pub struct Plugin;
+pub(crate) struct Plugin;
 
 impl bevy_app::Plugin for Plugin {
     fn build(&self, app: &mut bevy_app::App) {
-        app
-            // Resources
-            .register_type::<GndDebug>()
-            .init_resource::<GndDebug>()
-            // Systems
-            .add_systems(
-                PostUpdate,
-                (
-                    show_gnd_vertex_normal.run_if(show_gnd_vertex_normal_condition),
-                    show_gnd_edges.run_if(show_gnd_edges_condition),
-                )
-                    .after(VisibilitySystems::CheckVisibility),
-            );
+        // Resources
+        app.register_type::<GndDebug>().init_resource::<GndDebug>();
+        app.add_systems(
+            Update,
+            trigger_on_changes.run_if(resource_changed::<GndDebug>),
+        );
+        // Observers
+        app.add_observer(toggle_gnd_aabbs);
     }
 }
 
-#[derive(Debug, Clone, Default, Resource, Reflect)]
+#[derive(Debug, Clone, Copy, Default, Resource, Reflect)]
 #[reflect(Resource)]
 pub struct GndDebug {
-    show_edges: bool,
-    show_normals: bool,
+    show_aabbs: bool,
 }
 
-fn show_gnd_vertex_normal(
-    mut gizmos: Gizmos,
-    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<Ground>>,
-    meshes: Res<Assets<Mesh>>,
-) {
-    for (ground_transform, ground_mesh, ground_in_view) in grounds.iter() {
-        if !**ground_in_view {
-            continue;
-        }
+#[derive(Debug, Event)]
+pub struct ToggleGndAabbs;
 
-        let Some(mesh) = meshes.get(ground_mesh) else {
-            continue;
-        };
-        let Some(VertexAttributeValues::Float32x3(vertex)) =
-            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
-        else {
-            continue;
-        };
-        let Some(VertexAttributeValues::Float32x3(normals)) =
-            mesh.attribute(Mesh::ATTRIBUTE_NORMAL)
-        else {
-            continue;
-        };
+fn toggle_gnd_aabbs(_event: On<ToggleGndAabbs>, mut gat_debug: ResMut<GndDebug>) {
+    debug!("Toggling Gnd Aabbs");
+    gat_debug.show_aabbs = !gat_debug.show_aabbs;
+}
 
-        if let Some(Indices::U16(indices)) = mesh.indices() {
-            for i in indices {
-                let v = vertex[usize::from(*i)];
-                let n = normals[usize::from(*i)];
-                let vertex = Vec3::from_array(v);
-                let normal = Vec3::from_array(n);
-                let start = ground_transform.transform_point(vertex);
-                let direction =
-                    (ground_transform.transform_point(vertex + normal) - start).normalize();
-                let color = Color::srgb_from_array(direction.to_array());
-                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGTH), color);
-            }
-        } else {
-            for (v, n) in vertex.iter().zip(normals) {
-                let vertex = Vec3::from_array(*v);
-                let normal = Vec3::from_array(*n);
-                let start = ground_transform.transform_point(vertex);
-                let direction =
-                    (ground_transform.transform_point(vertex + normal) - start).normalize();
-                let color = Color::srgb_from_array(direction.to_array());
-                gizmos.line(start, start + (direction * NORMAL_GIZMOS_LENGTH), color);
-            }
+fn enable_gnd_aabbs(mut commands: Commands, cubes: Query<&Children, With<Cube>>) {
+    debug!("Enabling Gnd Aabbs");
+    let cube_aabb_color = palettes::tailwind::PURPLE_300.into();
+    for children in cubes {
+        if let Some(child) = children.first() {
+            commands.entity(*child).insert(ShowAabbGizmo {
+                color: Some(cube_aabb_color),
+            });
         }
     }
 }
 
-fn show_gnd_vertex_normal_condition(gnd_debug: Res<GndDebug>) -> bool {
-    gnd_debug.show_normals
-}
-
-fn show_gnd_edges(
-    mut gizmos: Gizmos,
-    grounds: Query<(&GlobalTransform, &Mesh3d, &ViewVisibility), With<Ground>>,
-    meshes: Res<Assets<Mesh>>,
-) {
-    const GIZMO_COLOR: Srgba = palettes::css::ORANGE;
-    for (ground_transform, ground_mesh, ground_in_view) in grounds.iter() {
-        if !**ground_in_view {
-            continue;
-        }
-
-        let Some(mesh) = meshes.get(ground_mesh) else {
-            continue;
-        };
-        let Some(VertexAttributeValues::Float32x3(vertex)) =
-            mesh.attribute(Mesh::ATTRIBUTE_POSITION)
-        else {
-            continue;
-        };
-        let vertex = vertex
-            .iter()
-            .map(|triangle| Vec3::from_array(*triangle))
-            .collect::<Vec<_>>();
-
-        if let Some(Indices::U16(indices)) = mesh.indices() {
-            for i in indices.chunks(3) {
-                gizmos.line(
-                    ground_transform.transform_point(vertex[usize::from(i[0])]),
-                    ground_transform.transform_point(vertex[usize::from(i[1])]),
-                    GIZMO_COLOR,
-                );
-                gizmos.line(
-                    ground_transform.transform_point(vertex[usize::from(i[0])]),
-                    ground_transform.transform_point(vertex[usize::from(i[2])]),
-                    GIZMO_COLOR,
-                );
-                gizmos.line(
-                    ground_transform.transform_point(vertex[usize::from(i[1])]),
-                    ground_transform.transform_point(vertex[usize::from(i[2])]),
-                    GIZMO_COLOR,
-                );
-            }
-        } else {
-            for v in vertex.chunks(3) {
-                gizmos.line(
-                    ground_transform.transform_point(v[0]),
-                    ground_transform.transform_point(v[1]),
-                    GIZMO_COLOR,
-                );
-                gizmos.line(
-                    ground_transform.transform_point(v[0]),
-                    ground_transform.transform_point(v[2]),
-                    GIZMO_COLOR,
-                );
-                gizmos.line(
-                    ground_transform.transform_point(v[1]),
-                    ground_transform.transform_point(v[2]),
-                    GIZMO_COLOR,
-                );
-            }
-        }
+fn disable_gnd_aabbs(mut commands: Commands, cubes: Query<&Children, With<Cube>>) {
+    debug!("Disabling Gat Aabbs");
+    for child in cubes.iter().flatten() {
+        commands.entity(*child).remove::<ShowAabbGizmo>();
     }
 }
 
-fn show_gnd_edges_condition(gnd_debug: Res<GndDebug>) -> bool {
-    gnd_debug.show_edges
+fn trigger_on_changes(
+    mut commands: Commands,
+    gnd_debug: Res<GndDebug>,
+    mut gnd_debug_cache: Local<GndDebug>,
+) {
+    if gnd_debug.show_aabbs != gnd_debug_cache.show_aabbs {
+        match gnd_debug.show_aabbs {
+            true => commands.run_system_cached(enable_gnd_aabbs),
+            false => commands.run_system_cached(disable_gnd_aabbs),
+        }
+    }
+
+    *gnd_debug_cache = *gnd_debug;
 }
