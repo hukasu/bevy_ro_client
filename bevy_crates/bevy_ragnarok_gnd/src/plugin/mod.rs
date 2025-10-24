@@ -10,7 +10,7 @@ use bevy_mesh::{Mesh, MeshBuilder, Meshable};
 
 #[cfg(feature = "debug")]
 use crate::debug;
-use crate::{Ground, assets::GndAsset, material, plugin::loader::AssetLoader};
+use crate::{Cube, Ground, assets::GndAsset, material, plugin::loader::AssetLoader};
 
 const GND_TOP_MESH: Handle<Mesh> = uuid_handle!("886618db-d316-482e-8aeb-c79a73e47f44");
 const GND_EAST_MESH: Handle<Mesh> = uuid_handle!("8ddb2470-39cd-4083-b37d-93d2a84bb2d6");
@@ -33,6 +33,7 @@ impl bevy_app::Plugin for Plugin {
 
         // Types
         app.register_type::<Ground>();
+        app.register_type::<Cube>();
 
         #[cfg(feature = "debug")]
         app.add_plugins(debug::Plugin);

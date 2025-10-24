@@ -16,7 +16,7 @@ use bevy_transform::components::Transform;
 use ragnarok_gnd::{Error, Gnd};
 
 use crate::{
-    Ground,
+    Cube, Ground,
     assets::GndAsset,
     material::GndMaterial,
     plugin::{GND_EAST_MESH, GND_NORTH_MESH, GND_TOP_MESH},
@@ -278,6 +278,7 @@ impl AssetLoader {
                 let cube_entity = world
                     .spawn((
                         Name::new(format!("Cube {x}/{z}")),
+                        Cube,
                         transform,
                         Visibility::default(),
                         ChildOf(row),

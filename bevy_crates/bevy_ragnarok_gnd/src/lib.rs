@@ -17,3 +17,8 @@ pub struct Ground {
     /// Each ground cube contains 2x2 tiles.
     pub scale: f32,
 }
+
+/// Represents a ground cube
+#[derive(Debug, Component, Reflect)]
+#[reflect(Component)]
+pub struct Cube;
