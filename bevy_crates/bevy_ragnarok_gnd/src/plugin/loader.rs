@@ -57,11 +57,13 @@ impl bevy_asset::AssetLoader for AssetLoader {
         let surfaces = Self::build_surfaces(&gnd, load_context);
         let surface_ids = Self::build_surface_ids(&gnd, load_context);
         let cube_faces = Self::build_cube_faces(&gnd, load_context);
+        let normals = Self::build_cube_face_normals(&gnd, load_context);
         let materials = Self::build_materials(
             &textures,
             surface_ids.clone(),
             surfaces.clone(),
             cube_faces.clone(),
+            normals.clone(),
             load_context,
         );
         let scene = Self::build_scene(&gnd, &materials, load_context);
@@ -72,6 +74,7 @@ impl bevy_asset::AssetLoader for AssetLoader {
             surface_ids,
             surfaces,
             cube_faces,
+            normals,
             materials,
         })
     }
@@ -178,11 +181,51 @@ impl AssetLoader {
         )
     }
 
+    fn build_cube_face_normals(
+        gnd: &Gnd,
+        load_context: &mut LoadContext<'_>,
+    ) -> Handle<ShaderStorageBuffer> {
+        let Ok(width) = usize::try_from(gnd.width) else {
+            unreachable!("Width must fit on usize");
+        };
+        let Ok(height) = usize::try_from(gnd.height) else {
+            unreachable!("Width must fit on usize");
+        };
+
+        let mut cube_face_normals = Vec::with_capacity(width * height * 4 * 4 * 4);
+        #[cfg(debug_assertions)]
+        let initial_capacity = cube_face_normals.capacity();
+
+        for z in 0..height {
+            for x in 0..width {
+                let Some(normals) = gnd.calculate_normals(x, z) else {
+                    unreachable!("Should never call with invalid coordinates.");
+                };
+                for normal in normals {
+                    cube_face_normals.extend_from_slice(&normal[0].to_le_bytes());
+                    cube_face_normals.extend_from_slice(&normal[1].to_le_bytes());
+                    cube_face_normals.extend_from_slice(&normal[2].to_le_bytes());
+                    // Padding, but why?
+                    cube_face_normals.extend_from_slice(&[0; 4]);
+                }
+            }
+        }
+
+        #[cfg(debug_assertions)]
+        assert_eq!(initial_capacity, cube_face_normals.len());
+
+        load_context.add_labeled_asset(
+            "CubeFaceNormals".to_owned(),
+            ShaderStorageBuffer::new(&cube_face_normals, RenderAssetUsages::RENDER_WORLD),
+        )
+    }
+
     fn build_materials(
         textures: &[Handle<Image>],
         surface_ids: Handle<ShaderStorageBuffer>,
         surfaces: Handle<ShaderStorageBuffer>,
         cube_faces: Handle<ShaderStorageBuffer>,
+        normals: Handle<ShaderStorageBuffer>,
         load_context: &mut LoadContext<'_>,
     ) -> Vec<Handle<GndMaterial>> {
         let mut materials = Vec::with_capacity(textures.len());
@@ -195,6 +238,7 @@ impl AssetLoader {
                 cube_faces: cube_faces.clone(),
                 surface_ids: surface_ids.clone(),
                 surfaces: surfaces.clone(),
+                normals: normals.clone(),
             };
             materials.push(load_context.add_labeled_asset(format!("Material{i}"), material));
         }

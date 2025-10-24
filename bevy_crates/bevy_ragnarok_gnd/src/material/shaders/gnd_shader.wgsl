@@ -36,6 +36,13 @@ struct GndSurface {
     top_right_uv: vec2<f32>,
 }
 
+struct GndCubeFaceNormals {
+    bottom_left: vec3<f32>,
+    bottom_right: vec3<f32>,
+    top_left: vec3<f32>,
+    top_right: vec3<f32>,
+}
+
 #ifdef BINDLESS
 
 struct GndBindings {
@@ -44,12 +51,14 @@ struct GndBindings {
     cube_face: u32,
     surface_id: u32,
     surface: u32,
+    normals: u32,
 }
 
 @group(#{MATERIAL_BIND_GROUP}) @binding(0) var<storage> gnd_bindings: array<GndBindings>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(10) var<storage> gnd_cube_faces: array<GndCubeFace>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(11) var<storage> gnd_surface_ids: array<u32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(12) var<storage> gnd_surfaces: array<GndSurface>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(13) var<storage> gnd_cube_face_normals: array<GndCubeFaceNormals>;
 
 #else // BINDLESS
 
@@ -58,6 +67,7 @@ struct GndBindings {
 @group(#{MATERIAL_BIND_GROUP}) @binding(2) var<storage> gnd_cube_faces: array<GndCubeFace>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(3) var<storage> gnd_surface_ids: array<u32>;
 @group(#{MATERIAL_BIND_GROUP}) @binding(4) var<storage> gnd_surfaces: array<GndSurface>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(5) var<storage> gnd_cube_face_normals: array<GndCubeFaceNormals>;
 
 #endif // BINDLESS
 
@@ -88,10 +98,12 @@ fn vertex(
     let cube_face = gnd_cube_faces[gnd_bindings[slot].cube_face + tag];
     let surface_id = gnd_surface_ids[gnd_bindings[slot].surface_id + tag];
     let surface = gnd_surfaces[gnd_bindings[slot].surface + surface_id];
+    let cube_face_normals = gnd_cube_face_normals[gnd_bindings[slot].normals + tag / 3];
 #else // BINDLESS
     let cube_face = gnd_cube_faces[tag];
     let surface_id = gnd_surface_ids[tag];
     let surface = gnd_surfaces[surface_id];
+    let cube_face_normals = gnd_cube_face_normals[tag / 3];
 #endif // BINDLESS
 
 #ifdef MORPH_TARGETS
@@ -137,6 +149,16 @@ fn vertex(
 
         if bottom_right_high || bottom_left_high { 
             normal = vec3(-1.) * in.normal;
+        }
+    } else {
+        if index == 0 {
+            normal = cube_face_normals.bottom_right;
+        } else if index == 1 {
+            normal = cube_face_normals.bottom_left;
+        } else if index == 2 {
+            normal = cube_face_normals.top_right;
+        } else if index == 3 {
+            normal = cube_face_normals.top_left;
         }
     }
 

@@ -34,6 +34,8 @@ pub struct GndMaterial {
     pub surface_ids: Handle<ShaderStorageBuffer>,
     #[storage(4, binding_array(12), read_only)]
     pub surfaces: Handle<ShaderStorageBuffer>,
+    #[storage(5, binding_array(13), read_only)]
+    pub normals: Handle<ShaderStorageBuffer>,
 }
 
 impl Material for GndMaterial {

@@ -26,6 +26,9 @@ pub struct GndAsset {
     /// Handle to [`ShaderStorageBuffer`] built from
     /// [`GroundMeshCubes`](ragnarok_gnd::GroundMeshCube) faces.
     pub cube_faces: Handle<ShaderStorageBuffer>,
+    /// Handle to [`ShaderStorageBuffer`] built from
+    /// [`GroundMeshCubes`](ragnarok_gnd::GroundMeshCube) faces' normals.
+    pub normals: Handle<ShaderStorageBuffer>,
     /// Materials built from [`Gnd::textures`](ragnarok_gnd::Gnd::textures).
     pub materials: Vec<Handle<GndMaterial>>,
 }
