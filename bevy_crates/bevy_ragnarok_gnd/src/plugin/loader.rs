@@ -112,7 +112,7 @@ impl AssetLoader {
         }
 
         #[cfg(debug_assertions)]
-        assert_eq!(initial_capacity, surfaces.capacity());
+        debug_assert_eq!(initial_capacity, surfaces.len());
 
         load_context.add_labeled_asset(
             "Surfaces".to_owned(),
@@ -135,7 +135,7 @@ impl AssetLoader {
         }
 
         #[cfg(debug_assertions)]
-        assert_eq!(initial_capacity, surface_ids.capacity());
+        debug_assert_eq!(initial_capacity, surface_ids.len());
 
         load_context.add_labeled_asset(
             "SurfaceIds".to_owned(),
@@ -173,7 +173,7 @@ impl AssetLoader {
         }
 
         #[cfg(debug_assertions)]
-        assert_eq!(initial_capacity, cube_faces.capacity());
+        debug_assert_eq!(initial_capacity, cube_faces.len());
 
         load_context.add_labeled_asset(
             "CubeFaces".to_owned(),
@@ -212,7 +212,7 @@ impl AssetLoader {
         }
 
         #[cfg(debug_assertions)]
-        assert_eq!(initial_capacity, cube_face_normals.len());
+        debug_assert_eq!(initial_capacity, cube_face_normals.len());
 
         load_context.add_labeled_asset(
             "CubeFaceNormals".to_owned(),
