@@ -1,8 +1,9 @@
 use bevy_app::Update;
-use bevy_color::{self, palettes};
+use bevy_color::{self, Srgba, palettes};
 use bevy_ecs::{
-    event::Event,
+    event::{EntityEvent, Event},
     hierarchy::Children,
+    lifecycle::Add,
     observer::On,
     query::With,
     reflect::ReflectResource,
@@ -16,6 +17,8 @@ use bevy_reflect::Reflect;
 
 use crate::Cube;
 
+const AABB_COLOR: Srgba = palettes::tailwind::PURPLE_300;
+
 pub(crate) struct Plugin;
 
 impl bevy_app::Plugin for Plugin {
@@ -28,6 +31,7 @@ impl bevy_app::Plugin for Plugin {
         );
         // Observers
         app.add_observer(toggle_gnd_aabbs);
+        app.add_observer(enable_gnd_aabbs_for_new_cubes);
     }
 }
 
@@ -45,9 +49,25 @@ fn toggle_gnd_aabbs(_event: On<ToggleGndAabbs>, mut gat_debug: ResMut<GndDebug>)
     gat_debug.show_aabbs = !gat_debug.show_aabbs;
 }
 
+fn enable_gnd_aabbs_for_new_cubes(
+    event: On<Add, Cube>,
+    mut commands: Commands,
+    cubes: Query<&Children, With<Cube>>,
+    gnd_debug: ResMut<GndDebug>,
+) {
+    if gnd_debug.show_aabbs
+        && let Ok(children) = cubes.get(event.event_target())
+        && let Some(child) = children.first()
+    {
+        commands.entity(*child).insert(ShowAabbGizmo {
+            color: Some(AABB_COLOR.into()),
+        });
+    }
+}
+
 fn enable_gnd_aabbs(mut commands: Commands, cubes: Query<&Children, With<Cube>>) {
     debug!("Enabling Gnd Aabbs");
-    let cube_aabb_color = palettes::tailwind::PURPLE_300.into();
+    let cube_aabb_color = AABB_COLOR.into();
     for children in cubes {
         if let Some(child) = children.first() {
             commands.entity(*child).insert(ShowAabbGizmo {
