@@ -6,7 +6,7 @@ use bevy_app::AppExit;
 use bevy_asset::{AssetApp, Assets, Handle, uuid_handle};
 use bevy_log::error;
 use bevy_math::{Quat, Vec2, Vec3, primitives::Plane3d};
-use bevy_mesh::{Mesh, MeshBuilder, Meshable};
+use bevy_mesh::{Indices, Mesh, MeshBuilder, Meshable};
 
 #[cfg(feature = "debug")]
 use crate::debug;
@@ -48,7 +48,10 @@ impl bevy_app::Plugin for Plugin {
 
         if let Err(err) = meshes.insert(
             GND_TOP_MESH.id(),
-            Plane3d::new(Vec3::NEG_Y, Vec2::splat(0.5)).mesh().build(),
+            Plane3d::new(Vec3::NEG_Y, Vec2::splat(0.5))
+                .mesh()
+                .build()
+                .with_inserted_indices(Indices::U16(vec![0, 3, 1, 0, 2, 3])),
         ) {
             error!("{err}");
             app.world_mut().write_message(AppExit::from_code(1));
