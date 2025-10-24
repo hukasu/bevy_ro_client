@@ -14,7 +14,6 @@ debug = ["dep:bevy_gizmos"]
 
 [dependencies]
 ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
-ragnarok_rebuild_bevy = { path = "../../ragnarok_rebuild_bevy" }
 ragnarok_gnd = { workspace = true }
 
 ragnarok_water_plane = { workspace = true }
@@ -27,9 +26,7 @@ bevy_color = { workspace = true, default-features = false }
 bevy_derive = { workspace = true, default-features = false }
 bevy_ecs = { workspace = true, default-features = false }
 bevy_gizmos = { workspace = true, default-features = false, optional = true }
-bevy_image = { workspace = true, default-features = false, features = [
-  "zstd_rust",
-] }
+bevy_image = { workspace = true, default-features = false }
 bevy_light = { workspace = true, default-features = false }
 bevy_log = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
