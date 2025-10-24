@@ -147,6 +147,62 @@ impl Gnd {
         }
     }
 
+    /// Return the normals of the top face of a cube
+    ///
+    /// The order is
+    /// ```ignore
+    /// 2 ----- 3
+    /// | \     |
+    /// |     \ |
+    /// 0 ----- 1
+    /// ```
+    pub fn calculate_normals(&self, x: usize, z: usize) -> Option<[[f32; 3]; 4]> {
+        let Ok(width) = usize::try_from(self.width) else {
+            unreachable!("Width must fit on usize");
+        };
+        let Ok(height) = usize::try_from(self.height) else {
+            unreachable!("Height must fit on usize");
+        };
+
+        if x >= width || z >= height {
+            return None;
+        }
+
+        let Some(heights) = self.get_top_face_heights(x, z) else {
+            unreachable!("Must be a valid face.");
+        };
+
+        let zero = Self::triangle_normal(
+            [-0.5, heights[0], -0.5],
+            [0.5, heights[1], -0.5],
+            [-0.5, heights[2], 0.5],
+        );
+        let three = Self::triangle_normal(
+            [0.5, heights[1], -0.5],
+            [0.5, heights[3], 0.5],
+            [-0.5, heights[2], 0.5],
+        );
+
+        let shared = {
+            let sum = [zero[0] + three[0], zero[1] + three[1], zero[2] + three[2]];
+            let length = (sum[0].powi(2) + sum[1].powi(2) + sum[2].powi(2)).sqrt();
+            [sum[0] / length, sum[1] / length, sum[2] / length]
+        };
+
+        Some([zero, shared, shared, three])
+    }
+
+    #[inline(always)]
+    fn triangle_normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
+        let x = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+        let y = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+        [
+            x[1] * y[2] - x[2] * y[1],
+            x[2] * y[0] - x[0] - y[2],
+            x[0] * y[1] - x[1] * y[0],
+        ]
+    }
+
     /// Return the heights of the top face.
     ///
     /// The order is
