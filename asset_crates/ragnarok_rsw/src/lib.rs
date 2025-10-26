@@ -60,6 +60,7 @@ impl Rsw {
             | Version(2, 5, 131)
             | Version(2, 5, 143)
             | Version(2, 5, 146)
+            | Version(2, 5, 227)
             | Version(2, 6, 161)
             | Version(2, 6, 162)
             | Version(2, 6, 187) => (),
