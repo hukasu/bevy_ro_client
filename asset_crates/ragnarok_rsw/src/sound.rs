@@ -36,7 +36,8 @@ impl Sound {
         let range = reader.read_le_f32()?;
 
         let cycle = match version {
-            Version(2, 1, 0)
+            Version(2, 0, 0)
+            | Version(2, 1, 0)
             | Version(2, 2, _)
             | Version(2, 3, _)
             | Version(2, 4, _)
