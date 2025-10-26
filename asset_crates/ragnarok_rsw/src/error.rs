@@ -20,15 +20,15 @@ impl std::fmt::Display for Error {
         match self {
             Self::InvalidSignature => write!(f, "Rsw file had wrong signature."),
             Self::UnknownVersion(version) => {
-                write!(f, "The version '{version}' is unknown.")
+                write!(f, "The Rsw version '{version}' is unknown.")
             }
             Self::Io(err) => write!(f, "An IO error occurred while reading RSW. '{err}'"),
             Self::UnknownObjectType(obj_type) => {
-                write!(f, "RSW had an object of unknown type ({obj_type}).")
+                write!(f, "Rsw had an object of unknown type ({obj_type}).")
             }
             Self::IncompleteRead(version, unread) => write!(
                 f,
-                "Could not read RSW to the end. RSW V{version} had {unread} unread bytes."
+                "Could not read Rsw to the end. Rsw v{version} had {unread} unread bytes."
             ),
         }
     }
