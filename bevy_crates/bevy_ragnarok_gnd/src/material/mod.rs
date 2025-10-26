@@ -22,7 +22,7 @@ impl bevy_app::Plugin for Plugin {
 }
 
 #[derive(Clone, Asset, Reflect, AsBindGroup)]
-#[bindless(index_table(range(0..5)))]
+#[bindless(index_table(range(0..6)))]
 pub struct GndMaterial {
     #[texture(0)]
     #[sampler(1)]
