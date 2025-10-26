@@ -116,13 +116,13 @@ fn vertex(
 
     var y: f32;
     if index == 0 {
-        y = cube_face.bottom_right;
-    } else if index == 1 {
         y = cube_face.bottom_left;
+    } else if index == 1 {
+        y = cube_face.bottom_right;
     } else if index == 2 {
-        y = cube_face.top_right;
-    } else if index == 3 {
         y = cube_face.top_left;
+    } else if index == 3 {
+        y = cube_face.top_right;
     }
 
     let position = vec4<f32>(
@@ -139,8 +139,8 @@ fn vertex(
 #ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
     var normal: vec3<f32> = in.normal;
     if all(in.normal == vec3(1., 0., 0.)) {
-        let bottom_right_high = cube_face.bottom_left > cube_face.bottom_right;
-        let bottom_left_high = cube_face.top_left > cube_face.top_right;
+        let bottom_right_high = cube_face.bottom_right > cube_face.top_right;
+        let bottom_left_high = cube_face.bottom_left > cube_face.top_left;
 
         if bottom_right_high || bottom_left_high {
             normal = vec3(-1.) * in.normal;
@@ -154,13 +154,13 @@ fn vertex(
         }
     } else {
         if index == 0 {
-            normal = cube_face_normals.bottom_right;
-        } else if index == 1 {
             normal = cube_face_normals.bottom_left;
+        } else if index == 1 {
+            normal = cube_face_normals.bottom_right;
         } else if index == 2 {
-            normal = cube_face_normals.top_right;
-        } else if index == 3 {
             normal = cube_face_normals.top_left;
+        } else if index == 3 {
+            normal = cube_face_normals.top_right;
         }
     }
 
@@ -171,13 +171,13 @@ fn vertex(
 #endif
 #ifdef VERTEX_UVS_A
     if index == 0 {
-        vertex_output.uv = surface.bottom_right_uv;
-    } else if index == 1 {
         vertex_output.uv = surface.bottom_left_uv;
+    } else if index == 1 {
+        vertex_output.uv = surface.bottom_right_uv;
     } else if index == 2 {
-        vertex_output.uv = surface.top_right_uv;
-    } else if index == 3 {
         vertex_output.uv = surface.top_left_uv;
+    } else if index == 3 {
+        vertex_output.uv = surface.top_right_uv;
     }
 #endif // VERTEX_UVS_A
 

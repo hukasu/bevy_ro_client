@@ -237,12 +237,12 @@ impl Gnd {
     ///
     /// The order is
     /// ```ignore
-    ///           3
+    ///           2
     ///          /|
-    /// + ----- 2 |
-    /// |       | 1
+    /// + ----- 0 |
+    /// |       | 3
     /// |       |/
-    /// + ----- 0
+    /// + ----- 1
     /// ```
     pub fn get_east_face_heights(&self, x: usize, z: usize) -> Option<[f32; 4]> {
         let Ok(width) = usize::try_from(self.width) else {
@@ -259,10 +259,10 @@ impl Gnd {
         let cur_cube = &self.ground_mesh_cubes[x + z * width];
         let east_cube = &self.ground_mesh_cubes[(x + 1) + z * width];
         Some([
-            cur_cube.bottom_right_height,
-            east_cube.bottom_left_height,
             cur_cube.top_right_height,
+            cur_cube.bottom_right_height,
             east_cube.top_left_height,
+            east_cube.bottom_left_height,
         ])
     }
 
