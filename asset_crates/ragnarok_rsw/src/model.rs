@@ -26,7 +26,7 @@ impl Model {
         let animation_speed = reader.read_le_f32()?;
         let block_type = reader.read_le_i32()?;
         let flag = match version {
-            Version(2, 6, 187) => reader.read_u8()?,
+            Version(2, 6, 187) | Version(2, 6, 197) => reader.read_u8()?,
             _ => 0,
         };
         let filename = read_euc_kr_string(reader, 80)?;
