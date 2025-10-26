@@ -91,6 +91,8 @@ fn vertex(
 ) -> VertexOutput {
     var vertex_output: VertexOutput;
 
+    vertex_output.instance_index = in.instance_index;
+
     let first_vertex_index = mesh[in.instance_index].first_vertex_index;
     let tag = mesh[in.instance_index].tag;
 #ifdef BINDLESS
