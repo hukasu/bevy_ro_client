@@ -147,16 +147,8 @@ impl Gnd {
         }
     }
 
-    /// Return the normals of the top face of a cube
-    ///
-    /// The order is
-    /// ```ignore
-    /// 2 ----- 3
-    /// | \     |
-    /// |     \ |
-    /// 0 ----- 1
-    /// ```
-    pub fn calculate_normals(&self, x: usize, z: usize) -> Option<[[f32; 3]; 4]> {
+    /// Get the cube for given coordinate
+    pub fn get_cube(&self, x: usize, z: usize) -> Option<&GroundMeshCube> {
         let Ok(width) = usize::try_from(self.width) else {
             unreachable!("Width must fit on usize");
         };
@@ -168,39 +160,173 @@ impl Gnd {
             return None;
         }
 
-        let Some(heights) = self.get_top_face_heights(x, z) else {
-            unreachable!("Must be a valid face.");
-        };
-
-        let zero = Self::triangle_normal(
-            [-0.5, heights[0], -0.5],
-            [0.5, heights[1], -0.5],
-            [-0.5, heights[2], 0.5],
-        );
-        let three = Self::triangle_normal(
-            [0.5, heights[1], -0.5],
-            [0.5, heights[3], 0.5],
-            [-0.5, heights[2], 0.5],
-        );
-
-        let shared = {
-            let sum = [zero[0] + three[0], zero[1] + three[1], zero[2] + three[2]];
-            let length = (sum[0].powi(2) + sum[1].powi(2) + sum[2].powi(2)).sqrt();
-            [sum[0] / length, sum[1] / length, sum[2] / length]
-        };
-
-        Some([zero, shared, shared, three])
+        Some(&self.ground_mesh_cubes[x + z * width])
     }
 
-    #[inline(always)]
-    fn triangle_normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
-        let x = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
-        let y = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-        [
-            x[1] * y[2] - x[2] * y[1],
-            x[2] * y[0] - x[0] - y[2],
-            x[0] * y[1] - x[1] * y[0],
-        ]
+    /// Return the normals of the top face of a cube
+    ///
+    /// The order is
+    /// ```ignore
+    /// 2 ----- 3
+    /// | \     |
+    /// |     \ |
+    /// 0 ----- 1
+    /// ```
+    pub fn calculate_normals(&self, x: usize, z: usize) -> Option<[[f32; 3]; 4]> {
+        let center_cube = self.get_cube(x, z)?;
+        let center = center_cube.calculate_normals();
+
+        // 4 way adjacency
+        let left_cube = x.checked_sub(1).and_then(|x| self.get_cube(x, z));
+        let left = left_cube
+            .filter(|left| center_cube.is_connected_left(left))
+            .map(|left| left.calculate_normals());
+
+        let right_cube = self.get_cube(x + 1, z);
+        let right = right_cube
+            .filter(|right| center_cube.is_connected_right(right))
+            .map(|right| right.calculate_normals());
+        let top_cube = self.get_cube(x, z + 1);
+        let top = top_cube
+            .filter(|top| center_cube.is_connected_top(top))
+            .map(|top| top.calculate_normals());
+        let bottom_cube = z.checked_sub(1).and_then(|z| self.get_cube(x, z));
+        let bottom = bottom_cube
+            .filter(|bottom| center_cube.is_connected_bottom(bottom))
+            .map(|bottom| bottom.calculate_normals());
+
+        // Diagonal adjacency
+        let bottom_left_cube = x
+            .checked_sub(1)
+            .and_then(|x| z.checked_sub(1).and_then(|z| self.get_cube(x, z)));
+        let bottom_left = bottom_left_cube
+            .filter(|bottom_left| {
+                let top_connected = left_cube
+                    .map(|left| bottom_left.is_connected_top(left))
+                    .unwrap_or(false);
+                let right_connected = bottom_cube
+                    .map(|bottom| bottom_left.is_connected_right(bottom))
+                    .unwrap_or(false);
+
+                top_connected || right_connected
+            })
+            .map(|bottom_left| bottom_left.calculate_normals());
+
+        let bottom_right_cube = z.checked_sub(1).and_then(|z| self.get_cube(x + 1, z));
+        let bottom_right = bottom_right_cube
+            .filter(|bottom_right| {
+                let top_connected = right_cube
+                    .map(|right| bottom_right.is_connected_top(right))
+                    .unwrap_or(false);
+                let left_connected = bottom_cube
+                    .map(|bottom| bottom_right.is_connected_left(bottom))
+                    .unwrap_or(false);
+
+                top_connected || left_connected
+            })
+            .map(|bottom_right| bottom_right.calculate_normals());
+
+        let top_left_cube = x.checked_sub(1).and_then(|x| self.get_cube(x, z + 1));
+        let top_left = top_left_cube
+            .filter(|top_left| {
+                let right_connected = top_cube
+                    .map(|top| top_left.is_connected_right(top))
+                    .unwrap_or(false);
+                let bottom_connected = left_cube
+                    .map(|left| top_left.is_connected_bottom(left))
+                    .unwrap_or(false);
+
+                right_connected || bottom_connected
+            })
+            .map(|top_left| top_left.calculate_normals());
+
+        let top_right_cube = self.get_cube(x + 1, z + 1);
+        let top_right = top_right_cube
+            .filter(|top_right| {
+                let left_connected = top_cube
+                    .map(|top| top_right.is_connected_left(top))
+                    .unwrap_or(false);
+                let bottom_connected = right_cube
+                    .map(|right| top_right.is_connected_bottom(right))
+                    .unwrap_or(false);
+
+                left_connected || bottom_connected
+            })
+            .map(|top_right| top_right.calculate_normals());
+
+        // + ------- + ------- + ------- +
+        // | \       | \       | \       |
+        // |   \     |   \     |   \     |
+        // |     \   |     \   |     \   |
+        // |       \ |       \ |       \ |
+        // + ------- 2 ------- 3 ------- +
+        // | \       | \       | \       |
+        // |   \     |   \     |   \     |
+        // |     \   |     \   |     \   |
+        // |       \ |       \ |       \ |
+        // + ------- 0 ------- 1 ------- +
+        // | \       | \       | \       |
+        // |   \     |   \     |   \     |
+        // |     \   |     \   |     \   |
+        // |       \ |       \ |       \ |
+        // + ------- + --------- + ----- +
+        let Some(zero) = triangles_normal(
+            [
+                left.map(|left| left[0]),
+                left.map(|left| left[1]),
+                Some(center[0]),
+                bottom.map(|bottom| bottom[1]),
+                bottom.map(|bottom| bottom[0]),
+                bottom_left.map(|bottom_left| bottom_left[1]),
+            ]
+            .into_iter()
+            .flatten(),
+        ) else {
+            unreachable!("Iterator will never be empty.");
+        };
+        let Some(one) = triangles_normal(
+            [
+                Some(center[0]),
+                Some(center[1]),
+                right.map(|right| right[0]),
+                bottom_right.map(|bottom_right| bottom_right[1]),
+                bottom_right.map(|bottom_right| bottom_right[0]),
+                bottom.map(|bottom| bottom[1]),
+            ]
+            .into_iter()
+            .flatten(),
+        ) else {
+            unreachable!("Iterator will never be empty.");
+        };
+        let Some(two) = triangles_normal(
+            [
+                top_left.map(|top_left| top_left[0]),
+                top_left.map(|top_left| top_left[1]),
+                top.map(|top| top[0]),
+                Some(center[1]),
+                Some(center[0]),
+                left.map(|left| left[1]),
+            ]
+            .into_iter()
+            .flatten(),
+        ) else {
+            unreachable!("Iterator will never be empty.");
+        };
+        let Some(three) = triangles_normal(
+            [
+                top.map(|top| top[0]),
+                top.map(|top| top[1]),
+                top_right.map(|top_right| top_right[0]),
+                right.map(|right| right[1]),
+                right.map(|right| right[0]),
+                Some(center[1]),
+            ]
+            .into_iter()
+            .flatten(),
+        ) else {
+            unreachable!("Iterator will never be empty.");
+        };
+        Some([zero, one, two, three])
     }
 
     /// Return the heights of the top face.
@@ -298,4 +424,29 @@ impl Gnd {
             north_cube.bottom_right_height,
         ])
     }
+}
+
+#[inline(always)]
+fn triangle_normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
+    let x = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+    let y = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    [
+        x[1] * y[2] - x[2] * y[1],
+        x[2] * y[0] - x[0] - y[2],
+        x[0] * y[1] - x[1] * y[0],
+    ]
+}
+
+#[inline(always)]
+fn triangles_normal(triangles: impl Iterator<Item = [f32; 3]>) -> Option<[f32; 3]> {
+    let sum = triangles.reduce(|accumulator, next| {
+        [
+            accumulator[0] + next[0],
+            accumulator[1] + next[1],
+            accumulator[2] + next[2],
+        ]
+    })?;
+
+    let length = (sum[0].powi(2) + sum[1].powi(2) + sum[2].powi(2)).sqrt();
+    Some([sum[0] / length, sum[1] / length, sum[2] / length])
 }

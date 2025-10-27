@@ -2,6 +2,8 @@ use std::io::Read;
 
 use ragnarok_rebuild_common::reader_ext::ReaderExt;
 
+use crate::triangle_normal;
+
 #[derive(Debug)]
 pub struct GroundMeshCube {
     pub bottom_left_height: f32,
@@ -32,5 +34,71 @@ impl GroundMeshCube {
             north_facing_surface,
             east_facing_surface,
         })
+    }
+
+    /// Return the normals of the top face of the cube.
+    ///
+    /// The order is
+    /// ```ignore
+    /// + ----- +
+    /// | \  1  |
+    /// |   \   |
+    /// | 0   \ |
+    /// + ----- +
+    /// ```
+    pub fn calculate_normals(&self) -> [[f32; 3]; 2] {
+        let heights = [
+            self.bottom_left_height,
+            self.bottom_right_height,
+            self.top_left_height,
+            self.top_right_height,
+        ];
+
+        let zero = triangle_normal(
+            [-0.5, heights[0], -0.5],
+            [0.5, heights[1], -0.5],
+            [-0.5, heights[2], 0.5],
+        );
+        let one = triangle_normal(
+            [0.5, heights[1], -0.5],
+            [0.5, heights[3], 0.5],
+            [-0.5, heights[2], 0.5],
+        );
+
+        [zero, one]
+    }
+
+    /// Tests if the top of the [`GroundMeshCube`] is connected to the bottom
+    /// of another [`GroundMeshCube`]
+    pub fn is_connected_top(&self, top: &Self) -> bool {
+        let left_connected = (top.bottom_left_height - self.top_left_height).abs() < f32::EPSILON;
+        let right_connected =
+            (top.bottom_right_height - self.top_right_height).abs() < f32::EPSILON;
+
+        left_connected || right_connected
+    }
+
+    /// Tests if the bottom of the [`GroundMeshCube`] is connected to the top
+    /// of another [`GroundMeshCube`]
+    #[inline(always)]
+    pub fn is_connected_bottom(&self, bottom: &Self) -> bool {
+        bottom.is_connected_top(self)
+    }
+
+    /// Tests if the top of the [`GroundMeshCube`] is connected to the bottom
+    /// of another [`GroundMeshCube`]
+    pub fn is_connected_right(&self, right: &Self) -> bool {
+        let top_connected = (self.top_right_height - right.top_left_height).abs() < f32::EPSILON;
+        let bottom_connected =
+            (self.bottom_right_height - right.bottom_left_height).abs() < f32::EPSILON;
+
+        top_connected || bottom_connected
+    }
+
+    /// Tests if the bottom of the [`GroundMeshCube`] is connected to the top
+    /// of another [`GroundMeshCube`]
+    #[inline(always)]
+    pub fn is_connected_left(&self, left: &Self) -> bool {
+        left.is_connected_right(self)
     }
 }
