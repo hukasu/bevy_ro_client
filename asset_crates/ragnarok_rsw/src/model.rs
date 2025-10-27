@@ -9,7 +9,7 @@ pub struct Model {
     pub animation_speed: f32,
     pub block_type: i32,
     pub flag: u8,
-    pub extra_flag: u32,
+    pub extra_flag: [u8; 4],
     pub filename: Box<str>,
     pub node_name: Box<str>,
     pub position: [f32; 3],
@@ -31,8 +31,8 @@ impl Model {
             _ => 0,
         };
         let extra_flag = match version {
-            Version(2, 7, _) => reader.read_le_u32()?,
-            _ => 0,
+            Version(2, 7, _) => reader.read_array()?,
+            _ => [255; 4],
         };
         let filename = read_euc_kr_string(reader, 80)?;
         // There are models were this field is corrupt
