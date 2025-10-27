@@ -38,6 +38,13 @@ pub struct GndMaterial {
     pub normals: Handle<ShaderStorageBuffer>,
 }
 
+impl GndMaterial {
+    pub const SURFACE_UVS_STRIDE: usize = 2 * 4 * 4;
+    pub const SURFACE_IDS_STRIDE: usize = 4;
+    pub const HEIGHTS_STRIDE: usize = 4 * 4;
+    pub const NORMALS_STRIDE: usize = 4 * 4 * 4;
+}
+
 impl Material for GndMaterial {
     fn alpha_mode(&self) -> AlphaMode {
         AlphaMode::Mask(0.5)

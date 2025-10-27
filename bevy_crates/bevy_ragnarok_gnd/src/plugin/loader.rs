@@ -96,7 +96,7 @@ impl AssetLoader {
         gnd: &Gnd,
         load_context: &mut LoadContext<'_>,
     ) -> Handle<ShaderStorageBuffer> {
-        let mut surfaces = Vec::with_capacity(gnd.surfaces.len() * 8 * 4);
+        let mut surfaces = Vec::with_capacity(gnd.surfaces.len() * GndMaterial::SURFACE_UVS_STRIDE);
         #[cfg(debug_assertions)]
         let initial_capacity = surfaces.capacity();
 
@@ -124,7 +124,8 @@ impl AssetLoader {
         gnd: &Gnd,
         load_context: &mut LoadContext<'_>,
     ) -> Handle<ShaderStorageBuffer> {
-        let mut surface_ids = Vec::with_capacity(gnd.ground_mesh_cubes.len() * 3 * 4);
+        let mut surface_ids =
+            Vec::with_capacity(gnd.ground_mesh_cubes.len() * 3 * GndMaterial::SURFACE_IDS_STRIDE);
         #[cfg(debug_assertions)]
         let initial_capacity = surface_ids.capacity();
 
@@ -147,7 +148,8 @@ impl AssetLoader {
         gnd: &Gnd,
         load_context: &mut LoadContext<'_>,
     ) -> Handle<ShaderStorageBuffer> {
-        let mut cube_faces = Vec::with_capacity(gnd.ground_mesh_cubes.len() * 3 * 4 * 4);
+        let mut cube_faces =
+            Vec::with_capacity(gnd.ground_mesh_cubes.len() * 3 * GndMaterial::HEIGHTS_STRIDE);
         #[cfg(debug_assertions)]
         let initial_capacity = cube_faces.capacity();
 
@@ -198,7 +200,8 @@ impl AssetLoader {
             unreachable!("Width must fit on usize");
         };
 
-        let mut cube_face_normals = Vec::with_capacity(width * height * 4 * 4 * 4);
+        let mut cube_face_normals =
+            Vec::with_capacity(width * height * GndMaterial::NORMALS_STRIDE);
         #[cfg(debug_assertions)]
         let initial_capacity = cube_face_normals.capacity();
 
