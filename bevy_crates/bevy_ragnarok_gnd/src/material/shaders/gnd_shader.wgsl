@@ -134,8 +134,11 @@ fn vertex(
     
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
-    vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);
-    
+    vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);    
+#ifdef UNCLIPPED_DEPTH_ORTHO_EMULATION
+    vertex_output.unclipped_depth = vertex_output.world_position.z;
+#endif // UNCLIPPED_DEPTH_ORTHO_EMULATION
+
 #ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
     var normal: vec3<f32> = in.normal;
     if all(in.normal == vec3(1., 0., 0.)) {
@@ -234,6 +237,9 @@ fn prepass_fragment(
 #ifdef NORMAL_PREPASS
     out.normal = in.world_normal;
 #endif
+#ifdef UNCLIPPED_DEPTH_ORTHO_EMULATION
+    out.frag_depth = in.unclipped_depth;
+#endif // UNCLIPPED_DEPTH_ORTHO_EMULATION
     return out;
 }
 #else // PREPASS_FRAGMENT
