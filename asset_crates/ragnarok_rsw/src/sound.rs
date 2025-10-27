@@ -42,7 +42,8 @@ impl Sound {
             | Version(2, 3, _)
             | Version(2, 4, _)
             | Version(2, 5, _)
-            | Version(2, 6, _) => reader.read_le_f32()?,
+            | Version(2, 6, _)
+            | Version(2, 7, _) => reader.read_le_f32()?,
             _ => 4.,
         };
 

@@ -66,7 +66,8 @@ impl Rsw {
             | Version(2, 6, 162)
             | Version(2, 6, 187)
             | Version(2, 6, 197)
-            | Version(2, 7, 227) => (),
+            | Version(2, 7, 227)
+            | Version(2, 7, 248) => (),
             version => return Err(Error::UnknownVersion(version)),
         };
 
