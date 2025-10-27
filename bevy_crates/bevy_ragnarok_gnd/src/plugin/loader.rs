@@ -175,9 +175,15 @@ impl AssetLoader {
         #[cfg(debug_assertions)]
         debug_assert_eq!(initial_capacity, cube_faces.len());
 
+        let asset_usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
         load_context.add_labeled_asset(
             "CubeFaces".to_owned(),
-            ShaderStorageBuffer::new(&cube_faces, RenderAssetUsages::RENDER_WORLD),
+            ShaderStorageBuffer::new(&cube_faces, asset_usage),
         )
     }
 
@@ -214,9 +220,15 @@ impl AssetLoader {
         #[cfg(debug_assertions)]
         debug_assert_eq!(initial_capacity, cube_face_normals.len());
 
+        let asset_usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
         load_context.add_labeled_asset(
             "CubeFaceNormals".to_owned(),
-            ShaderStorageBuffer::new(&cube_face_normals, RenderAssetUsages::RENDER_WORLD),
+            ShaderStorageBuffer::new(&cube_face_normals, asset_usage),
         )
     }
 

@@ -47,24 +47,27 @@ impl bevy_app::Plugin for Plugin {
             return;
         };
 
+        let asset_usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
         if let Err(err) = meshes.insert(
             GND_TOP_MESH.id(),
-            Mesh::new(
-                bevy_mesh::PrimitiveTopology::TriangleList,
-                RenderAssetUsages::RENDER_WORLD,
-            )
-            .with_inserted_attribute(
-                Mesh::ATTRIBUTE_POSITION,
-                vec![
-                    Vec3::new(-0.5, 0.5, -0.5),
-                    Vec3::new(0.5, 0.5, -0.5),
-                    Vec3::new(-0.5, 0.5, 0.5),
-                    Vec3::new(0.5, 0.5, 0.5),
-                ],
-            )
-            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![Vec3::NEG_Y; 4])
-            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![Vec2::ZERO; 4])
-            .with_inserted_indices(Indices::U16(INDICES.to_vec())),
+            Mesh::new(bevy_mesh::PrimitiveTopology::TriangleList, asset_usage)
+                .with_inserted_attribute(
+                    Mesh::ATTRIBUTE_POSITION,
+                    vec![
+                        Vec3::new(-0.5, 0.5, -0.5),
+                        Vec3::new(0.5, 0.5, -0.5),
+                        Vec3::new(-0.5, 0.5, 0.5),
+                        Vec3::new(0.5, 0.5, 0.5),
+                    ],
+                )
+                .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![Vec3::NEG_Y; 4])
+                .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![Vec2::ZERO; 4])
+                .with_inserted_indices(Indices::U16(INDICES.to_vec())),
         ) {
             error!("{err}");
             app.world_mut().write_message(AppExit::from_code(1));
@@ -73,22 +76,19 @@ impl bevy_app::Plugin for Plugin {
 
         if let Err(err) = meshes.insert(
             GND_EAST_MESH.id(),
-            Mesh::new(
-                bevy_mesh::PrimitiveTopology::TriangleList,
-                RenderAssetUsages::RENDER_WORLD,
-            )
-            .with_inserted_attribute(
-                Mesh::ATTRIBUTE_POSITION,
-                vec![
-                    Vec3::new(0.5, 0.5, 0.5),
-                    Vec3::new(0.5, 0.5, -0.5),
-                    Vec3::new(0.5, -0.5, 0.5),
-                    Vec3::new(0.5, -0.5, -0.5),
-                ],
-            )
-            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![Vec3::X; 4])
-            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![Vec2::ZERO; 4])
-            .with_inserted_indices(Indices::U16(INDICES.to_vec())),
+            Mesh::new(bevy_mesh::PrimitiveTopology::TriangleList, asset_usage)
+                .with_inserted_attribute(
+                    Mesh::ATTRIBUTE_POSITION,
+                    vec![
+                        Vec3::new(0.5, 0.5, 0.5),
+                        Vec3::new(0.5, 0.5, -0.5),
+                        Vec3::new(0.5, -0.5, 0.5),
+                        Vec3::new(0.5, -0.5, -0.5),
+                    ],
+                )
+                .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![Vec3::X; 4])
+                .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![Vec2::ZERO; 4])
+                .with_inserted_indices(Indices::U16(INDICES.to_vec())),
         ) {
             error!("{err}");
             app.world_mut().write_message(AppExit::from_code(1));
@@ -97,22 +97,19 @@ impl bevy_app::Plugin for Plugin {
 
         if let Err(err) = meshes.insert(
             GND_NORTH_MESH.id(),
-            Mesh::new(
-                bevy_mesh::PrimitiveTopology::TriangleList,
-                RenderAssetUsages::RENDER_WORLD,
-            )
-            .with_inserted_attribute(
-                Mesh::ATTRIBUTE_POSITION,
-                vec![
-                    Vec3::new(-0.5, 0.5, 0.5),
-                    Vec3::new(0.5, 0.5, 0.5),
-                    Vec3::new(-0.5, -0.5, 0.5),
-                    Vec3::new(0.5, -0.5, 0.5),
-                ],
-            )
-            .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![Vec3::NEG_Z; 4])
-            .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![Vec2::ZERO; 4])
-            .with_inserted_indices(Indices::U16(INDICES.to_vec())),
+            Mesh::new(bevy_mesh::PrimitiveTopology::TriangleList, asset_usage)
+                .with_inserted_attribute(
+                    Mesh::ATTRIBUTE_POSITION,
+                    vec![
+                        Vec3::new(-0.5, 0.5, 0.5),
+                        Vec3::new(0.5, 0.5, 0.5),
+                        Vec3::new(-0.5, -0.5, 0.5),
+                        Vec3::new(0.5, -0.5, 0.5),
+                    ],
+                )
+                .with_inserted_attribute(Mesh::ATTRIBUTE_NORMAL, vec![Vec3::NEG_Z; 4])
+                .with_inserted_attribute(Mesh::ATTRIBUTE_UV_0, vec![Vec2::ZERO; 4])
+                .with_inserted_indices(Indices::U16(INDICES.to_vec())),
         ) {
             error!("{err}");
             app.world_mut().write_message(AppExit::from_code(1));
