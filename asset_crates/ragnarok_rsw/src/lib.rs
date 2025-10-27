@@ -34,7 +34,7 @@ pub struct Rsw {
     pub water_configuration: Option<WaterPlane>,
     pub lighting_parameters: LightingParams,
     pub map_boundaries: BoundingBox,
-    pub mystery_items: Box<[u32]>,
+    pub mystery_items: Box<[[u8; 4]]>,
     pub models: Box<[Model]>,
     pub lights: Box<[Light]>,
     pub sounds: Box<[Sound]>,
@@ -158,7 +158,7 @@ impl Rsw {
     fn read_mystery_items(
         mut reader: &mut dyn Read,
         version: &Version,
-    ) -> Result<Box<[u32]>, Error> {
+    ) -> Result<Box<[[u8; 4]]>, Error> {
         match version {
             Version(2, 7, _) => {
                 let count = reader.read_le_u32()?;
@@ -167,7 +167,7 @@ impl Rsw {
                 };
                 let mut mystery_items = Vec::with_capacity(count);
                 for _ in 0..count {
-                    let value = reader.read_le_u32()?;
+                    let value = reader.read_array()?;
                     mystery_items.push(value);
                 }
 
