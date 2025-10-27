@@ -34,6 +34,7 @@ pub struct Rsw {
     pub water_configuration: Option<WaterPlane>,
     pub lighting_parameters: LightingParams,
     pub map_boundaries: BoundingBox,
+    pub mystery_items: Box<[[u8; 4]]>,
     pub models: Box<[Model]>,
     pub lights: Box<[Light]>,
     pub sounds: Box<[Sound]>,
@@ -48,6 +49,7 @@ impl Rsw {
 
         match version {
             Version(1, 9, 0)
+            | Version(2, 0, 0)
             | Version(2, 1, 0)
             | Version(2, 2, 0)
             | Version(2, 2, 1)
@@ -59,9 +61,14 @@ impl Rsw {
             | Version(2, 5, 131)
             | Version(2, 5, 143)
             | Version(2, 5, 146)
+            | Version(2, 5, 227)
             | Version(2, 6, 161)
             | Version(2, 6, 162)
-            | Version(2, 6, 187) => (),
+            | Version(2, 6, 187)
+            | Version(2, 6, 197)
+            | Version(2, 7, 227)
+            | Version(2, 7, 248)
+            | Version(2, 7, 251) => (),
             version => return Err(Error::UnknownVersion(version)),
         };
 
@@ -76,6 +83,8 @@ impl Rsw {
         let lighting_parameters = LightingParams::from_reader(reader)?;
 
         let map_boundaries = BoundingBox::from_reader(reader)?;
+
+        let mystery_items = Self::read_mystery_items(reader, &version)?;
 
         let (models, lights, sounds, effects) = Self::read_objects(reader, &version)?;
 
@@ -98,6 +107,7 @@ impl Rsw {
             water_configuration,
             lighting_parameters,
             map_boundaries,
+            mystery_items,
             models,
             lights,
             sounds,
@@ -120,7 +130,7 @@ impl Rsw {
         let minor = reader.read_u8()?;
         let build = if major == 2 && (2..5).contains(&minor) {
             u32::from(reader.read_u8()?)
-        } else if major == 2 && (5..7).contains(&minor) {
+        } else if major == 2 && (5..).contains(&minor) {
             reader.read_le_u32()?
         } else {
             0
@@ -130,7 +140,7 @@ impl Rsw {
 
     fn read_flag(mut reader: &mut dyn Read, version: &Version) -> Result<u8, std::io::Error> {
         match version {
-            Version(2, 5, _) | Version(2, 6, _) => reader.read_u8(),
+            Version(2, 5, _) | Version(2, 6, _) | Version(2, 7, _) => reader.read_u8(),
             _ => Ok(0),
         }
     }
@@ -140,8 +150,30 @@ impl Rsw {
         version: &Version,
     ) -> Result<Option<WaterPlane>, std::io::Error> {
         match version {
-            Version(2, 6, _) => Ok(None),
+            Version(2, 6, _) | Version(2, 7, _) => Ok(None),
             _ => Ok(Some(WaterPlane::from_reader(reader)?)),
+        }
+    }
+
+    fn read_mystery_items(
+        mut reader: &mut dyn Read,
+        version: &Version,
+    ) -> Result<Box<[[u8; 4]]>, Error> {
+        match version {
+            Version(2, 7, _) => {
+                let count = reader.read_le_u32()?;
+                let Ok(count) = usize::try_from(count) else {
+                    unreachable!("Count should never exceed usize.");
+                };
+                let mut mystery_items = Vec::with_capacity(count);
+                for _ in 0..count {
+                    let value = reader.read_array()?;
+                    mystery_items.push(value);
+                }
+
+                Ok(mystery_items.into_boxed_slice())
+            }
+            _ => Ok(Box::default()),
         }
     }
 
@@ -185,7 +217,8 @@ impl Rsw {
             | Version(2, 3, _)
             | Version(2, 4, _)
             | Version(2, 5, _)
-            | Version(2, 6, _) => QuadTree::from_reader(reader),
+            | Version(2, 6, _)
+            | Version(2, 7, _) => QuadTree::from_reader(reader),
             _ => Ok(QuadTree {
                 ranges: std::array::from_fn::<Range, QUAD_TREE_SIZE, _>(|_| Range::default())
                     .into(),
