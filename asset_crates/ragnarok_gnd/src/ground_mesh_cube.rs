@@ -46,7 +46,7 @@ impl GroundMeshCube {
     /// | 0   \ |
     /// + ----- +
     /// ```
-    pub fn calculate_normals(&self) -> [[f32; 3]; 2] {
+    pub fn calculate_normals(&self, scale: f32) -> [[f32; 3]; 2] {
         let heights = [
             self.bottom_left_height,
             self.bottom_right_height,
@@ -55,14 +55,14 @@ impl GroundMeshCube {
         ];
 
         let zero = triangle_normal(
-            [-0.5, heights[0], -0.5],
-            [0.5, heights[1], -0.5],
-            [-0.5, heights[2], 0.5],
+            [-0.5 * scale, heights[0], -0.5 * scale],
+            [0.5 * scale, heights[1], -0.5 * scale],
+            [-0.5 * scale, heights[2], 0.5 * scale],
         );
         let one = triangle_normal(
-            [0.5, heights[1], -0.5],
-            [0.5, heights[3], 0.5],
-            [-0.5, heights[2], 0.5],
+            [0.5 * scale, heights[1], -0.5 * scale],
+            [0.5 * scale, heights[3], 0.5 * scale],
+            [-0.5 * scale, heights[2], 0.5 * scale],
         );
 
         [zero, one]

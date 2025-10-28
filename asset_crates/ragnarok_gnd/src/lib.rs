@@ -14,6 +14,8 @@ pub use self::{
     error::Error, ground_mesh_cube::GroundMeshCube, lightmap::Lightmap, surface::Surface,
 };
 
+const NORMALIZED_THRESHOLD: f32 = f32::EPSILON * 2.;
+
 #[derive(Debug)]
 pub struct Gnd {
     pub signature: Box<str>,
@@ -174,26 +176,26 @@ impl Gnd {
     /// ```
     pub fn calculate_normals(&self, x: usize, z: usize) -> Option<[[f32; 3]; 4]> {
         let center_cube = self.get_cube(x, z)?;
-        let center = center_cube.calculate_normals();
+        let center = center_cube.calculate_normals(self.scale);
 
         // 4 way adjacency
         let left_cube = x.checked_sub(1).and_then(|x| self.get_cube(x, z));
         let left = left_cube
             .filter(|left| center_cube.is_connected_left(left))
-            .map(|left| left.calculate_normals());
+            .map(|left| left.calculate_normals(self.scale));
 
         let right_cube = self.get_cube(x + 1, z);
         let right = right_cube
             .filter(|right| center_cube.is_connected_right(right))
-            .map(|right| right.calculate_normals());
+            .map(|right| right.calculate_normals(self.scale));
         let top_cube = self.get_cube(x, z + 1);
         let top = top_cube
             .filter(|top| center_cube.is_connected_top(top))
-            .map(|top| top.calculate_normals());
+            .map(|top| top.calculate_normals(self.scale));
         let bottom_cube = z.checked_sub(1).and_then(|z| self.get_cube(x, z));
         let bottom = bottom_cube
             .filter(|bottom| center_cube.is_connected_bottom(bottom))
-            .map(|bottom| bottom.calculate_normals());
+            .map(|bottom| bottom.calculate_normals(self.scale));
 
         // Diagonal adjacency
         let bottom_left_cube = x
@@ -210,7 +212,7 @@ impl Gnd {
 
                 top_connected || right_connected
             })
-            .map(|bottom_left| bottom_left.calculate_normals());
+            .map(|bottom_left| bottom_left.calculate_normals(self.scale));
 
         let bottom_right_cube = z.checked_sub(1).and_then(|z| self.get_cube(x + 1, z));
         let bottom_right = bottom_right_cube
@@ -224,7 +226,7 @@ impl Gnd {
 
                 top_connected || left_connected
             })
-            .map(|bottom_right| bottom_right.calculate_normals());
+            .map(|bottom_right| bottom_right.calculate_normals(self.scale));
 
         let top_left_cube = x.checked_sub(1).and_then(|x| self.get_cube(x, z + 1));
         let top_left = top_left_cube
@@ -238,7 +240,7 @@ impl Gnd {
 
                 right_connected || bottom_connected
             })
-            .map(|top_left| top_left.calculate_normals());
+            .map(|top_left| top_left.calculate_normals(self.scale));
 
         let top_right_cube = self.get_cube(x + 1, z + 1);
         let top_right = top_right_cube
@@ -252,7 +254,7 @@ impl Gnd {
 
                 left_connected || bottom_connected
             })
-            .map(|top_right| top_right.calculate_normals());
+            .map(|top_right| top_right.calculate_normals(self.scale));
 
         // + ------- + ------- + ------- +
         // | \       | \       | \       |
@@ -430,16 +432,23 @@ impl Gnd {
 fn triangle_normal(a: [f32; 3], b: [f32; 3], c: [f32; 3]) -> [f32; 3] {
     let x = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
     let y = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
-    [
+    let unnormalized = [
         x[1] * y[2] - x[2] * y[1],
         x[2] * y[0] - x[0] - y[2],
         x[0] * y[1] - x[1] * y[0],
+    ];
+    let length = crate::length(unnormalized);
+    [
+        unnormalized[0] / length,
+        unnormalized[1] / length,
+        unnormalized[2] / length,
     ]
 }
 
 #[inline(always)]
 fn triangles_normal(triangles: impl Iterator<Item = [f32; 3]>) -> Option<[f32; 3]> {
     let sum = triangles.reduce(|accumulator, next| {
+        debug_assert!((length(next) - 1.).abs() <= NORMALIZED_THRESHOLD);
         [
             accumulator[0] + next[0],
             accumulator[1] + next[1],
@@ -447,6 +456,16 @@ fn triangles_normal(triangles: impl Iterator<Item = [f32; 3]>) -> Option<[f32; 3
         ]
     })?;
 
-    let length = (sum[0].powi(2) + sum[1].powi(2) + sum[2].powi(2)).sqrt();
-    Some([sum[0] / length, sum[1] / length, sum[2] / length])
+    let normalized = normalize(sum);
+    debug_assert!((length(normalized) - 1.).abs() <= NORMALIZED_THRESHOLD);
+    Some(normalized)
+}
+
+fn length(vector: [f32; 3]) -> f32 {
+    (vector[0].powi(2) + vector[1].powi(2) + vector[2].powi(2)).sqrt()
+}
+
+fn normalize(vector: [f32; 3]) -> [f32; 3] {
+    let length = crate::length(vector);
+    [vector[0] / length, vector[1] / length, vector[2] / length]
 }
