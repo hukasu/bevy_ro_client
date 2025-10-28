@@ -45,6 +45,8 @@ impl bevy_app::Plugin for Plugin {
             (
                 enable_gnd_edges.run_if(enable_gnd_edges_condition),
                 disable_gnd_edges.run_if(not(enable_gnd_edges_condition)),
+                enable_gnd_normals.run_if(enable_gnd_normals_condition),
+                disable_gnd_normals.run_if(not(enable_gnd_normals_condition)),
             )
                 .after(TransformSystems::Propagate)
                 .after(VisibilitySystems::CheckVisibility),
@@ -52,6 +54,7 @@ impl bevy_app::Plugin for Plugin {
         // Observers
         app.add_observer(toggle_gnd_aabbs);
         app.add_observer(toggle_gnd_edges);
+        app.add_observer(toggle_gnd_normals);
         app.add_observer(enable_gnd_aabbs_for_new_cubes);
     }
 }
@@ -61,6 +64,7 @@ impl bevy_app::Plugin for Plugin {
 pub struct GndDebug {
     show_aabbs: bool,
     show_edges: bool,
+    show_normals: bool,
 }
 
 #[derive(Debug, Event)]
@@ -68,6 +72,9 @@ pub struct ToggleGndAabbs;
 
 #[derive(Debug, Event)]
 pub struct ToggleGndEdges;
+
+#[derive(Debug, Event)]
+pub struct ToggleGndNormals;
 
 fn toggle_gnd_aabbs(_event: On<ToggleGndAabbs>, mut gat_debug: ResMut<GndDebug>) {
     debug!("Toggling Gnd Aabbs");
@@ -202,6 +209,123 @@ fn disable_gnd_edges(
 ) {
     for face in faces.into_inner() {
         commands.entity(face).remove::<Gizmo>();
+    }
+}
+
+fn toggle_gnd_normals(_event: On<ToggleGndNormals>, mut gat_debug: ResMut<GndDebug>) {
+    debug!("Toggling Gnd Normals");
+    gat_debug.show_normals = !gat_debug.show_normals;
+}
+
+fn enable_gnd_normals_condition(gnd_debug: Res<GndDebug>) -> bool {
+    gnd_debug.show_normals
+}
+
+#[expect(clippy::type_complexity, reason = "Queries are complex")]
+fn enable_gnd_normals(
+    mut commands: Commands,
+    cubes: Populated<(Entity, Option<&Children>), (With<Cube>, Without<Gizmo>)>,
+    faces: Query<(&Mesh3d, &MeshMaterial3d<GndMaterial>, &MeshTag)>,
+    meshes: Res<Assets<Mesh>>,
+    gnd_materials: Res<Assets<GndMaterial>>,
+    shader_buffers: Res<Assets<ShaderStorageBuffer>>,
+    mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
+) {
+    for (cube, children) in cubes.into_inner() {
+        let Some(cube_faces) = children else {
+            continue;
+        };
+        let Some((mesh, material, tag)) = cube_faces
+            .iter()
+            .filter_map(|child| {
+                faces
+                    .get(*child)
+                    .ok()
+                    .filter(|(_, _, tag)| tag.0.is_multiple_of(3))
+            })
+            .next()
+        else {
+            continue;
+        };
+
+        let Some(vertices) = meshes
+            .get(mesh.id())
+            .and_then(|mesh| mesh.attribute(Mesh::ATTRIBUTE_POSITION))
+            .and_then(|vertices| vertices.as_float3())
+        else {
+            continue;
+        };
+        let Some(material) = gnd_materials.get(material.id()) else {
+            continue;
+        };
+        let Some(cube_heights) = shader_buffers
+            .get(material.cube_faces.id())
+            .and_then(|buffer| buffer.data.as_ref())
+        else {
+            continue;
+        };
+        let Some(cube_normals) = shader_buffers
+            .get(material.normals.id())
+            .and_then(|buffer| buffer.data.as_ref())
+        else {
+            continue;
+        };
+        let Ok(tag) = usize::try_from(tag.0) else {
+            unreachable!("Tag must fit in usize.");
+        };
+
+        let heights = cube_heights
+            [(tag * GndMaterial::HEIGHTS_STRIDE)..((tag + 1) * GndMaterial::HEIGHTS_STRIDE)]
+            .chunks(4)
+            .map(|le| {
+                let Ok(le) = le.try_into() else {
+                    unreachable!("Array must always be length 4.");
+                };
+                f32::from_le_bytes(le)
+            })
+            .collect::<Vec<_>>();
+        let normals = cube_normals[((tag / 3) * GndMaterial::NORMALS_STRIDE)
+            ..(((tag / 3) + 1) * GndMaterial::NORMALS_STRIDE)]
+            .chunks(16)
+            .map(|le| {
+                let Ok(le): Result<[u8; 16], _> = le.try_into() else {
+                    unreachable!("Array must always be length 4.");
+                };
+                let normal = Vec3::new(
+                    f32::from_le_bytes([le[0], le[1], le[2], le[3]]),
+                    f32::from_le_bytes([le[4], le[5], le[6], le[7]]),
+                    f32::from_le_bytes([le[8], le[9], le[10], le[11]]),
+                );
+                debug_assert!(normal.is_normalized());
+                normal
+            })
+            .collect::<Vec<_>>();
+
+        let mut gizmos = GizmoAsset::new();
+        for i in 0..4 {
+            gizmos.arrow(
+                Vec3::from_array(vertices[i]).with_y(heights[i]),
+                Vec3::from_array(vertices[i]).with_y(heights[i])
+                    + normals[i] * Vec3::new(1., 5., 1.),
+                Color::srgb(normals[i].x.abs(), normals[i].y.abs(), normals[i].z.abs()),
+            );
+        }
+
+        let handle = gizmo_assets.add(gizmos);
+
+        commands.entity(cube).insert(Gizmo {
+            handle,
+            ..Default::default()
+        });
+    }
+}
+
+fn disable_gnd_normals(
+    mut commands: Commands,
+    cubes: Populated<Entity, (With<Cube>, With<Gizmo>)>,
+) {
+    for cube in cubes.into_inner() {
+        commands.entity(cube).remove::<Gizmo>();
     }
 }
 
