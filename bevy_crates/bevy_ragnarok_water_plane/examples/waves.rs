@@ -59,9 +59,9 @@ fn setup(
     let water_plane = WaterPlaneAsset {
         water_level: 0.,
         water_type: 0,
-        wave_height: 0.25,
-        wave_speed: 0.5,
-        wave_pitch: 2.5,
+        wave_height: 1.,
+        wave_speed: 2.,
+        wave_pitch: 50.,
         texture_cyclical_interval: 3,
     };
     commands.spawn((
@@ -70,7 +70,7 @@ fn setup(
             height: 18,
             water_plane: water_planes.add(water_plane),
         },
-        Transform::from_scale(Vec3::new(1., -1., -1.)),
+        Transform::from_scale(Vec3::new(2., -0.2, -2.)),
         Visibility::default(),
     ));
 }
