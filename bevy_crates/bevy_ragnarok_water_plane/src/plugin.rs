@@ -16,6 +16,7 @@ use bevy_ecs::{
     system::{Commands, Populated, Query, Res, ResMut},
 };
 use bevy_image::Image;
+use bevy_light::NotShadowCaster;
 use bevy_log::trace;
 use bevy_math::{Vec2, Vec3, Vec3A};
 use bevy_mesh::{Indices, Mesh, Mesh3d, PrimitiveTopology};
@@ -217,6 +218,7 @@ fn build_water_plane(
                 Mesh3d(mesh),
                 plane_transform,
                 Visibility::default(),
+                NotShadowCaster,
                 ChildOf(water_plane_builder_entity),
             ));
         }

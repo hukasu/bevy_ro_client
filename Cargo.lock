@@ -1590,6 +1590,7 @@ dependencies = [
  "bevy_derive",
  "bevy_ecs",
  "bevy_image",
+ "bevy_light",
  "bevy_log",
  "bevy_math",
  "bevy_mesh",

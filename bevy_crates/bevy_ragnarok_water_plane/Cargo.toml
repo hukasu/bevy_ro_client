@@ -21,6 +21,7 @@ bevy_camera = { workspace = true, default-features = false }
 bevy_derive = { workspace = true, default-features = false }
 bevy_ecs = { workspace = true, default-features = false }
 bevy_image = { workspace = true, default-features = false }
+bevy_light = { workspace = true, default-features = false }
 bevy_log = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
 bevy_mesh = { workspace = true, default-features = false }
