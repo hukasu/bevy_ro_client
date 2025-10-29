@@ -15,7 +15,7 @@ use bevy_ecs::{
         IntoScheduleConfigs,
         common_conditions::{not, resource_changed},
     },
-    system::{Commands, Local, Populated, Query, Res, ResMut},
+    system::{Commands, Local, Populated, Query, Res, ResMut, Single, SystemParam},
 };
 use bevy_gizmos::{GizmoAsset, aabb::ShowAabbGizmo, retained::Gizmo};
 use bevy_log::debug;
@@ -76,6 +76,13 @@ pub struct ToggleGndEdges;
 #[derive(Debug, Event)]
 pub struct ToggleGndNormals;
 
+#[derive(SystemParam)]
+struct GndAssets<'w> {
+    meshes: Res<'w, Assets<Mesh>>,
+    gnd_materials: Res<'w, Assets<GndMaterial>>,
+    shader_buffers: Res<'w, Assets<ShaderStorageBuffer>>,
+}
+
 fn toggle_gnd_aabbs(_event: On<ToggleGndAabbs>, mut gat_debug: ResMut<GndDebug>) {
     debug!("Toggling Gnd Aabbs");
     gat_debug.show_aabbs = !gat_debug.show_aabbs;
@@ -128,25 +135,25 @@ fn enable_gnd_edges_condition(gnd_debug: Res<GndDebug>) -> bool {
 fn enable_gnd_edges(
     mut commands: Commands,
     faces: Populated<(Entity, &Mesh3d, &MeshMaterial3d<GndMaterial>, &MeshTag), Without<Gizmo>>,
-    meshes: Res<Assets<Mesh>>,
-    gnd_materials: Res<Assets<GndMaterial>>,
-    shader_buffers: Res<Assets<ShaderStorageBuffer>>,
+    gnd_assets: GndAssets<'_>,
     mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
 ) {
     let edge_color: Color = palettes::tailwind::ORANGE_700.into();
 
     for (face, mesh, material, tag) in faces.into_inner() {
-        let Some(vertices) = meshes
+        let Some(vertices) = gnd_assets
+            .meshes
             .get(mesh.id())
             .and_then(|mesh| mesh.attribute(Mesh::ATTRIBUTE_POSITION))
             .and_then(|vertices| vertices.as_float3())
         else {
             continue;
         };
-        let Some(material) = gnd_materials.get(material.id()) else {
+        let Some(material) = gnd_assets.gnd_materials.get(material.id()) else {
             continue;
         };
-        let Some(cube_heights) = shader_buffers
+        let Some(cube_heights) = gnd_assets
+            .shader_buffers
             .get(material.cube_faces.id())
             .and_then(|buffer| buffer.data.as_ref())
         else {
@@ -226,9 +233,7 @@ fn enable_gnd_normals(
     mut commands: Commands,
     cubes: Populated<(Entity, Option<&Children>), (With<Cube>, Without<Gizmo>)>,
     faces: Query<(&Mesh3d, &MeshMaterial3d<GndMaterial>, &MeshTag)>,
-    meshes: Res<Assets<Mesh>>,
-    gnd_materials: Res<Assets<GndMaterial>>,
-    shader_buffers: Res<Assets<ShaderStorageBuffer>>,
+    gnd_assets: GndAssets<'_>,
     mut gizmo_assets: ResMut<Assets<GizmoAsset>>,
 ) {
     for (cube, children) in cubes.into_inner() {
@@ -248,23 +253,26 @@ fn enable_gnd_normals(
             continue;
         };
 
-        let Some(vertices) = meshes
+        let Some(vertices) = gnd_assets
+            .meshes
             .get(mesh.id())
             .and_then(|mesh| mesh.attribute(Mesh::ATTRIBUTE_POSITION))
             .and_then(|vertices| vertices.as_float3())
         else {
             continue;
         };
-        let Some(material) = gnd_materials.get(material.id()) else {
+        let Some(material) = gnd_assets.gnd_materials.get(material.id()) else {
             continue;
         };
-        let Some(cube_heights) = shader_buffers
+        let Some(cube_heights) = gnd_assets
+            .shader_buffers
             .get(material.cube_faces.id())
             .and_then(|buffer| buffer.data.as_ref())
         else {
             continue;
         };
-        let Some(cube_normals) = shader_buffers
+        let Some(cube_normals) = gnd_assets
+            .shader_buffers
             .get(material.normals.id())
             .and_then(|buffer| buffer.data.as_ref())
         else {
