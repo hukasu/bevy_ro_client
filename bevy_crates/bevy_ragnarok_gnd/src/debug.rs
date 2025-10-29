@@ -26,7 +26,7 @@ use bevy_reflect::Reflect;
 use bevy_render::storage::ShaderStorageBuffer;
 use bevy_transform::TransformSystems;
 
-use crate::{Cube, material::GndMaterial};
+use crate::{Cube, Ground, material::GndMaterial};
 
 const AABB_COLOR: Srgba = palettes::tailwind::PURPLE_300;
 
@@ -231,6 +231,7 @@ fn enable_gnd_normals_condition(gnd_debug: Res<GndDebug>) -> bool {
 #[expect(clippy::type_complexity, reason = "Queries are complex")]
 fn enable_gnd_normals(
     mut commands: Commands,
+    ground: Single<&Ground>,
     cubes: Populated<(Entity, Option<&Children>), (With<Cube>, Without<Gizmo>)>,
     faces: Query<(&Mesh3d, &MeshMaterial3d<GndMaterial>, &MeshTag)>,
     gnd_assets: GndAssets<'_>,
@@ -314,7 +315,7 @@ fn enable_gnd_normals(
             gizmos.arrow(
                 Vec3::from_array(vertices[i]).with_y(heights[i]),
                 Vec3::from_array(vertices[i]).with_y(heights[i])
-                    + normals[i] * Vec3::new(1., 5., 1.),
+                    + normals[i] * Vec3::new(1., ground.scale, 1.),
                 Color::srgb(normals[i].x.abs(), normals[i].y.abs(), normals[i].z.abs()),
             );
         }
