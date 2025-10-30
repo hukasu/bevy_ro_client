@@ -1,11 +1,12 @@
 use bevy::{
     app::Startup,
     asset::{AssetServer, Assets, Handle},
-    camera::{Camera, Camera2d},
+    camera::{Camera, Camera2d, ClearColorConfig},
     color::Color,
     ecs::{children, component::Component, lifecycle::Insert, observer::On, spawn::SpawnRelated},
     image::{Image, ImageLoaderSettings, ImageSampler},
     prelude::{Commands, Entity, OnEnter, OnExit, Res, Single, With},
+    render::view::Hdr,
     ui::{
         widget::ImageNode, AlignSelf, BackgroundColor, FlexDirection, Node, PositionType,
         UiTargetCamera, Val, ZIndex,
@@ -52,9 +53,11 @@ fn spawn_loading_screen(mut commands: Commands, asset_server: Res<AssetServer>) 
             Camera2d,
             Camera {
                 order: 16,
+                clear_color: ClearColorConfig::None,
                 is_active: false,
                 ..Default::default()
             },
+            Hdr,
             LoadingScreenCamera,
         ))
         .id();
