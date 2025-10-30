@@ -178,6 +178,7 @@ fn load_altitude(
             },
         )));
 }
+
 /// Load [`WaterPlane`](bevy_ragnarok_water_plane::WaterPlane) of [`World`]
 fn load_rsw_water_plane(
     mut commands: Commands,
@@ -250,6 +251,9 @@ fn wait_scene(
     }
 }
 
+/// Waits for the [`LoadingGround`] to finish loading.
+///
+/// Failing to load the [`Ground`] will exit the app.
 fn wait_ground_scene(
     mut commands: Commands,
     grounds: Query<(NameOrEntity, &LoadingGround), With<Ground>>,
@@ -273,6 +277,7 @@ fn wait_ground_scene(
             Some(RecursiveDependencyLoadState::Failed(err)) => {
                 commands.entity(ground.entity).remove::<LoadingGround>();
                 error!("Dependencies of {ground} failed to load: {err}");
+                commands.write_message(AppExit::from_code(1));
             }
             None => {
                 unreachable!("All model scene handles must be valid.")
