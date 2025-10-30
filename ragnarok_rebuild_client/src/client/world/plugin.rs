@@ -393,7 +393,22 @@ fn start_animations(
 }
 
 /// Update the [`Transform`] of [`Game`] to include the new [`GndGround::scale`].
-fn update_game_transform(mut game: Single<&mut Transform, With<Game>>, ground: Single<&GndGround>) {
+fn update_game_transform(
+    mut commands: Commands,
+    mut games: Query<&mut Transform, With<Game>>,
+    grounds: Query<&GndGround>,
+) {
+    let Ok(mut game) = games.single_mut() else {
+        error!("There were none or more than one Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+    let Ok(ground) = grounds.single() else {
+        error!("There were none or more than one GndGround.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+
     let scale = 2. / ground.scale;
     game.scale = Vec3::new(scale, -scale, -scale);
 }
