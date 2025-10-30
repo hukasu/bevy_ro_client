@@ -7,7 +7,7 @@ use bevy::{
         schedule::common_conditions::resource_exists,
         system::{Commands, Res, ResMut},
     },
-    prelude::{Deref, DerefMut, IntoScheduleConfigs, Name, NextState, Resource, Visibility},
+    prelude::{Deref, DerefMut, IntoScheduleConfigs, Name, Resource, Visibility},
     text::Font,
     transform::components::Transform,
 };
@@ -21,7 +21,7 @@ use bevy_ragnarok_act::Actor;
 use bevy_ragnarok_spr::Sprite;
 use ragnarok_rebuild_bevy::assets::paths;
 
-use crate::client::{entities, states::GameState, world::ChangeMap};
+use crate::client::{entities, world::ChangeMap};
 
 const FONT_NAME: &str = "SCDream4";
 
@@ -49,14 +49,12 @@ fn teleport_windows(
     mut contexts: bevy_inspector_egui::bevy_egui::EguiContexts,
     mut commands: Commands,
     mut text_box: ResMut<TeleportTextBox>,
-    mut next_state: ResMut<NextState<GameState>>,
 ) {
     if let Ok(ctx) = contexts.ctx_mut() {
         bevy_inspector_egui::bevy_egui::egui::Window::new("Teleport").show(ctx, |ui| {
             ui.label("Destination");
             let text = (**text_box).clone();
             if ui.text_edit_singleline(&mut **text_box).lost_focus() && !text.is_empty() {
-                next_state.set(GameState::MapChange);
                 commands.trigger(ChangeMap::new(text));
                 text_box.clear();
             }

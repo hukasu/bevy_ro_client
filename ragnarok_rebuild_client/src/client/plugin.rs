@@ -3,32 +3,33 @@ use bevy::{
     color::Color,
     ecs::{children, lifecycle::Add, observer::On},
     prelude::{
-        in_state, ClearColor, Commands, Entity, IntoScheduleConfigs, Name, NextState, Observer,
-        Query, ResMut, SpawnRelated, Transform, Visibility, With,
+        in_state, ClearColor, Commands, Entity, IntoScheduleConfigs, Name, Observer, Query,
+        SpawnRelated, Transform, Visibility, With,
     },
+    state::app::AppExtStates,
 };
 
 use ragnarok_rebuild_bevy::audio::{Bgm, Sound};
 
-use crate::client::world::ChangeMap;
-
-use super::{audio, camera, entities, loading_screen, states, states::GameState, world, Game};
+use super::{audio, camera, entities, loading_screen, world, Game};
+use crate::client::{world::ChangeMap, GameStates};
 
 pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
+        app.add_computed_state::<GameStates>();
+
         app.insert_resource(ClearColor(Color::BLACK))
             // Plugins
             .add_plugins(audio::Plugin)
             .add_plugins(camera::plugin::Plugin)
             .add_plugins(entities::Plugin)
             .add_plugins(loading_screen::Plugin)
-            .add_plugins(states::Plugin)
             .add_plugins(world::plugin::Plugin)
             // Startup system
             .add_systems(Startup, start_up)
-            .add_systems(Update, skip_login.run_if(in_state(GameState::Login)))
+            .add_systems(Update, skip_login.run_if(in_state(GameStates::Login)))
             // Observers
             // TODO Change to observe on the the container entity
             // in 0.15
@@ -37,7 +38,7 @@ impl bevy::app::Plugin for Plugin {
     }
 }
 
-fn start_up(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>) {
+fn start_up(mut commands: Commands) {
     commands.spawn((
         Name::new("RagnarokOnline"),
         Game,
@@ -57,13 +58,10 @@ fn start_up(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>
             )
         ],
     ));
-
-    next_state.set(GameState::Login);
 }
 
-fn skip_login(mut commands: Commands, mut next_state: ResMut<NextState<GameState>>) {
+fn skip_login(mut commands: Commands) {
     commands.trigger(ChangeMap::new("prontera.rsw"));
-    next_state.set(GameState::MapChange);
 }
 
 fn attach_entity_to_game(event: On<Add, entities::Entity>, mut commands: Commands) {

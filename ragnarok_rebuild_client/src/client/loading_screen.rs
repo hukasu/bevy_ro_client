@@ -12,7 +12,7 @@ use bevy::{
     },
 };
 
-use super::states::GameState;
+use crate::client::GameStates;
 
 const MAXIMUM_LOADING_SCREENS: usize = 16;
 
@@ -22,8 +22,8 @@ impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         // Systems
         app.add_systems(Startup, spawn_loading_screen)
-            .add_systems(OnEnter(GameState::MapChange), show_loading_screen)
-            .add_systems(OnExit(GameState::MapChange), hide_loading_screen);
+            .add_systems(OnEnter(GameStates::MapChange), show_loading_screen)
+            .add_systems(OnExit(GameStates::MapChange), hide_loading_screen);
         app.add_observer(replace_loading_screen);
     }
 }
