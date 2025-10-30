@@ -229,7 +229,10 @@ fn load_models(
     }
 }
 
-/// Wait for [`Scene`] of [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset) to finish loading
+/// Wait for [`Scene`] of [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset) to finish loading.
+///
+/// Failing to load the [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset)
+/// will exit the app.
 fn wait_scene(
     mut commands: Commands,
     game: Single<Entity, With<Game>>,
