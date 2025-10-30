@@ -14,7 +14,7 @@ use bevy::{
         query::With,
         relationship::RelationshipTarget,
         schedule::{IntoScheduleConfigs, SystemSet},
-        system::{Commands, Populated, Query, Res, ResMut, Single},
+        system::{Commands, Populated, Query, Res, ResMut},
     },
     log::{debug, error, trace},
     math::Vec3,
@@ -120,26 +120,36 @@ struct LoadingModel(Handle<Scene>);
 fn map_change(
     map_change: On<ChangeMap>,
     mut commands: Commands,
-    game: Single<Entity, With<Game>>,
+    games: Query<Entity, With<Game>>,
     asset_server: Res<AssetServer>,
 ) {
+    let Ok(game) = games.single() else {
+        error!("There were none or more than one Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+
     let new_map = &*map_change.map;
     trace!("Starting loading of {new_map} map.");
 
     let map: Handle<Scene> = asset_server.load(format!("data/{new_map}#Scene"));
 
-    commands.entity(*game).insert(MapChangeScene(map));
+    commands.entity(game).insert(MapChangeScene(map));
     commands.set_state(MapChangeStates::LoadingAsset);
 }
 
 /// Load ground of [`World`]
 fn load_ground(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &WorldOfGround), With<World>>,
+    worlds: Query<(NameOrEntity, &WorldOfGround), With<World>>,
     children: Query<(NameOrEntity, &Ground), With<GroundOfWorld>>,
     asset_server: Res<AssetServer>,
 ) {
-    let (world, world_of_models) = world.into_inner();
+    let Ok((world, world_of_models)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     let Ok((ground, ground_path)) = children.get(*world_of_models.collection()) else {
         error!("{world} does not ground.");
@@ -155,11 +165,15 @@ fn load_ground(
 /// Load altitude tiles of [`World`]
 fn load_altitude(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &WorldOfAltitude), With<World>>,
+    worlds: Query<(NameOrEntity, &WorldOfAltitude), With<World>>,
     children: Query<(NameOrEntity, &Altitude), With<AltitudeOfWorld>>,
     asset_server: Res<AssetServer>,
 ) {
-    let (world, world_of_altitude) = world.into_inner();
+    let Ok((world, world_of_altitude)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     let Ok((altitude, Altitude { altitude_path })) = children.get(*world_of_altitude.collection())
     else {
@@ -181,10 +195,19 @@ fn load_altitude(
 /// Load [`WaterPlane`](bevy_ragnarok_water_plane::WaterPlane) of [`World`]
 fn load_rsw_water_plane(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &World), With<World>>,
-    ground: Single<&GndGround>,
+    worlds: Query<(NameOrEntity, &World), With<World>>,
+    grounds: Query<&GndGround>,
 ) {
-    let (world_entity, world) = world.into_inner();
+    let Ok((world_entity, world)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+    let Ok(ground) = grounds.single() else {
+        error!("There were none or more than one GndGround.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     if let Some(water_plane) = &world.water_plane {
         commands.spawn((
@@ -206,12 +229,16 @@ fn load_rsw_water_plane(
 /// Queue the loading of all [`AnimatedProp`] of the [`World`].
 fn load_models(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &WorldOfModels), With<World>>,
+    worlds: Query<(NameOrEntity, &WorldOfModels), With<World>>,
     children: Query<(NameOrEntity, &Children), With<ModelsOfWorld>>,
     animated_props: Query<&AnimatedProp>,
     asset_server: Res<AssetServer>,
 ) {
-    let (world, world_of_models) = world.into_inner();
+    let Ok((world, world_of_models)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     let Ok((models, children)) = children.get(*world_of_models.collection()) else {
         debug!("{world} does not have animated props.");
@@ -235,11 +262,15 @@ fn load_models(
 /// will exit the app.
 fn wait_scene(
     mut commands: Commands,
-    game: Single<(Entity, Option<&GameOfWorld>, &MapChangeScene), With<Game>>,
+    game: Query<(Entity, Option<&GameOfWorld>, &MapChangeScene), With<Game>>,
     mut scene_spawner: ResMut<SceneSpawner>,
     asset_server: Res<AssetServer>,
 ) {
-    let (game, game_of_world, map_change_scene) = game.into_inner();
+    let Ok((game, game_of_world, map_change_scene)) = game.single() else {
+        error!("There were none or more than one Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
     match asset_server.recursive_dependency_load_state(map_change_scene.0.id()) {
         RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading => (),
         RecursiveDependencyLoadState::Loaded => {
