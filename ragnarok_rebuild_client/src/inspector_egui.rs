@@ -3,17 +3,19 @@ use std::sync::Arc;
 use bevy::{
     app::{PostStartup, Startup, Update},
     asset::{AssetServer, Assets, Handle},
+    camera::{Camera, Camera2d},
     ecs::{
         schedule::common_conditions::resource_exists,
         system::{Commands, Res, ResMut},
     },
     prelude::{Deref, DerefMut, IntoScheduleConfigs, Name, Resource, Visibility},
+    render::view::Hdr,
     text::Font,
     transform::components::Transform,
 };
 
 use bevy_inspector_egui::{
-    bevy_egui::{EguiPlugin, EguiPrimaryContextPass},
+    bevy_egui::{EguiGlobalSettings, EguiPlugin, EguiPrimaryContextPass, PrimaryEguiContext},
     quick::WorldInspectorPlugin,
 };
 
@@ -29,9 +31,14 @@ pub struct Plugin;
 
 impl bevy::app::Plugin for Plugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins((EguiPlugin::default(), WorldInspectorPlugin::default()))
+        app.insert_resource(EguiGlobalSettings {
+            auto_create_primary_context: false,
+            ..Default::default()
+        });
+
+        app.add_plugins((EguiPlugin::default(), WorldInspectorPlugin::new()))
             .insert_resource(TeleportTextBox(String::new()))
-            .add_systems(Startup, init_font_loading)
+            .add_systems(Startup, (init_font_loading, create_egui_context))
             .add_systems(
                 Update,
                 check_loading_font.run_if(resource_exists::<LoadingFont>),
@@ -68,6 +75,20 @@ struct LoadingFont(Handle<Font>);
 fn init_font_loading(mut commands: Commands, asset_server: Res<AssetServer>) {
     let font = asset_server.load(format!("system://font/{}.otf", FONT_NAME));
     commands.insert_resource(LoadingFont(font));
+}
+
+fn create_egui_context(mut commands: Commands) {
+    commands.spawn((
+        Name::new("EguiCamera"),
+        Camera2d,
+        Camera {
+            order: 32,
+            clear_color: bevy::camera::ClearColorConfig::None,
+            ..Default::default()
+        },
+        Hdr,
+        PrimaryEguiContext,
+    ));
 }
 
 fn check_loading_font(
