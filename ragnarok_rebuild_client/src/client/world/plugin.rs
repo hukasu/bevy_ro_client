@@ -202,7 +202,7 @@ fn load_rsw_water_plane(
     commands.set_state(MapChangeStates::LoadingModels);
 }
 
-/// Load models of [`World`]
+/// Queue the loading of all [`AnimatedProp`] of the [`World`].
 fn load_models(
     mut commands: Commands,
     world: Single<(NameOrEntity, &WorldOfModels), With<World>>,
@@ -294,6 +294,9 @@ fn wait_ground_scene(
     }
 }
 
+/// Wait for the [`Altitude`] scene to finish loading.
+///
+/// Failing to load the [`Altitude`] scene will exit the app.
 fn wait_altitude_scene(
     mut commands: Commands,
     altitudes: Query<(NameOrEntity, &LoadingAltitude), With<Altitude>>,
@@ -317,6 +320,7 @@ fn wait_altitude_scene(
             Some(RecursiveDependencyLoadState::Failed(err)) => {
                 commands.entity(altitude.entity).remove::<LoadingAltitude>();
                 error!("Dependencies of {altitude} failed to load: {err}");
+                commands.write_message(AppExit::from_code(1));
             }
             None => {
                 unreachable!("All altitude scene handles must be valid.")
@@ -325,6 +329,9 @@ fn wait_altitude_scene(
     }
 }
 
+/// Wait for all [`LoadingModel`] to finish loading.
+///
+/// A model failing to load does not exit the app.
 fn wait_model_scene(
     mut commands: Commands,
     models: Query<(NameOrEntity, &LoadingModel), With<AnimatedProp>>,
@@ -356,6 +363,7 @@ fn wait_model_scene(
     }
 }
 
+/// Start animations of [`World`]'s [`AnimatedProp`].
 fn start_animations(
     animated_props: Populated<(NameOrEntity, &AnimatedProp, &Children)>,
     mut models: Query<(&mut AnimationPlayer, &Model)>,
@@ -383,11 +391,15 @@ fn start_animations(
     }
 }
 
+/// Update the [`Transform`] of [`Game`] to include the new [`GndGround::scale`].
 fn update_game_transform(mut game: Single<&mut Transform, With<Game>>, ground: Single<&GndGround>) {
     let scale = 2. / ground.scale;
     game.scale = Vec3::new(scale, -scale, -scale);
 }
 
+/// Adds [`WorldOfGame`] to newly spawned [`World`]
+/// and advances to [`MapChangeStates::LoadingGround`]
+/// on [`World`]'s [`SceneInstanceReady`].
 fn new_world_spawned(
     event: On<SceneInstanceReady>,
     mut commands: Commands,
