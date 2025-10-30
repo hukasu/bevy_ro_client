@@ -8,7 +8,7 @@ pub struct Surface {
     pub bottom_right: [f32; 2],
     pub top_left: [f32; 2],
     pub top_right: [f32; 2],
-    pub texture_id: i16,
+    pub texture_id: u16,
     pub lightmap_id: i16,
     pub bottom_left_vertex_color: [u8; 4],
 }
@@ -17,7 +17,7 @@ impl Surface {
     pub fn from_reader(mut reader: &mut dyn Read) -> Result<Self, super::Error> {
         let [bottom_left, bottom_right, top_left, top_right] = Self::read_uvs(reader)?;
 
-        let texture_id = reader.read_le_i16()?;
+        let texture_id = reader.read_le_u16()?;
         let lightmap_id = reader.read_le_i16()?;
 
         let bottom_left_vertex_color = Self::read_vertex_color(reader)?;

@@ -11,8 +11,6 @@ workspace = true
 [dependencies]
 ragnarok_pal = { workspace = true }
 
-ragnarok_water_plane = { workspace = true }
-
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 
 log = { workspace = true }

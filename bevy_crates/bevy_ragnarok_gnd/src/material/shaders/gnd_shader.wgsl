@@ -1,0 +1,254 @@
+#import bevy_pbr::{
+    mesh_functions,
+    mesh_bindings::mesh,
+    pbr_fragment::pbr_input_from_vertex_output,
+    pbr_types::{PbrInput, STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK},
+    view_transformations::position_world_to_clip,
+    pbr_functions::alpha_discard,
+}
+#ifdef BINDLESS
+#import bevy_render::bindless::{bindless_samplers_filtering, bindless_textures_2d}
+#endif  // BINDLESS
+
+#ifdef PREPASS_PIPELINE
+#import bevy_pbr::{
+    prepass_io::{Vertex, VertexOutput, FragmentOutput},
+    pbr_deferred_functions::deferred_output,
+}
+#else
+#import bevy_pbr::{
+    forward_io::{Vertex, VertexOutput, FragmentOutput},
+    pbr_functions::{apply_pbr_lighting, main_pass_post_lighting_processing},
+}
+#endif
+
+struct GndCubeFace {
+    bottom_left: f32,
+    bottom_right: f32,
+    top_left: f32,
+    top_right: f32,
+}
+
+struct GndSurface {
+    bottom_left_uv: vec2<f32>,
+    bottom_right_uv: vec2<f32>,
+    top_left_uv: vec2<f32>,
+    top_right_uv: vec2<f32>,
+}
+
+struct GndCubeFaceNormals {
+    bottom_left: vec3<f32>,
+    bottom_right: vec3<f32>,
+    top_left: vec3<f32>,
+    top_right: vec3<f32>,
+}
+
+#ifdef BINDLESS
+
+struct GndBindings {
+    texture: u32,
+    texture_sampler: u32,
+    cube_face: u32,
+    surface_id: u32,
+    surface: u32,
+    normals: u32,
+}
+
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var<storage> gnd_bindings: array<GndBindings>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(10) var<storage> gnd_cube_faces: array<GndCubeFace>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(11) var<storage> gnd_surface_ids: array<u32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(12) var<storage> gnd_surfaces: array<GndSurface>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(13) var<storage> gnd_cube_face_normals: array<GndCubeFaceNormals>;
+
+#else // BINDLESS
+
+@group(#{MATERIAL_BIND_GROUP}) @binding(0) var gnd_texture: texture_2d<f32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(1) var gnd_texture_sampler: sampler;
+@group(#{MATERIAL_BIND_GROUP}) @binding(2) var<storage> gnd_cube_faces: array<GndCubeFace>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(3) var<storage> gnd_surface_ids: array<u32>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(4) var<storage> gnd_surfaces: array<GndSurface>;
+@group(#{MATERIAL_BIND_GROUP}) @binding(5) var<storage> gnd_cube_face_normals: array<GndCubeFaceNormals>;
+
+#endif // BINDLESS
+
+#ifdef MESH_PIPELINE
+fn gnd_default_material(in: VertexOutput, is_front: bool) -> PbrInput {
+    var pbr_input = pbr_input_from_vertex_output(in, is_front, false);
+
+    pbr_input.material.reflectance = vec3(0.04);
+    pbr_input.material.flags = STANDARD_MATERIAL_FLAGS_ALPHA_MODE_MASK;
+
+    return pbr_input;
+}
+#endif // MESH_PIPELINE
+
+@vertex
+fn vertex(
+    in: Vertex,
+#ifndef MORPH_TARGETS
+    @builtin(vertex_index) vertex_index: u32,
+#endif
+) -> VertexOutput {
+    var vertex_output: VertexOutput;
+
+    vertex_output.instance_index = in.instance_index;
+
+    let first_vertex_index = mesh[in.instance_index].first_vertex_index;
+    let tag = mesh[in.instance_index].tag;
+#ifdef BINDLESS
+    let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
+    let cube_face = gnd_cube_faces[gnd_bindings[slot].cube_face + tag];
+    let surface_id = gnd_surface_ids[gnd_bindings[slot].surface_id + tag];
+    let surface = gnd_surfaces[gnd_bindings[slot].surface + surface_id];
+    let cube_face_normals = gnd_cube_face_normals[gnd_bindings[slot].normals + tag / 3];
+#else // BINDLESS
+    let cube_face = gnd_cube_faces[tag];
+    let surface_id = gnd_surface_ids[tag];
+    let surface = gnd_surfaces[surface_id];
+    let cube_face_normals = gnd_cube_face_normals[tag / 3];
+#endif // BINDLESS
+
+#ifdef MORPH_TARGETS
+    let index = in.index - first_vertex_index;
+#else
+    let index = vertex_index - first_vertex_index;
+#endif
+
+    var y: f32;
+    if index == 0 {
+        y = cube_face.bottom_left;
+    } else if index == 1 {
+        y = cube_face.bottom_right;
+    } else if index == 2 {
+        y = cube_face.top_left;
+    } else if index == 3 {
+        y = cube_face.top_right;
+    }
+
+    let position = vec4<f32>(
+        in.position.x,
+        y,
+        in.position.z,
+        1.0
+    );
+    
+    var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
+    vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
+    vertex_output.position = position_world_to_clip(vertex_output.world_position.xyz);    
+#ifdef UNCLIPPED_DEPTH_ORTHO_EMULATION
+    vertex_output.unclipped_depth = vertex_output.world_position.z;
+#endif // UNCLIPPED_DEPTH_ORTHO_EMULATION
+
+#ifdef VERTEX_NORMALS || NORMAL_PREPASS_OR_DEFERRED_PREPASS
+    var normal: vec3<f32> = in.normal;
+    if all(in.normal == vec3(1., 0., 0.)) {
+        let bottom_right_high = cube_face.bottom_right > cube_face.top_right;
+        let bottom_left_high = cube_face.bottom_left > cube_face.top_left;
+
+        if bottom_right_high || bottom_left_high {
+            normal = vec3(-1.) * in.normal;
+        }
+    } else if all(in.normal == vec3(0., 0., 1.)) {
+        let bottom_right_high = cube_face.bottom_right > cube_face.top_right;
+        let bottom_left_high = cube_face.bottom_left > cube_face.top_left;
+
+        if bottom_right_high || bottom_left_high { 
+            normal = vec3(-1.) * in.normal;
+        }
+    } else {
+        if index == 0 {
+            normal = cube_face_normals.bottom_left;
+        } else if index == 1 {
+            normal = cube_face_normals.bottom_right;
+        } else if index == 2 {
+            normal = cube_face_normals.top_left;
+        } else if index == 3 {
+            normal = cube_face_normals.top_right;
+        }
+    }
+
+    vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
+        normal,
+        in.instance_index
+    );
+#endif
+#ifdef VERTEX_UVS_A
+    if index == 0 {
+        vertex_output.uv = surface.bottom_left_uv;
+    } else if index == 1 {
+        vertex_output.uv = surface.bottom_right_uv;
+    } else if index == 2 {
+        vertex_output.uv = surface.top_left_uv;
+    } else if index == 3 {
+        vertex_output.uv = surface.top_right_uv;
+    }
+#endif // VERTEX_UVS_A
+
+    return vertex_output;
+}
+
+#ifdef MESH_PIPELINE
+@fragment
+fn fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) -> FragmentOutput {
+    // generate a PbrInput struct from the StandardMaterial bindings
+    var pbr_input = gnd_default_material(in, is_front);
+
+#ifdef BINDLESS
+    let slot = mesh[in.instance_index].material_and_lightmap_bind_group_slot & 0xffffu;
+    let texture = bindless_textures_2d[gnd_bindings[slot].texture];
+    let texture_sampler = bindless_samplers_filtering[gnd_bindings[slot].texture_sampler];
+#else // BINDLESS
+    let texture = gnd_texture;
+    let texture_sampler = gnd_texture_sampler;
+#endif // BINDLESS
+
+    pbr_input.material.base_color = textureSample(texture, texture_sampler, in.uv);
+    // Key out magenta
+    if all(pbr_input.material.base_color.rgb == vec3(1.0, 0., 1.0)) {
+        pbr_input.material.base_color.a = 0.;
+    }
+
+    // alpha discard
+    pbr_input.material.base_color = alpha_discard(pbr_input.material, pbr_input.material.base_color);
+
+    var out: FragmentOutput;
+    // apply lighting
+    out.color = apply_pbr_lighting(pbr_input);
+
+    // apply in-shader post processing (fog, alpha-premultiply, and also tonemapping, debanding if the camera is non-hdr)
+    // note this does not include fullscreen postprocessing effects like bloom.
+    out.color = main_pass_post_lighting_processing(pbr_input, out.color);
+
+    return out;
+}
+#endif // MESH_PIPELINE
+
+#ifdef PREPASS_PIPELINE
+#ifdef PREPASS_FRAGMENT
+@fragment
+fn prepass_fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) -> FragmentOut {
+    var out: FragmentOutput;
+#ifdef NORMAL_PREPASS
+    out.normal = in.world_normal;
+#endif
+#ifdef UNCLIPPED_DEPTH_ORTHO_EMULATION
+    out.frag_depth = in.unclipped_depth;
+#endif // UNCLIPPED_DEPTH_ORTHO_EMULATION
+    return out;
+}
+#else // PREPASS_FRAGMENT
+@fragment
+fn prepass_fragment(
+    in: VertexOutput,
+    @builtin(front_facing) is_front: bool,
+) {
+    return;
+}
+#endif // PREPASS_FRAGMENT
+#endif // PREPASS_PIPELINE

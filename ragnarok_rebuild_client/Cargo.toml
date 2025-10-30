@@ -12,11 +12,13 @@ workspace = true
 with-inspector = [
   "bevy-inspector-egui",
   "ragnarok_rebuild_bevy/debug",
+  "bevy/bevy_dev_tools",
   "bevy/default_font",
   "bevy/file_watcher",
   "bevy/embedded_watcher",
   "bevy_ragnarok_act/debug",
   "bevy_ragnarok_gat/debug",
+  "bevy_ragnarok_gnd/debug",
   "bevy_ragnarok_pal/debug",
   "bevy_ragnarok_rsm/debug",
   "bevy_ragnarok_rsw/debug",
@@ -26,9 +28,10 @@ with-inspector = [
 ]
 
 [dependencies]
-bevy_ragnarok_grf = { workspace = true }
 bevy_ragnarok_act = { workspace = true }
 bevy_ragnarok_gat = { workspace = true }
+bevy_ragnarok_gnd = { workspace = true }
+bevy_ragnarok_grf = { workspace = true }
 bevy_ragnarok_pal = { workspace = true }
 bevy_ragnarok_rsm = { workspace = true }
 bevy_ragnarok_rsw = { workspace = true }
@@ -36,6 +39,7 @@ bevy_ragnarok_spr = { workspace = true }
 
 bevy_ragnarok_camera = { workspace = true }
 bevy_ragnarok_quad_tree = { workspace = true }
+bevy_ragnarok_water_plane = { workspace = true }
 
 ragnarok_rebuild_common = { path = "../ragnarok_rebuild_common" }
 ragnarok_rebuild_bevy = { path = "../ragnarok_rebuild_bevy" }
@@ -52,6 +56,7 @@ bevy = { workspace = true, default-features = false, features = [
   "bevy_state",
   "bevy_text",
   "bevy_ui",
+  "bevy_ui_render",
   "bevy_window",
   "bevy_winit",
   "wayland",

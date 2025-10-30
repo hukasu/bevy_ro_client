@@ -7,6 +7,10 @@ gat_debug:
     cargo run --bin gat_debug --features="warning ragnarok_grf"
 
 [group("asset_debug")]
+gnd_debug:
+    cargo run --bin gnd_debug --features="warning ragnarok_grf"
+
+[group("asset_debug")]
 pal_debug:
     cargo run --bin pal_debug --features="warning ragnarok_grf"
 
@@ -16,7 +20,7 @@ rsm_debug:
 
 [group("asset_debug")]
 rsw_debug:
-    cargo run --bin rsw_debug --features="warning ragnarok_grf"
+    cargo run --bin rsw_debug --features="warning ragnarok_gat ragnarok_gnd ragnarok_grf"
 
 [group("asset_debug")]
 spr_debug:
@@ -38,6 +42,7 @@ format:
 clippy:
     @just ragnarok_act
     @just ragnarok_gat
+    @just ragnarok_gnd
     @just ragnarok_grf
     @just ragnarok_pal
     @just ragnarok_rsm
@@ -46,6 +51,7 @@ clippy:
 
     @just bevy_ragnarok_act
     @just bevy_ragnarok_gat
+    @just bevy_ragnarok_gnd
     @just bevy_ragnarok_grf
     @just bevy_ragnarok_pal
     @just bevy_ragnarok_rsm
@@ -73,6 +79,13 @@ ragnarok_gat $RUSTFLAGS="-Dwarnings":
     cargo clippy -p ragnarok_gat --bins --lib --tests --no-default-features --features="warning"
     cargo clippy -p ragnarok_gat --bins --lib --tests
     cargo clippy -p ragnarok_gat --bins --lib --tests --all-features
+
+[group("clippy")]
+ragnarok_gnd $RUSTFLAGS="-Dwarnings":
+    cargo clippy -p ragnarok_gnd --bins --lib --tests --no-default-features
+    cargo clippy -p ragnarok_gnd --bins --lib --tests --no-default-features --features="warning"
+    cargo clippy -p ragnarok_gnd --bins --lib --tests
+    cargo clippy -p ragnarok_gnd --bins --lib --tests --all-features
 
 [group("clippy")]
 ragnarok_grf $RUSTFLAGS="-Dwarnings":
@@ -121,6 +134,13 @@ bevy_ragnarok_gat $RUSTFLAGS="-Dwarnings":
     cargo clippy -p bevy_ragnarok_gat --bins --lib --tests --examples --no-default-features --features="debug"
     cargo clippy -p bevy_ragnarok_gat --bins --lib --tests --examples
     cargo clippy -p bevy_ragnarok_gat --bins --lib --tests --examples --all-features
+
+[group("clippy")]
+bevy_ragnarok_gnd $RUSTFLAGS="-Dwarnings":
+    cargo clippy -p bevy_ragnarok_gnd --bins --lib --tests --examples --no-default-features
+    cargo clippy -p bevy_ragnarok_gnd --bins --lib --tests --examples --no-default-features --features="debug"
+    cargo clippy -p bevy_ragnarok_gnd --bins --lib --tests --examples
+    cargo clippy -p bevy_ragnarok_gnd --bins --lib --tests --examples --all-features
 
 [group("clippy")]
 bevy_ragnarok_grf $RUSTFLAGS="-Dwarnings":

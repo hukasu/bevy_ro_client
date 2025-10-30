@@ -39,6 +39,7 @@ pub enum MapChangeStates {
     LoadingScene,
     LoadingGround,
     LoadingAltitude,
+    LoadingRswWaterPlane,
     LoadingModels,
     Loaded,
 }

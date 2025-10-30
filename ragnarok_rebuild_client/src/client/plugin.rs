@@ -2,17 +2,13 @@ use bevy::{
     app::{Startup, Update},
     color::Color,
     ecs::{children, lifecycle::Add, observer::On},
-    math::Vec3,
     prelude::{
-        in_state, resource_changed, ClearColor, Commands, Entity, IntoScheduleConfigs, Name,
-        NextState, Observer, Query, Res, ResMut, SpawnRelated, Transform, Visibility, With,
+        in_state, ClearColor, Commands, Entity, IntoScheduleConfigs, Name, NextState, Observer,
+        Query, ResMut, SpawnRelated, Transform, Visibility, With,
     },
 };
 
-use ragnarok_rebuild_bevy::{
-    assets::gnd,
-    audio::{Bgm, Sound},
-};
+use ragnarok_rebuild_bevy::audio::{Bgm, Sound};
 
 use crate::client::world::ChangeMap;
 
@@ -33,10 +29,6 @@ impl bevy::app::Plugin for Plugin {
             // Startup system
             .add_systems(Startup, start_up)
             .add_systems(Update, skip_login.run_if(in_state(GameState::Login)))
-            .add_systems(
-                Update,
-                update_world_transform.run_if(resource_changed::<gnd::GroundScale>),
-            )
             // Observers
             // TODO Change to observe on the the container entity
             // in 0.15
@@ -100,21 +92,4 @@ fn attach_sound_to_game(
     };
 
     commands.entity(game).add_child(event.entity);
-}
-
-fn update_world_transform(
-    mut games: Query<&mut Transform, With<Game>>,
-    ground_scale: Res<gnd::GroundScale>,
-) {
-    bevy::log::trace!("Updating world transform.");
-    let Ok(mut game_transform) = games
-        .single_mut()
-        .inspect_err(|err| bevy::log::error!("{err}"))
-    else {
-        return;
-    };
-
-    // TODO use ground scale
-    *game_transform =
-        game_transform.with_scale(Vec3::splat(**ground_scale) * Vec3::new(1., -1., -1.));
 }

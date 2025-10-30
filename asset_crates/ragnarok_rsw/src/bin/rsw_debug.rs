@@ -3,8 +3,8 @@
 use std::{io::Cursor, path::Path};
 
 use ragnarok_gat::Gat;
+use ragnarok_gnd::Gnd;
 use ragnarok_grf::Grf;
-use ragnarok_rebuild_assets::gnd::Gnd;
 use ragnarok_rebuild_common::warning::ReportWarning;
 use ragnarok_rsw::{Rsw, quad_tree::Crawler};
 

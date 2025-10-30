@@ -25,7 +25,6 @@
 #endif
 
 struct Wave {
-    level: f32,
     height: f32,
     speed: f32,
     pitch: f32,
@@ -56,8 +55,8 @@ fn vertex(in: Vertex) -> VertexOutput {
     var world_from_local = mesh_functions::get_world_from_local(in.instance_index);
     var normalized_in = world_from_local * vec4(in.position, 1.) / 2.;
 
-    let param = (normalized_in.x - normalized_in.z) * wave.pitch + globals.time * wave.speed;
-    let y_offset = wave.level + wave.height * sin(param);
+    let param = (normalized_in.x - normalized_in.z) * wave.pitch + globals.time * -wave.speed;
+    let y_offset = wave.height * sin(param);
 
     var position = vec4(in.position + vec3(0., y_offset, 0.), 1.);
     vertex_output.world_position = mesh_functions::mesh_position_local_to_world(world_from_local, position);
@@ -68,7 +67,7 @@ fn vertex(in: Vertex) -> VertexOutput {
     let slope_angle = atan2(1, -derivate);
 
     vertex_output.world_normal = mesh_functions::mesh_normal_local_to_world(
-        vec3(-pow(2., -0.5) * cos(slope_angle), -sin(slope_angle), -pow(2., -0.5) * cos(slope_angle)),
+        vec3(pow(2., -0.5) * cos(slope_angle), -sin(slope_angle), pow(2., -0.5) * cos(slope_angle)),
         in.instance_index
     );
 #endif

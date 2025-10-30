@@ -2,6 +2,8 @@ mod client;
 #[cfg(feature = "with-inspector")]
 mod inspector_egui;
 
+#[cfg(feature = "with-inspector")]
+use bevy::dev_tools::fps_overlay::FpsOverlayPlugin;
 use bevy::{
     app::{App, PluginGroup, PluginGroupBuilder},
     asset::{io::AssetSourceBuilder, AssetApp, AssetPlugin},
@@ -61,6 +63,7 @@ fn main() {
                     format!("ragnarok_rebuild_common={log_level}"),
                     format!("ragnarok_act={log_level}"),
                     format!("ragnarok_gat={log_level}"),
+                    format!("ragnarok_gnd={log_level}"),
                     format!("ragnarok_grf={log_level}"),
                     format!("ragnarok_pal={log_level}"),
                     format!("ragnarok_rsm={log_level}"),
@@ -68,6 +71,7 @@ fn main() {
                     format!("ragnarok_spr={log_level}"),
                     format!("bevy_ragnarok_act={log_level}"),
                     format!("bevy_ragnarok_gat={log_level}"),
+                    format!("bevy_ragnarok_gnd={log_level}"),
                     format!("bevy_ragnarok_grf={log_level}"),
                     format!("bevy_ragnarok_pal={log_level}"),
                     format!("bevy_ragnarok_rsm={log_level}"),
@@ -97,6 +101,7 @@ fn main() {
 
     #[cfg(feature = "with-inspector")]
     {
+        app.add_plugins(FpsOverlayPlugin::default());
         app.add_plugins(inspector_egui::Plugin);
     }
 
@@ -115,6 +120,9 @@ impl bevy::app::PluginGroup for ClientPlugins {
                 audio_path_prefix: paths::WAV_FILES_FOLDER.into(),
             })
             .add(bevy_ragnarok_gat::plugin::Plugin)
+            .add(bevy_ragnarok_gnd::plugin::Plugin {
+                texture_prefix: paths::TEXTURE_FILES_FOLDER.into(),
+            })
             .add(bevy_ragnarok_pal::plugin::Plugin)
             .add(bevy_ragnarok_rsm::plugin::Plugin {
                 texture_path_prefix: paths::TEXTURE_FILES_FOLDER.into(),
@@ -128,5 +136,8 @@ impl bevy::app::PluginGroup for ClientPlugins {
             .add(bevy_ragnarok_spr::plugin::Plugin)
             .add(bevy_ragnarok_camera::plugin::Plugin)
             .add(bevy_ragnarok_quad_tree::plugin::Plugin)
+            .add(bevy_ragnarok_water_plane::plugin::Plugin {
+                texture_prefix: paths::WATER_TEXTURE_FILES_FOLDER.into(),
+            })
     }
 }

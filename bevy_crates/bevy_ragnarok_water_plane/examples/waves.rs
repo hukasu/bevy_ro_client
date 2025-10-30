@@ -1,23 +1,18 @@
 use bevy::{
     DefaultPlugins,
     app::{App, Startup},
-    camera::Camera3d,
-    color::Color,
-    ecs::system::Commands,
+    asset::{
+        AssetApp, Assets,
+        io::{AssetSourceBuilder, AssetSourceId},
+    },
+    camera::{Camera3d, visibility::Visibility},
+    ecs::system::{Commands, ResMut},
+    gizmos::{GizmoAsset, retained::Gizmo},
     light::DirectionalLight,
     math::Vec3,
     transform::components::Transform,
 };
-use bevy_asset::{
-    AssetApp, AssetServer,
-    io::{AssetSourceBuilder, AssetSourceId},
-};
-use bevy_camera::visibility::Visibility;
-use bevy_ecs::system::Res;
-use bevy_math::{Vec2, primitives::Plane3d};
-use bevy_mesh::{Mesh3d, MeshBuilder, Meshable};
-use bevy_pbr::{MeshMaterial3d, StandardMaterial};
-use bevy_ragnarok_water_plane::WaterPlane;
+use bevy_ragnarok_water_plane::{WaterPlaneAsset, WaterPlaneBuilder};
 
 fn main() {
     let mut app = App::new();
@@ -36,10 +31,14 @@ fn main() {
     app.run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn setup(
+    mut commands: Commands,
+    mut water_planes: ResMut<Assets<WaterPlaneAsset>>,
+    mut gizmos: ResMut<Assets<GizmoAsset>>,
+) {
     commands.spawn((
         Camera3d::default(),
-        Transform::from_translation(Vec3::new(0., 5., 5.)).looking_at(Vec3::ZERO, Vec3::Y),
+        Transform::from_translation(Vec3::new(0., 25., 25.)).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
     commands.spawn((
@@ -47,22 +46,31 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
         Transform::from_translation(Vec3::new(-5., 5., 5.)).looking_at(Vec3::ZERO, Vec3::Y),
     ));
 
+    let mut gizmo = GizmoAsset::new();
+    gizmo.axes(Transform::default(), 1.);
     commands.spawn((
-        Mesh3d(asset_server.add(Plane3d::new(Vec3::Y, Vec2::splat(2.5)).mesh().build())),
-        MeshMaterial3d(asset_server.add(StandardMaterial::from_color(Color::WHITE))),
+        Gizmo {
+            handle: gizmos.add(gizmo),
+            ..Default::default()
+        },
         Transform::default(),
-        Visibility::default(),
     ));
 
+    let water_plane = WaterPlaneAsset {
+        water_level: 0.,
+        water_type: 0,
+        wave_height: 1.,
+        wave_speed: 2.,
+        wave_pitch: 50.,
+        texture_cyclical_interval: 3,
+    };
     commands.spawn((
-        WaterPlane {
-            water_level: -1.,
-            water_type: 0,
-            wave_height: 0.25,
-            wave_speed: 0.5,
-            wave_pitch: 2.5,
-            texture_cyclical_interval: 3,
+        WaterPlaneBuilder {
+            width: 18,
+            height: 18,
+            water_plane: water_planes.add(water_plane),
         },
-        Transform::from_scale(Vec3::new(5., -1., -5.)),
+        Transform::from_scale(Vec3::new(2., -0.2, -2.)),
+        Visibility::default(),
     ));
 }

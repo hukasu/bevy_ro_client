@@ -1,5 +1,5 @@
 [package]
-name = "ragnarok_rsw"
+name = "ragnarok_gnd"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,12 +9,10 @@ edition = "2024"
 workspace = true
 
 [features]
-# Warnings while loading the rsw
+# Warnings while loading the act
 warning = ["ragnarok_rebuild_common/warning"]
 
 [dependencies]
-ragnarok_gat = { workspace = true, optional = true }
-ragnarok_gnd = { workspace = true, optional = true }
 ragnarok_grf = { workspace = true, optional = true }
 
 ragnarok_water_plane = { workspace = true }
@@ -23,10 +21,6 @@ ragnarok_rebuild_common = { path = "../../ragnarok_rebuild_common" }
 
 log = { workspace = true }
 
-serde = { workspace = true }
-flate2 = { workspace = true }
-encoding_rs = { workspace = true }
-
 [[bin]]
-name = "rsw_debug"
-required-features = ["warning", "ragnarok_gat", "ragnarok_gnd", "ragnarok_grf"]
+name = "gnd_debug"
+required-features = ["warning", "ragnarok_grf"]

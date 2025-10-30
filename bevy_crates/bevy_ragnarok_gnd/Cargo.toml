@@ -1,5 +1,5 @@
 [package]
-name = "bevy_ragnarok_water_plane"
+name = "bevy_ragnarok_gnd"
 version = "0.1.0"
 edition = "2024"
 
@@ -9,45 +9,29 @@ edition = "2024"
 workspace = true
 
 [features]
-debug = []
-reflect = []
+# Graphical debugging of meshes
+debug = ["dep:bevy_color", "dep:bevy_gizmos"]
 
 [dependencies]
-ragnarok_water_plane = { workspace = true }
+ragnarok_gnd = { workspace = true }
+
+bevy_ragnarok_water_plane = { workspace = true }
 
 bevy_app = { workspace = true, default-features = false }
 bevy_asset = { workspace = true, default-features = false }
 bevy_camera = { workspace = true, default-features = false }
-bevy_derive = { workspace = true, default-features = false }
+bevy_color = { workspace = true, default-features = false, optional = true }
 bevy_ecs = { workspace = true, default-features = false }
+bevy_gizmos = { workspace = true, default-features = false, optional = true, features = [
+  "bevy_render",
+] }
 bevy_image = { workspace = true, default-features = false }
-bevy_light = { workspace = true, default-features = false }
 bevy_log = { workspace = true, default-features = false }
 bevy_math = { workspace = true, default-features = false }
 bevy_mesh = { workspace = true, default-features = false }
 bevy_pbr = { workspace = true, default-features = false }
-bevy_platform = { workspace = true, default-features = false }
 bevy_reflect = { workspace = true, default-features = false }
 bevy_render = { workspace = true, default-features = false }
+bevy_scene = { workspace = true, default-features = false }
 bevy_shader = { workspace = true, default-features = false }
-bevy_time = { workspace = true, default-features = false }
 bevy_transform = { workspace = true, default-features = false }
-
-[dev-dependencies]
-bevy = { workspace = true, features = [
-  "bevy_asset",
-  "bevy_camera",
-  "bevy_core_pipeline",
-  "bevy_gizmos",
-  "bevy_light",
-  "bevy_log",
-  "bevy_pbr",
-  "bevy_render",
-  "bevy_window",
-  "bevy_winit",
-  "debug",
-  "jpeg",
-  "tonemapping_luts",
-  "wayland",
-  "zstd_rust",
-] }
