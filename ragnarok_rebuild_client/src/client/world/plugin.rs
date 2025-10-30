@@ -1,8 +1,7 @@
 //! Plugin for dealing with Rsw loading
 
-#[cfg(debug_assertions)]
-use bevy::state::state::State;
 use bevy::{
+    animation::AnimationPlayer,
     app::{AppExit, PreUpdate},
     asset::{AssetServer, Handle, RecursiveDependencyLoadState},
     camera::visibility::Visibility,
@@ -10,22 +9,21 @@ use bevy::{
         component::Component,
         entity::Entity,
         hierarchy::{ChildOf, Children},
-        lifecycle::{Add, Remove},
-        name::NameOrEntity,
+        name::{Name, NameOrEntity},
         observer::On,
         query::With,
         relationship::RelationshipTarget,
-        resource::Resource,
         schedule::{IntoScheduleConfigs, SystemSet},
-        system::{Commands, Query, Res, ResMut, Single},
+        system::{Commands, Populated, Query, Res, ResMut},
     },
     log::{debug, error, trace},
     math::Vec3,
-    scene::{Scene, SceneSpawner},
+    scene::{Scene, SceneInstanceReady, SceneSpawner},
     state::{app::AppExtStates, commands::CommandsStatesExt, condition::in_state, state::OnEnter},
     transform::components::Transform,
 };
 use bevy_ragnarok_gnd::Ground as GndGround;
+use bevy_ragnarok_rsm::Model;
 use bevy_ragnarok_rsw::{
     relationships::{
         AltitudeOfWorld, GroundOfWorld, ModelsOfWorld, WorldOfAltitude, WorldOfGround,
@@ -36,7 +34,7 @@ use bevy_ragnarok_rsw::{
 use bevy_ragnarok_water_plane::WaterPlaneBuilder;
 
 use crate::client::{
-    world::{ChangeMap, MapChangeStates, WorldOfGame},
+    world::{ChangeMap, GameOfWorld, MapChangeStates, WorldOfGame},
     Game,
 };
 
@@ -84,12 +82,10 @@ impl bevy::app::Plugin for Plugin {
         );
         app.add_systems(
             OnEnter(MapChangeStates::Loaded),
-            update_game_transform.in_set(WorldSystems::Cleanup),
+            (start_animations, update_game_transform).in_set(WorldSystems::Cleanup),
         );
 
         app.add_observer(map_change);
-        app.add_observer(new_world_spawned);
-        app.add_observer(despawn_old_world);
     }
 }
 
@@ -105,7 +101,7 @@ pub enum WorldSystems {
 }
 
 /// [`Handle<Scene>`] of the loading map
-#[derive(Resource)]
+#[derive(Component)]
 struct MapChangeScene(Handle<Scene>);
 
 /// [`Handle<Scene>`] of the loading ground
@@ -121,24 +117,39 @@ struct LoadingAltitude(Handle<Scene>);
 struct LoadingModel(Handle<Scene>);
 
 /// Starts the process of loading a new map
-fn map_change(map_change: On<ChangeMap>, mut commands: Commands, asset_server: Res<AssetServer>) {
+fn map_change(
+    map_change: On<ChangeMap>,
+    mut commands: Commands,
+    games: Query<Entity, With<Game>>,
+    asset_server: Res<AssetServer>,
+) {
+    let Ok(game) = games.single() else {
+        error!("There were none or more than one Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+
     let new_map = &*map_change.map;
     trace!("Starting loading of {new_map} map.");
 
     let map: Handle<Scene> = asset_server.load(format!("data/{new_map}#Scene"));
 
+    commands.entity(game).insert(MapChangeScene(map));
     commands.set_state(MapChangeStates::LoadingAsset);
-    commands.insert_resource(MapChangeScene(map));
 }
 
 /// Load ground of [`World`]
 fn load_ground(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &WorldOfGround), With<World>>,
+    worlds: Query<(NameOrEntity, &WorldOfGround), With<World>>,
     children: Query<(NameOrEntity, &Ground), With<GroundOfWorld>>,
     asset_server: Res<AssetServer>,
 ) {
-    let (world, world_of_models) = world.into_inner();
+    let Ok((world, world_of_models)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     let Ok((ground, ground_path)) = children.get(*world_of_models.collection()) else {
         error!("{world} does not ground.");
@@ -154,11 +165,15 @@ fn load_ground(
 /// Load altitude tiles of [`World`]
 fn load_altitude(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &WorldOfAltitude), With<World>>,
+    worlds: Query<(NameOrEntity, &WorldOfAltitude), With<World>>,
     children: Query<(NameOrEntity, &Altitude), With<AltitudeOfWorld>>,
     asset_server: Res<AssetServer>,
 ) {
-    let (world, world_of_altitude) = world.into_inner();
+    let Ok((world, world_of_altitude)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     let Ok((altitude, Altitude { altitude_path })) = children.get(*world_of_altitude.collection())
     else {
@@ -176,16 +191,27 @@ fn load_altitude(
             },
         )));
 }
+
 /// Load [`WaterPlane`](bevy_ragnarok_water_plane::WaterPlane) of [`World`]
 fn load_rsw_water_plane(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &World), With<World>>,
-    ground: Single<&GndGround>,
+    worlds: Query<(NameOrEntity, &World), With<World>>,
+    grounds: Query<&GndGround>,
 ) {
-    let (world_entity, world) = world.into_inner();
+    let Ok((world_entity, world)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+    let Ok(ground) = grounds.single() else {
+        error!("There were none or more than one GndGround.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     if let Some(water_plane) = &world.water_plane {
         commands.spawn((
+            Name::new("WaterPlane"),
             ChildOf(world_entity.entity),
             WaterPlaneBuilder {
                 width: ground.width - 4,
@@ -200,15 +226,19 @@ fn load_rsw_water_plane(
     commands.set_state(MapChangeStates::LoadingModels);
 }
 
-/// Load models of [`World`]
+/// Queue the loading of all [`AnimatedProp`] of the [`World`].
 fn load_models(
     mut commands: Commands,
-    world: Single<(NameOrEntity, &WorldOfModels), With<World>>,
+    worlds: Query<(NameOrEntity, &WorldOfModels), With<World>>,
     children: Query<(NameOrEntity, &Children), With<ModelsOfWorld>>,
     animated_props: Query<&AnimatedProp>,
     asset_server: Res<AssetServer>,
 ) {
-    let (world, world_of_models) = world.into_inner();
+    let Ok((world, world_of_models)) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
 
     let Ok((models, children)) = children.get(*world_of_models.collection()) else {
         debug!("{world} does not have animated props.");
@@ -226,20 +256,35 @@ fn load_models(
     }
 }
 
-/// Wait for [`Scene`] of [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset) to finish loading
+/// Wait for [`Scene`] of [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset) to finish loading.
+///
+/// Failing to load the [`RswAsset`](bevy_ragnarok_rsw::assets::RswAsset)
+/// will exit the app.
 fn wait_scene(
     mut commands: Commands,
-    game: Single<Entity, With<Game>>,
-    map_change_scene: Res<MapChangeScene>,
+    game: Query<(Entity, Option<&GameOfWorld>, &MapChangeScene), With<Game>>,
     mut scene_spawner: ResMut<SceneSpawner>,
     asset_server: Res<AssetServer>,
 ) {
-    match asset_server.recursive_dependency_load_state(map_change_scene.0.id()) {
+    let Ok((game, game_of_world, MapChangeScene(handle))) = game.single() else {
+        error!("There were none or more than one Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+
+    match asset_server.recursive_dependency_load_state(handle.id()) {
         RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading => (),
         RecursiveDependencyLoadState::Loaded => {
-            scene_spawner.spawn_as_child(map_change_scene.0.clone(), *game);
-            commands.remove_resource::<MapChangeScene>();
-            commands.set_state(MapChangeStates::LoadingScene);
+            if let Some(old_world) = game_of_world.map(|game_of_world| game_of_world.collection()) {
+                commands.entity(*old_world).despawn();
+            }
+
+            scene_spawner.spawn_as_child(handle.clone(), game);
+            commands
+                .entity(game)
+                .remove::<MapChangeScene>()
+                .observe(new_world_spawned);
+            commands.set_state(MapChangeStates::WaitingWorld);
         }
         RecursiveDependencyLoadState::Failed(err) => {
             error!("{err}");
@@ -248,6 +293,9 @@ fn wait_scene(
     }
 }
 
+/// Waits for the [`LoadingGround`] to finish loading.
+///
+/// Failing to load the [`Ground`] will exit the app.
 fn wait_ground_scene(
     mut commands: Commands,
     grounds: Query<(NameOrEntity, &LoadingGround), With<Ground>>,
@@ -271,6 +319,7 @@ fn wait_ground_scene(
             Some(RecursiveDependencyLoadState::Failed(err)) => {
                 commands.entity(ground.entity).remove::<LoadingGround>();
                 error!("Dependencies of {ground} failed to load: {err}");
+                commands.write_message(AppExit::from_code(1));
             }
             None => {
                 unreachable!("All model scene handles must be valid.")
@@ -279,6 +328,9 @@ fn wait_ground_scene(
     }
 }
 
+/// Wait for the [`Altitude`] scene to finish loading.
+///
+/// Failing to load the [`Altitude`] scene will exit the app.
 fn wait_altitude_scene(
     mut commands: Commands,
     altitudes: Query<(NameOrEntity, &LoadingAltitude), With<Altitude>>,
@@ -302,6 +354,7 @@ fn wait_altitude_scene(
             Some(RecursiveDependencyLoadState::Failed(err)) => {
                 commands.entity(altitude.entity).remove::<LoadingAltitude>();
                 error!("Dependencies of {altitude} failed to load: {err}");
+                commands.write_message(AppExit::from_code(1));
             }
             None => {
                 unreachable!("All altitude scene handles must be valid.")
@@ -310,6 +363,9 @@ fn wait_altitude_scene(
     }
 }
 
+/// Wait for all [`LoadingModel`] to finish loading.
+///
+/// A model failing to load does not exit the app.
 fn wait_model_scene(
     mut commands: Commands,
     models: Query<(NameOrEntity, &LoadingModel), With<AnimatedProp>>,
@@ -341,41 +397,85 @@ fn wait_model_scene(
     }
 }
 
-fn update_game_transform(mut game: Single<&mut Transform, With<Game>>, ground: Single<&GndGround>) {
+/// Start animations of [`World`]'s [`AnimatedProp`].
+fn start_animations(
+    animated_props: Populated<(NameOrEntity, &AnimatedProp, &Children)>,
+    mut models: Query<(&mut AnimationPlayer, &Model)>,
+) {
+    for (entity, animated_prop, children) in animated_props.into_inner() {
+        if animated_prop.animation_type == 0 {
+            continue;
+        }
+
+        debug_assert_eq!(children.len(), 1);
+
+        let child = children.collection()[0];
+        let Ok((mut animation_player, model)) = models.get_mut(child) else {
+            error!("{entity}'s child was not a Model.");
+            continue;
+        };
+
+        if let Some(animation_id) = &model.animation {
+            let animation = animation_player.play(animation_id.animation_node_index);
+            if animated_prop.animation_type == 2 {
+                animation.repeat();
+            }
+            animation.set_speed(animated_prop.animation_speed);
+        }
+    }
+}
+
+/// Update the [`Transform`] of [`Game`] to include the new [`GndGround::scale`].
+fn update_game_transform(
+    mut commands: Commands,
+    mut games: Query<&mut Transform, With<Game>>,
+    grounds: Query<&GndGround>,
+) {
+    let Ok(mut game) = games.single_mut() else {
+        error!("There were none or more than one Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+    let Ok(ground) = grounds.single() else {
+        error!("There were none or more than one GndGround.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+
     let scale = 2. / ground.scale;
     game.scale = Vec3::new(scale, -scale, -scale);
 }
 
+/// Adds [`WorldOfGame`] to newly spawned [`World`]
+/// and advances to [`MapChangeStates::LoadingGround`]
+/// on [`World`]'s [`SceneInstanceReady`].
 fn new_world_spawned(
-    event: On<Add, World>,
+    event: On<SceneInstanceReady>,
     mut commands: Commands,
+    games: Query<(Entity, &Children), With<Game>>,
     worlds: Query<NameOrEntity, With<World>>,
-    game: Single<Entity, With<Game>>,
-    #[cfg(debug_assertions)] map_change_states: Res<State<MapChangeStates>>,
 ) {
-    #[cfg(debug_assertions)]
-    debug_assert_eq!(*map_change_states.get(), MapChangeStates::LoadingScene);
+    // Queue self-removal
+    commands.entity(event.observer()).despawn();
 
-    let world = event.entity;
-    let Ok(name_or_entity) = worlds.get(world) else {
-        unreachable!("Infallible query.");
+    let Ok((game, children)) = games.single() else {
+        error!("There were none or more than one Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    };
+    let Ok(world) = worlds.single() else {
+        error!("There were none or more than one World.");
+        commands.write_message(AppExit::from_code(1));
+        return;
     };
 
-    trace!("New World {name_or_entity} spawned.");
-    commands.entity(world).insert(WorldOfGame(*game));
+    if !children.collection().contains(&world.entity) {
+        error!("World was not a child of Game.");
+        commands.write_message(AppExit::from_code(1));
+        return;
+    }
+
+    trace!("New World {world} spawned.");
+    commands.entity(world.entity).insert(WorldOfGame(game));
     commands.set_state(MapChangeStates::LoadingGround);
-}
-
-fn despawn_old_world(
-    event: On<Remove, WorldOfGame>,
-    mut commands: Commands,
-    worlds: Query<NameOrEntity, With<World>>,
-) {
-    let world = event.entity;
-    let Ok(name_or_entity) = worlds.get(world) else {
-        unreachable!("Infallible query.");
-    };
-
-    trace!("Despawning {name_or_entity}.");
-    commands.entity(event.entity).despawn();
 }
