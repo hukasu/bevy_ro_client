@@ -9,7 +9,7 @@ use bevy::{
         component::Component,
         entity::Entity,
         hierarchy::{ChildOf, Children},
-        name::NameOrEntity,
+        name::{Name, NameOrEntity},
         observer::On,
         query::With,
         relationship::RelationshipTarget,
@@ -188,6 +188,7 @@ fn load_rsw_water_plane(
 
     if let Some(water_plane) = &world.water_plane {
         commands.spawn((
+            Name::new("WaterPlane"),
             ChildOf(world_entity.entity),
             WaterPlaneBuilder {
                 width: ground.width - 4,
