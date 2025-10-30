@@ -266,23 +266,25 @@ fn wait_scene(
     mut scene_spawner: ResMut<SceneSpawner>,
     asset_server: Res<AssetServer>,
 ) {
-    let Ok((game, game_of_world, map_change_scene)) = game.single() else {
+    let Ok((game, game_of_world, MapChangeScene(handle))) = game.single() else {
         error!("There were none or more than one Game.");
         commands.write_message(AppExit::from_code(1));
         return;
     };
-    match asset_server.recursive_dependency_load_state(map_change_scene.0.id()) {
+
+    match asset_server.recursive_dependency_load_state(handle.id()) {
         RecursiveDependencyLoadState::NotLoaded | RecursiveDependencyLoadState::Loading => (),
         RecursiveDependencyLoadState::Loaded => {
             if let Some(old_world) = game_of_world.map(|game_of_world| game_of_world.collection()) {
                 commands.entity(*old_world).despawn();
             }
 
-            scene_spawner.spawn_as_child(map_change_scene.0.clone(), game);
+            scene_spawner.spawn_as_child(handle.clone(), game);
             commands
                 .entity(game)
                 .remove::<MapChangeScene>()
                 .observe(new_world_spawned);
+            commands.set_state(MapChangeStates::WaitingWorld);
         }
         RecursiveDependencyLoadState::Failed(err) => {
             error!("{err}");
