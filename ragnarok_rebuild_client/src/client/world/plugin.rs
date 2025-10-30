@@ -419,18 +419,18 @@ fn update_game_transform(
 fn new_world_spawned(
     event: On<SceneInstanceReady>,
     mut commands: Commands,
-    game: Query<(Entity, &Children), With<Game>>,
-    world: Query<NameOrEntity, With<World>>,
+    games: Query<(Entity, &Children), With<Game>>,
+    worlds: Query<NameOrEntity, With<World>>,
 ) {
     // Queue self-removal
     commands.entity(event.observer()).despawn();
 
-    let Ok((game, children)) = game.single() else {
+    let Ok((game, children)) = games.single() else {
         error!("There were none or more than one Game.");
         commands.write_message(AppExit::from_code(1));
         return;
     };
-    let Ok(world) = world.single() else {
+    let Ok(world) = worlds.single() else {
         error!("There were none or more than one World.");
         commands.write_message(AppExit::from_code(1));
         return;
