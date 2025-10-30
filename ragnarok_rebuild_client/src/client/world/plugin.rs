@@ -3,6 +3,7 @@
 #[cfg(debug_assertions)]
 use bevy::state::state::State;
 use bevy::{
+    animation::AnimationPlayer,
     app::{AppExit, PreUpdate},
     asset::{AssetServer, Handle, RecursiveDependencyLoadState},
     camera::visibility::Visibility,
@@ -17,7 +18,7 @@ use bevy::{
         relationship::RelationshipTarget,
         resource::Resource,
         schedule::{IntoScheduleConfigs, SystemSet},
-        system::{Commands, Query, Res, ResMut, Single},
+        system::{Commands, Populated, Query, Res, ResMut, Single},
     },
     log::{debug, error, trace},
     math::Vec3,
@@ -26,6 +27,7 @@ use bevy::{
     transform::components::Transform,
 };
 use bevy_ragnarok_gnd::Ground as GndGround;
+use bevy_ragnarok_rsm::Model;
 use bevy_ragnarok_rsw::{
     relationships::{
         AltitudeOfWorld, GroundOfWorld, ModelsOfWorld, WorldOfAltitude, WorldOfGround,
@@ -84,7 +86,7 @@ impl bevy::app::Plugin for Plugin {
         );
         app.add_systems(
             OnEnter(MapChangeStates::Loaded),
-            update_game_transform.in_set(WorldSystems::Cleanup),
+            (start_animations, update_game_transform).in_set(WorldSystems::Cleanup),
         );
 
         app.add_observer(map_change);
@@ -337,6 +339,33 @@ fn wait_model_scene(
             None => {
                 unreachable!("All model scene handles must be valid.")
             }
+        }
+    }
+}
+
+fn start_animations(
+    animated_props: Populated<(NameOrEntity, &AnimatedProp, &Children)>,
+    mut models: Query<(&mut AnimationPlayer, &Model)>,
+) {
+    for (entity, animated_prop, children) in animated_props.into_inner() {
+        if animated_prop.animation_type == 0 {
+            continue;
+        }
+
+        debug_assert_eq!(children.len(), 1);
+
+        let child = children.collection()[0];
+        let Ok((mut animation_player, model)) = models.get_mut(child) else {
+            error!("{entity}'s child was not a Model.");
+            continue;
+        };
+
+        if let Some(animation_id) = &model.animation {
+            let animation = animation_player.play(animation_id.animation_node_index);
+            if animated_prop.animation_type == 2 {
+                animation.repeat();
+            }
+            animation.set_speed(animated_prop.animation_speed);
         }
     }
 }
