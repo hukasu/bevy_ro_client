@@ -36,7 +36,6 @@ pub enum MapChangeStates {
     #[default]
     Unloaded,
     LoadingAsset,
-    LoadingScene,
     LoadingGround,
     LoadingAltitude,
     LoadingRswWaterPlane,
