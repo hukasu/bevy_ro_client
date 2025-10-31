@@ -11,6 +11,7 @@ use bevy_render::{
     render_resource::{
         AsBindGroup, RenderPipelineDescriptor, ShaderType, SpecializedMeshPipelineError,
     },
+    storage::ShaderStorageBuffer,
 };
 use bevy_shader::ShaderRef;
 
@@ -28,6 +29,8 @@ pub struct SprIndexedMaterial {
     pub index_image: Handle<Image>,
     #[texture(2, dimension = "1d")]
     pub palette: Handle<Image>,
+    #[storage(3, read_only)]
+    pub uvs: Handle<ShaderStorageBuffer>,
 }
 
 impl Material for SprIndexedMaterial {
@@ -79,6 +82,8 @@ pub struct SprTrueColorMaterial {
     #[texture(1)]
     #[sampler(2)]
     pub color: Handle<Image>,
+    #[storage(3, read_only)]
+    pub uvs: Handle<ShaderStorageBuffer>,
 }
 
 impl Material for SprTrueColorMaterial {
