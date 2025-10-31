@@ -2,7 +2,7 @@ mod loader;
 
 use bevy_asset::AssetApp;
 
-use crate::{Sprite, assets::SpriteImages, material};
+use crate::{Sprite, SpriteImages, material};
 
 pub struct Plugin;
 

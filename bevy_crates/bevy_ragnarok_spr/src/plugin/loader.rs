@@ -11,7 +11,7 @@ use bevy_render::{
 };
 use ragnarok_spr::{Error, IndexedSprite, Spr, TrueColorSprite};
 
-use crate::assets::SpriteImages;
+use crate::SpriteImages;
 
 pub struct AssetLoader;
 
