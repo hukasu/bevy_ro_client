@@ -1,8 +1,10 @@
-use bevy_asset::{Asset, AssetApp, Handle, embedded_asset};
+pub(crate) mod plugin;
+
+use bevy_asset::{Asset, Handle};
 use bevy_color::LinearRgba;
 use bevy_image::Image;
 use bevy_mesh::MeshVertexBufferLayoutRef;
-use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey, MaterialPlugin};
+use bevy_pbr::{Material, MaterialPipeline, MaterialPipelineKey};
 use bevy_reflect::Reflect;
 use bevy_render::{
     alpha::AlphaMode,
@@ -11,27 +13,6 @@ use bevy_render::{
     },
 };
 use bevy_shader::ShaderRef;
-
-pub(crate) struct Plugin;
-
-impl bevy_app::Plugin for Plugin {
-    fn build(&self, app: &mut bevy_app::App) {
-        app
-            // Asset
-            .init_asset::<SprIndexedMaterial>()
-            .register_asset_reflect::<SprIndexedMaterial>()
-            .init_asset::<SprTrueColorMaterial>()
-            .register_asset_reflect::<SprTrueColorMaterial>()
-            // Material Plugin
-            .add_plugins(MaterialPlugin::<SprIndexedMaterial>::default())
-            .add_plugins(MaterialPlugin::<SprTrueColorMaterial>::default());
-
-        // Shader handles
-        embedded_asset!(app, "shaders/spr_vertex.wgsl");
-        embedded_asset!(app, "shaders/spr_fragment.wgsl");
-        embedded_asset!(app, "shaders/spr_prepass_fragment.wgsl");
-    }
-}
 
 #[derive(Debug, Clone, Reflect, ShaderType)]
 pub struct SprUniform {

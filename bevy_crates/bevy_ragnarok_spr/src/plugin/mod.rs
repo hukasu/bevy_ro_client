@@ -17,6 +17,6 @@ impl bevy_app::Plugin for Plugin {
             .init_asset::<SpriteImages>()
             .register_asset_reflect::<SpriteImages>()
             // MaterialPlugin
-            .add_plugins(material::Plugin);
+            .add_plugins(material::plugin::Plugin);
     }
 }
