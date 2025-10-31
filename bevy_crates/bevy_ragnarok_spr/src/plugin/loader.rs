@@ -45,8 +45,8 @@ impl AssetLoader {
     ) -> Result<SpriteImages, TextureAtlasBuilderError> {
         let (indexed_sprites, indexed_sprites_uvs) =
             Self::load_indexed_sprites(load_context, &sprite.bitmap_images)?;
-        let true_color_sprites =
-            Self::load_true_color_sprites(load_context, &sprite.true_color_images);
+        let (true_color_sprites, true_color_sprites_uvs) =
+            Self::load_true_color_sprites(load_context, &sprite.true_color_images)?;
         let palette =
             load_context.add_labeled_asset("Palette".to_owned(), pal_to_image(sprite.palette));
 
@@ -54,6 +54,7 @@ impl AssetLoader {
             indexed_sprites,
             indexed_sprites_uvs,
             true_color_sprites,
+            true_color_sprites_uvs,
             palette,
         })
     }
@@ -130,46 +131,76 @@ impl AssetLoader {
     fn load_true_color_sprites(
         load_context: &mut LoadContext,
         true_color_sprites: &[TrueColorSprite],
-    ) -> Vec<Handle<Image>> {
-        true_color_sprites
-            .iter()
-            .enumerate()
-            .map(|(index, sprite)| {
-                let image = Image {
-                    data: Some(
-                        sprite
-                            .pixels
-                            .iter()
-                            .flat_map(|pixel| [pixel.red, pixel.green, pixel.blue, pixel.alpha])
-                            .collect(),
-                    ),
-                    texture_descriptor: TextureDescriptor {
-                        label: Some("true_color_sprite"),
-                        size: Extent3d {
-                            width: u32::from(sprite.width),
-                            height: u32::from(sprite.height),
-                            depth_or_array_layers: 1,
-                        },
-                        mip_level_count: 1,
-                        sample_count: 1,
-                        dimension: TextureDimension::D2,
-                        format: TextureFormat::Rgba8UnormSrgb,
-                        usage: TextureUsages::TEXTURE_BINDING,
-                        view_formats: &[],
-                    },
-                    sampler: ImageSampler::Default,
-                    texture_view_descriptor: None,
-                    asset_usage: if cfg!(feature = "debug") {
-                        RenderAssetUsages::all()
-                    } else {
-                        RenderAssetUsages::RENDER_WORLD
-                    },
-                    ..Default::default()
-                };
+    ) -> Result<(Handle<Image>, Handle<ShaderStorageBuffer>), TextureAtlasBuilderError> {
+        let mut texture_atlas = TextureAtlasBuilder::default();
+        texture_atlas.auto_format_conversion(false);
+        texture_atlas.format(TextureFormat::Rgba8UnormSrgb);
 
-                load_context.add_labeled_asset(format!("TrueColorSprite{}", index), image)
+        let asset_usage = if cfg!(feature = "debug") {
+            RenderAssetUsages::all()
+        } else {
+            RenderAssetUsages::RENDER_WORLD
+        };
+
+        let images = true_color_sprites
+            .iter()
+            .map(|sprite| Image {
+                data: Some(
+                    sprite
+                        .pixels
+                        .iter()
+                        .flat_map(|pixel| [pixel.red, pixel.green, pixel.blue, pixel.alpha])
+                        .collect(),
+                ),
+                texture_descriptor: TextureDescriptor {
+                    label: Some("true_color_sprite"),
+                    size: Extent3d {
+                        width: u32::from(sprite.width),
+                        height: u32::from(sprite.height),
+                        depth_or_array_layers: 1,
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: TextureDimension::D2,
+                    format: TextureFormat::Rgba8UnormSrgb,
+                    usage: TextureUsages::TEXTURE_BINDING,
+                    view_formats: &[],
+                },
+                sampler: ImageSampler::Default,
+                texture_view_descriptor: None,
+                asset_usage,
+                ..Default::default()
             })
-            .collect()
+            .collect::<Vec<_>>();
+
+        for image in &images {
+            texture_atlas.add_texture(None, image);
+        }
+
+        let (texture_layout, _, image) = texture_atlas.build()?;
+
+        let mut uvs_buffer = Vec::with_capacity(true_color_sprites.len() * SpriteImages::UV_STRIDE);
+        #[cfg(debug_assertions)]
+        let initial_size = uvs_buffer.capacity();
+
+        let total_size = texture_layout.size;
+        for t in &texture_layout.textures {
+            uvs_buffer.extend_from_slice(&(t.min.x as f32 / total_size.x as f32).to_le_bytes());
+            uvs_buffer.extend_from_slice(&(t.min.y as f32 / total_size.y as f32).to_le_bytes());
+            uvs_buffer.extend_from_slice(&(t.max.x as f32 / total_size.x as f32).to_le_bytes());
+            uvs_buffer.extend_from_slice(&(t.max.y as f32 / total_size.y as f32).to_le_bytes());
+        }
+
+        #[cfg(debug_assertions)]
+        debug_assert_eq!(initial_size, uvs_buffer.len());
+
+        Ok((
+            load_context.add_labeled_asset("IndexedTextureAtlas".to_owned(), image),
+            load_context.add_labeled_asset(
+                "IndexedTextureAtlasUvs".to_owned(),
+                ShaderStorageBuffer::new(&uvs_buffer, asset_usage),
+            ),
+        ))
     }
 }
 

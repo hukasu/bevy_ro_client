@@ -7,7 +7,8 @@ use bevy_render::storage::ShaderStorageBuffer;
 pub struct SpriteImages {
     pub indexed_sprites: Handle<Image>,
     pub indexed_sprites_uvs: Handle<ShaderStorageBuffer>,
-    pub true_color_sprites: Vec<Handle<Image>>,
+    pub true_color_sprites: Handle<Image>,
+    pub true_color_sprites_uvs: Handle<ShaderStorageBuffer>,
     pub palette: Handle<Image>,
 }
 
