@@ -102,7 +102,8 @@ impl AssetLoader {
             texture_atlas.add_texture(None, image);
         }
 
-        let (texture_layout, _, image) = texture_atlas.build()?;
+        let (texture_layout, _, mut image) = texture_atlas.build()?;
+        image.texture_descriptor.label = Some("SprIndexedTextureAtlas");
 
         let mut uvs_buffer = Vec::with_capacity(indexed_sprites.len() * SpriteImages::UV_STRIDE);
         #[cfg(debug_assertions)]
@@ -177,7 +178,8 @@ impl AssetLoader {
             texture_atlas.add_texture(None, image);
         }
 
-        let (texture_layout, _, image) = texture_atlas.build()?;
+        let (texture_layout, _, mut image) = texture_atlas.build()?;
+        image.texture_descriptor.label = Some("SprTrueColorTextureAtlas");
 
         let mut uvs_buffer = Vec::with_capacity(true_color_sprites.len() * SpriteImages::UV_STRIDE);
         #[cfg(debug_assertions)]
@@ -195,9 +197,9 @@ impl AssetLoader {
         debug_assert_eq!(initial_size, uvs_buffer.len());
 
         Ok((
-            load_context.add_labeled_asset("IndexedTextureAtlas".to_owned(), image),
+            load_context.add_labeled_asset("TrueColorTextureAtlas".to_owned(), image),
             load_context.add_labeled_asset(
-                "IndexedTextureAtlasUvs".to_owned(),
+                "TrueColorTextureAtlasUvs".to_owned(),
                 ShaderStorageBuffer::new(&uvs_buffer, asset_usage),
             ),
         ))
