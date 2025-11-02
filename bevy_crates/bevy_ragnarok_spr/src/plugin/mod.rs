@@ -1,7 +1,7 @@
 mod loader;
 
 use bevy_app::PreUpdate;
-use bevy_asset::{AssetApp, AssetServer, Assets, Handle, RenderAssetUsages};
+use bevy_asset::{AssetApp, Assets, Handle, RenderAssetUsages};
 use bevy_derive::{Deref, DerefMut};
 use bevy_ecs::{
     entity::Entity,
@@ -41,16 +41,18 @@ impl bevy_app::Plugin for Plugin {
         app.init_resource::<SpriteCache>();
         app.init_resource::<SpriteTags>();
 
-        let asset_server = app.world().resource::<AssetServer>();
-        let uv_indices = asset_server.add(ShaderStorageBuffer::new(
+        let mut shader_buffers = app
+            .world_mut()
+            .resource_mut::<Assets<ShaderStorageBuffer>>();
+        let uv_indices = shader_buffers.add(ShaderStorageBuffer::new(
             &Vec::with_capacity(SprMaterial::UV_INDEX_STRIDE * INITIAL_SHADER_BUFFER_CAPACITY),
             RenderAssetUsages::all(),
         ));
-        let tint = asset_server.add(ShaderStorageBuffer::new(
+        let tint = shader_buffers.add(ShaderStorageBuffer::new(
             &Vec::with_capacity(SprMaterial::TINT_STRIDE * INITIAL_SHADER_BUFFER_CAPACITY),
             RenderAssetUsages::all(),
         ));
-        let flipped_uvs = asset_server.add(ShaderStorageBuffer::new(
+        let flipped_uvs = shader_buffers.add(ShaderStorageBuffer::new(
             &Vec::with_capacity(SprMaterial::FLIPPED_UVS_STRIDE * INITIAL_SHADER_BUFFER_CAPACITY),
             RenderAssetUsages::all(),
         ));
@@ -70,7 +72,7 @@ pub(crate) struct SpriteCache {
     cache: HashMap<Handle<SpriteImages>, Handle<SprMaterial>>,
 }
 
-#[derive(Resource)]
+#[derive(Clone, Resource)]
 pub(crate) struct SpriteBuffers {
     pub uv_indices: Handle<ShaderStorageBuffer>,
     pub tint: Handle<ShaderStorageBuffer>,
