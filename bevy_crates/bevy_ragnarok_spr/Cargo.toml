@@ -28,3 +28,18 @@ bevy_pbr = { workspace = true, default-features = false }
 bevy_reflect = { workspace = true, default-features = false }
 bevy_render = { workspace = true, default-features = false }
 bevy_shader = { workspace = true, default-features = false }
+
+[dev-dependencies]
+bevy = { workspace = true, features = [
+    "bevy_core_pipeline",
+    "bevy_log",
+    "bevy_pbr",
+    "bevy_post_process",
+    "bevy_render",
+    "bevy_window",
+    "bevy_winit",
+    "debug",
+    "tonemapping_luts",
+    "wayland",
+    "zstd_rust",
+] }
