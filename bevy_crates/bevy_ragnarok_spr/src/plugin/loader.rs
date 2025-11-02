@@ -120,6 +120,13 @@ impl AssetLoader {
         #[cfg(debug_assertions)]
         debug_assert_eq!(initial_size, uvs_buffer.len());
 
+        if uvs_buffer.is_empty() {
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+        }
+
         Ok((
             load_context.add_labeled_asset("IndexedTextureAtlas".to_owned(), image),
             load_context.add_labeled_asset(
@@ -195,6 +202,13 @@ impl AssetLoader {
 
         #[cfg(debug_assertions)]
         debug_assert_eq!(initial_size, uvs_buffer.len());
+
+        if uvs_buffer.is_empty() {
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+            uvs_buffer.extend_from_slice(&0f32.to_le_bytes());
+        }
 
         Ok((
             load_context.add_labeled_asset("TrueColorTextureAtlas".to_owned(), image),
