@@ -41,13 +41,44 @@ impl Sprite {
 
         let mut tags = deferred_world.resource_mut::<SpriteTags>();
 
-        let new_tag = if let Some(new_tag) = tags.free.pop() {
-            new_tag
+        let (new_tag, increase_buffers) = if let Some(new_tag) = tags.free.pop() {
+            (new_tag, false)
         } else {
             let new_tag = tags.last;
             tags.last += 1;
-            new_tag
+            (new_tag, true)
         };
+
+        if increase_buffers {
+            let buffers = deferred_world.resource::<SpriteBuffers>().clone();
+            let mut shader_buffers = deferred_world.resource_mut::<Assets<ShaderStorageBuffer>>();
+
+            let Some(uv_indexes) = shader_buffers
+                .get_mut(buffers.uv_indices.id())
+                .and_then(|buffer| buffer.data.as_mut())
+            else {
+                unreachable!("SpriteBuffer handles must be valid.");
+            };
+            uv_indexes.extend_from_slice(&0u32.to_le_bytes());
+
+            let Some(tints) = shader_buffers
+                .get_mut(buffers.tint.id())
+                .and_then(|buffer| buffer.data.as_mut())
+            else {
+                unreachable!("SpriteBuffer handles must be valid.");
+            };
+            for _ in 0..4 {
+                tints.extend_from_slice(&1f32.to_le_bytes());
+            }
+
+            let Some(flipped_uvs) = shader_buffers
+                .get_mut(buffers.flipped_uvs.id())
+                .and_then(|buffer| buffer.data.as_mut())
+            else {
+                unreachable!("SpriteBuffer handles must be valid.");
+            };
+            flipped_uvs.extend_from_slice(&0u32.to_le_bytes());
+        }
 
         deferred_world
             .commands()
