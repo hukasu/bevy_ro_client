@@ -3,25 +3,81 @@
 pub mod material;
 pub mod plugin;
 
+use bevy_app::AppExit;
 use bevy_asset::{Asset, Assets, Handle};
 use bevy_color::Color;
+use bevy_derive::Deref;
 use bevy_ecs::{
     component::Component,
     entity::Entity,
+    lifecycle::HookContext,
     query::{QueryEntityError, With},
     system::{Query, Res, ResMut, SystemParam},
+    world::DeferredWorld,
 };
 use bevy_image::Image;
+use bevy_log::error;
 use bevy_mesh::MeshTag;
 use bevy_pbr::MeshMaterial3d;
 use bevy_reflect::Reflect;
 use bevy_render::storage::ShaderStorageBuffer;
 
-use crate::{material::SprMaterial, plugin::SpriteBuffers};
+use crate::{
+    material::SprMaterial,
+    plugin::{SpriteBuffers, SpriteTags},
+};
 
 /// Holds an handles to the assets generated from a [`Spr`](ragnarok_spr::Spr).
-#[derive(Debug, Component, Reflect)]
-pub struct Sprite(pub Handle<SpriteImages>);
+///
+/// Entities holding this [`Component`] are given a [`MeshTag`]
+/// and [`MeshMaterial3d`].
+#[derive(Debug, Reflect, Component, Deref)]
+#[component(immutable, on_add=Self::on_add_hook, on_remove=Self::on_remove_hook)]
+pub struct Sprite(Handle<SpriteImages>);
+
+impl Sprite {
+    fn on_add_hook(mut deferred_world: DeferredWorld, hook_context: HookContext) {
+        let entity = hook_context.entity;
+
+        let mut tags = deferred_world.resource_mut::<SpriteTags>();
+
+        let new_tag = if let Some(new_tag) = tags.free.pop() {
+            new_tag
+        } else {
+            let new_tag = tags.last;
+            tags.last += 1;
+            new_tag
+        };
+
+        deferred_world
+            .commands()
+            .entity(entity)
+            .insert(MeshTag(new_tag));
+    }
+
+    fn on_remove_hook(mut deferred_world: DeferredWorld, hook_context: HookContext) {
+        let entity = hook_context.entity;
+
+        let Some(freed_tag) = deferred_world
+            .entity(entity)
+            .get::<MeshTag>()
+            .map(|tag| **tag)
+        else {
+            error!("MeshTag of {entity} was removed, breaking invariant.");
+            deferred_world.write_message(AppExit::from_code(1));
+            return;
+        };
+
+        let mut tags = deferred_world.resource_mut::<SpriteTags>();
+        tags.free.push(freed_tag);
+    }
+}
+
+impl From<Handle<SpriteImages>> for Sprite {
+    fn from(value: Handle<SpriteImages>) -> Self {
+        Self(value)
+    }
+}
 
 /// Assets generated from a [`Spr`](ragnarok_spr::Spr).
 #[derive(Debug, Asset, Reflect)]
