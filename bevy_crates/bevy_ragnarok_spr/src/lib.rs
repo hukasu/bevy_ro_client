@@ -201,11 +201,13 @@ impl SpritesManager<'_, '_> {
         let Some(data) = buffer.data.as_mut() else {
             unreachable!("Buffer data must be available on the CPU.");
         };
-        let slice = &mut data[start..end];
+        let mut slice = &mut data[start..end];
         let linear = tint.to_linear();
         for channel in [linear.red, linear.green, linear.blue, linear.alpha] {
-            slice[start..(start + 4)].swap_with_slice(&mut channel.to_le_bytes());
+            slice[0..4].swap_with_slice(&mut channel.to_le_bytes());
+            slice = &mut slice[4..];
         }
+        debug_assert!(slice.is_empty());
 
         Ok(())
     }
