@@ -11,7 +11,7 @@ use bevy_ecs::{
     component::Component,
     entity::Entity,
     lifecycle::HookContext,
-    query::{QueryEntityError, With},
+    query::QueryEntityError,
     system::{Query, Res, ResMut, SystemParam},
     world::DeferredWorld,
 };
@@ -132,9 +132,11 @@ impl SpriteImages {
 
 #[derive(SystemParam)]
 pub struct SpritesManager<'w, 's> {
-    sprites: Query<'w, 's, &'static MeshTag, With<MeshMaterial3d<SprMaterial>>>,
+    sprites: Query<'w, 's, (&'static MeshTag, &'static mut MeshMaterial3d<SprMaterial>)>,
     sprite_buffers: Res<'w, SpriteBuffers>,
     shader_storage_buffers: ResMut<'w, Assets<ShaderStorageBuffer>>,
+    // Work around https://github.com/bevyengine/bevy/issues/20378
+    mesh_materials: ResMut<'w, Assets<SprMaterial>>,
 }
 
 impl SpritesManager<'_, '_> {
@@ -157,7 +159,8 @@ impl SpritesManager<'_, '_> {
         mut index: u32,
         true_color: bool,
     ) -> Result<(), QueryEntityError> {
-        let Ok(tag) = usize::try_from(self.sprites.get(entity)?.0) else {
+        let (mesh_tag, mesh_material) = self.sprites.get(entity)?;
+        let Ok(tag) = usize::try_from(mesh_tag.0) else {
             unreachable!("Tag should never exceed usize.");
         };
 
@@ -180,11 +183,14 @@ impl SpritesManager<'_, '_> {
         };
         data[start..end].swap_with_slice(&mut index.to_le_bytes());
 
+        self.mesh_materials.get_mut(mesh_material.id());
+
         Ok(())
     }
 
     pub fn change_tint(&mut self, entity: Entity, tint: Color) -> Result<(), QueryEntityError> {
-        let Ok(tag) = usize::try_from(self.sprites.get(entity)?.0) else {
+        let (mesh_tag, mesh_material) = self.sprites.get(entity)?;
+        let Ok(tag) = usize::try_from(mesh_tag.0) else {
             unreachable!("Tag should never exceed usize.");
         };
 
@@ -209,6 +215,8 @@ impl SpritesManager<'_, '_> {
         }
         debug_assert!(slice.is_empty());
 
+        self.mesh_materials.get_mut(mesh_material.id());
+
         Ok(())
     }
 
@@ -217,7 +225,8 @@ impl SpritesManager<'_, '_> {
         entity: Entity,
         is_flipped: bool,
     ) -> Result<(), QueryEntityError> {
-        let Ok(tag) = usize::try_from(self.sprites.get(entity)?.0) else {
+        let (mesh_tag, mesh_material) = self.sprites.get(entity)?;
+        let Ok(tag) = usize::try_from(mesh_tag.0) else {
             unreachable!("Tag should never exceed usize.");
         };
 
@@ -235,6 +244,8 @@ impl SpritesManager<'_, '_> {
             unreachable!("Buffer data must be available on the CPU.");
         };
         data[start..end].swap_with_slice(&mut [0, 0, 0, is_flipped as u8]);
+
+        self.mesh_materials.get_mut(mesh_material.id());
 
         Ok(())
     }
