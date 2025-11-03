@@ -43,7 +43,7 @@ impl SprMaterial {
     /// Stride of the items on [`SprMaterial::uv_index`].
     pub const UV_INDEX_STRIDE: usize = 4;
     /// Stride of the items on [`SprMaterial::tint`].
-    pub const TINT_STRIDE: usize = 4;
+    pub const TINT_STRIDE: usize = 4 * 4;
     /// Stride of the items on [`SprMaterial::flipped_uvs`].
     pub const FLIPPED_UVS_STRIDE: usize = 4;
 }
