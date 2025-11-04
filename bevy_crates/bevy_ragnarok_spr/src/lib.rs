@@ -243,7 +243,7 @@ impl SpritesManager<'_, '_> {
         let Some(data) = buffer.data.as_mut() else {
             unreachable!("Buffer data must be available on the CPU.");
         };
-        data[start..end].swap_with_slice(&mut [0, 0, 0, is_flipped as u8]);
+        data[start..end].swap_with_slice(&mut (is_flipped as u32).to_le_bytes());
 
         self.mesh_materials.get_mut(mesh_material.id());
 
