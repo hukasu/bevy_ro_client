@@ -33,15 +33,22 @@ bevy_render = { workspace = true, default-features = false }
 bevy_shader = { workspace = true, default-features = false }
 
 [dev-dependencies]
-bevy = { workspace = true, features = [
+bevy = { workspace = true, default-features = true, features = [
     "bevy_core_pipeline",
+    "experimental_bevy_feathers",
+    "bevy_input_focus",
     "bevy_log",
     "bevy_pbr",
+    "bevy_picking",
     "bevy_post_process",
     "bevy_render",
+    "bevy_ui",
+    "bevy_ui_picking_backend",
+    "bevy_ui_render",
     "bevy_window",
     "bevy_winit",
     "debug",
+    "default_font",
     "tonemapping_luts",
     "wayland",
     "zstd_rust",
