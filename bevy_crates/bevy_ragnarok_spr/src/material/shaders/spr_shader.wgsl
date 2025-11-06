@@ -66,7 +66,7 @@ fn vertex(
     let index = in.vertex_index - first_vertex_index;
 #endif
 
-    let uv_index = spr_uv_index[tag] & 0x70000000;
+    let uv_index = spr_uv_index[tag] & 0x7fffffff;
 
     var dimensions: vec2<f32>;
     var spr_uv: SprUvs;
@@ -115,10 +115,9 @@ fn fragment(
     @builtin(front_facing) is_front: bool
 ) -> FragmentOutput {
     var pbr_input = spr_default_material(in, is_front);
-    pbr_input.material.base_color = vec4(1.);
+    pbr_input.material.base_color = vec4(1., 0., 1., 1.);
 
     let tag = mesh[in.instance_index].tag;
-    let uv_index = spr_uv_index[tag] & 0x70000000;
 
     if (spr_uv_index[tag] & 0x80000000) != 0 {
         pbr_input.material.base_color = textureSample(
@@ -127,7 +126,7 @@ fn fragment(
             in.uv
         );
     } else {
-        let spr_uv = spr_indexed_uvs[uv_index];
+        let spr_uv = in.uv;
         let dimensions = vec2<f32>(textureDimensions(spr_indexed_texture));
         let coord = vec2<u32>(dimensions * in.uv);
         let index = textureLoad(spr_indexed_texture, coord, 0).x;
