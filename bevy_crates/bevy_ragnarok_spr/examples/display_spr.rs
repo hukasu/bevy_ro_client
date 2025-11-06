@@ -2,7 +2,7 @@ use bevy::{
     DefaultPlugins,
     app::{App, PreUpdate, Startup},
     asset::{
-        AssetApp, AssetServer, Assets, RenderAssetUsages,
+        AssetApp, AssetEvent, AssetServer, Assets, RenderAssetUsages,
         io::{AssetSourceBuilder, AssetSourceId},
     },
     camera::{Camera, Camera2d, Camera3d, ClearColorConfig, RenderTarget},
@@ -10,9 +10,11 @@ use bevy::{
     ecs::{
         bundle::Bundle,
         children,
+        component::Component,
         entity::Entity,
         error::{BevyError, Result},
         hierarchy::Children,
+        message::MessageReader,
         observer::On,
         query::With,
         relationship::RelationshipTarget,
@@ -37,7 +39,10 @@ use bevy::{
     math::{Vec2, Vec3, primitives::Plane3d},
     mesh::{Mesh3d, MeshBuilder, Meshable},
     pbr::MeshMaterial3d,
-    render::render_resource::{TextureDimension, TextureFormat, TextureUsages},
+    render::{
+        render_resource::{TextureDimension, TextureFormat, TextureUsages},
+        storage::ShaderStorageBuffer,
+    },
     text::TextFont,
     transform::components::Transform,
     ui::{
@@ -47,10 +52,7 @@ use bevy::{
     },
     ui_widgets::{SliderPrecision, SliderRange, SliderStep, SliderValue, ValueChange, observe},
 };
-use bevy_asset::AssetEvent;
-use bevy_ecs::{component::Component, message::MessageReader};
 use bevy_ragnarok_spr::{Sprite, SpriteImages, SpritesManager, material::SprMaterial};
-use bevy_render::storage::ShaderStorageBuffer;
 
 fn main() {
     let mut app = App::new();
