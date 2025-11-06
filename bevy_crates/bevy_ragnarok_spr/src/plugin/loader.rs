@@ -2,6 +2,7 @@ use std::fmt::Display;
 
 use bevy_asset::{Handle, LoadContext, RenderAssetUsages};
 use bevy_image::{Image, ImageSampler, TextureAtlasBuilder, TextureAtlasBuilderError};
+use bevy_math::UVec2;
 use bevy_ragnarok_pal::pal_to_image;
 use bevy_render::{
     render_resource::{
@@ -66,6 +67,7 @@ impl AssetLoader {
         let mut texture_atlas = TextureAtlasBuilder::default();
         texture_atlas.auto_format_conversion(false);
         texture_atlas.format(TextureFormat::R8Uint);
+        texture_atlas.padding(UVec2::splat(1));
 
         let asset_usage = if cfg!(feature = "debug") {
             RenderAssetUsages::all()
@@ -143,6 +145,7 @@ impl AssetLoader {
         let mut texture_atlas = TextureAtlasBuilder::default();
         texture_atlas.auto_format_conversion(false);
         texture_atlas.format(TextureFormat::Rgba8UnormSrgb);
+        texture_atlas.padding(UVec2::splat(1));
 
         let asset_usage = if cfg!(feature = "debug") {
             RenderAssetUsages::all()
