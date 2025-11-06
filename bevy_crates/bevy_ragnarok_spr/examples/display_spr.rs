@@ -423,6 +423,6 @@ fn update_image_slider_range(
     }
     commands.entity(*image_slider).insert((
         SliderValue(0.),
-        SliderRange::from_range(0f32..=(length as f32)),
+        SliderRange::from_range(0f32..=((length - 1) as f32)),
     ));
 }
